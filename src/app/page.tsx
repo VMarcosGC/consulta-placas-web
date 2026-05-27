@@ -1,65 +1,208 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ConsultaForm } from "@/components/ConsultaForm";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div>
+      <HeroSection />
+      <ValoresSection />
+      <PlanesSection />
+      <CtaSection />
     </div>
+  );
+}
+
+function HeroSection() {
+  return (
+    <section className="relative overflow-hidden">
+      {/* Glow de fondo */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-40"
+        style={{
+          background:
+            "radial-gradient(60% 60% at 50% 0%, rgba(139,92,246,0.3) 0%, rgba(0,0,0,0) 70%), radial-gradient(40% 40% at 80% 30%, rgba(236,72,153,0.25) 0%, rgba(0,0,0,0) 70%)",
+        }}
+      />
+      <div className="mx-auto max-w-4xl px-6 pt-20 pb-16 text-center sm:pt-28">
+        <span className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-xs text-zinc-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          ANT · AMT · SRI · Fiscalía — en una sola consulta
+        </span>
+        <h1 className="mt-6 text-5xl sm:text-7xl font-black tracking-tight leading-[1.05]">
+          Conocé el <span className="text-brand-gradient">estado real</span><br />
+          de cualquier vehículo<br />
+          del Ecuador
+        </h1>
+        <p className="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
+          Matriculación, citaciones, infracciones municipales y denuncias asociadas.
+          Datos oficiales agregados en segundos. Sin registro para consultas básicas.
+        </p>
+        <div className="mt-10 mx-auto max-w-xl">
+          <ConsultaForm tamanio="hero" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ValoresSection() {
+  const items = [
+    {
+      titulo: "Datos oficiales",
+      texto: "Consultamos en tiempo real ANT, AMT y Fiscalía. No almacenamos información sensible.",
+      emoji: "🔍",
+    },
+    {
+      titulo: "Historial privado",
+      texto: "Tu garage personal con kilometraje, mantenimientos y dueños históricos. Solo para vos.",
+      emoji: "📋",
+    },
+    {
+      titulo: "Modo compra-venta",
+      texto: "Compartí un token temporal con un comprador interesado. Decidís qué ve y por cuánto tiempo.",
+      emoji: "🤝",
+    },
+  ];
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-16">
+      <div className="grid gap-6 sm:grid-cols-3">
+        {items.map((it) => (
+          <article
+            key={it.titulo}
+            className="rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-6 transition-colors hover:border-zinc-700"
+          >
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-gradient text-2xl">
+              {it.emoji}
+            </div>
+            <h3 className="text-lg font-semibold text-zinc-100">{it.titulo}</h3>
+            <p className="mt-2 text-sm text-zinc-400">{it.texto}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PlanesSection() {
+  return (
+    <section id="planes" className="mx-auto max-w-6xl px-6 py-20">
+      <div className="text-center">
+        <h2 className="text-3xl sm:text-4xl font-bold">Planes simples</h2>
+        <p className="mt-2 text-zinc-400">Empezá gratis, escalá cuando lo necesites.</p>
+      </div>
+      <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <PlanCard
+          nombre="Gratis"
+          precio="$0"
+          unidad="/mes"
+          descripcion="Para uso ocasional"
+          beneficios={[
+            "5 consultas públicas / mes",
+            "1 vehículo en tu garage",
+            "Soporte por email",
+          ]}
+          cta={{ label: "Empezar", href: "/registro" }}
+          destacado={false}
+        />
+        <PlanCard
+          nombre="Pro"
+          precio="$4.99"
+          unidad="/mes"
+          descripcion="Para dueños activos"
+          beneficios={[
+            "Consultas ilimitadas",
+            "Garage ilimitado",
+            "Alertas por email de nuevas citaciones",
+            "Exportar a PDF",
+          ]}
+          cta={{ label: "Próximamente", href: "#" }}
+          destacado
+        />
+        <PlanCard
+          nombre="Compra-Venta"
+          precio="$1.99"
+          unidad="/ token"
+          descripcion="Pago por uso"
+          beneficios={[
+            "Link compartible del historial",
+            "Decidís qué campos ver",
+            "Caduca en 7 días",
+            "Pack de 5 tokens: $7.99",
+          ]}
+          cta={{ label: "Próximamente", href: "#" }}
+          destacado={false}
+        />
+      </div>
+      <p className="mt-8 text-center text-xs text-zinc-500">
+        Los pagos llegan cuando integremos el gateway local (PlaceToPay/MercadoPago). Mientras tanto, registrate gratis y reservá tu lugar.
+      </p>
+    </section>
+  );
+}
+
+interface PlanProps {
+  nombre: string;
+  precio: string;
+  unidad: string;
+  descripcion: string;
+  beneficios: string[];
+  cta: { label: string; href: string };
+  destacado: boolean;
+}
+
+function PlanCard({ nombre, precio, unidad, descripcion, beneficios, cta, destacado }: PlanProps) {
+  return (
+    <article
+      className={`relative rounded-3xl border p-6 ${
+        destacado
+          ? "border-transparent bg-brand-gradient/10 ring-1 ring-pink-500/40"
+          : "border-zinc-800/60 bg-zinc-900/40"
+      }`}
+    >
+      {destacado && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-semibold text-zinc-950">
+          Más popular
+        </span>
+      )}
+      <h3 className="text-xl font-bold">{nombre}</h3>
+      <p className="text-sm text-zinc-400">{descripcion}</p>
+      <div className="mt-4 flex items-baseline gap-1">
+        <span className="text-4xl font-black">{precio}</span>
+        <span className="text-sm text-zinc-500">{unidad}</span>
+      </div>
+      <ul className="mt-5 space-y-2 text-sm text-zinc-300">
+        {beneficios.map((b) => (
+          <li key={b} className="flex items-start gap-2">
+            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-brand-gradient" />
+            {b}
+          </li>
+        ))}
+      </ul>
+      <Link
+        href={cta.href}
+        className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-sm font-medium ${
+          destacado
+            ? "bg-brand-gradient text-zinc-950 hover:opacity-90"
+            : "border border-zinc-700 text-zinc-100 hover:bg-zinc-800"
+        }`}
+      >
+        {cta.label}
+      </Link>
+    </article>
+  );
+}
+
+function CtaSection() {
+  return (
+    <section className="mx-auto max-w-4xl px-6 py-20 text-center">
+      <h2 className="text-3xl sm:text-4xl font-bold">¿Probás con una placa ahora?</h2>
+      <p className="mt-3 text-zinc-400">
+        En menos de un minuto te decimos todo lo que sabe el Estado sobre ese vehículo.
+      </p>
+      <div className="mt-6 mx-auto max-w-md">
+        <ConsultaForm tamanio="compacto" />
+      </div>
+    </section>
   );
 }
