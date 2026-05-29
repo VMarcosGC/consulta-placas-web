@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Precios | ConsultaPlacas EC",
-  description: "Planes simples para usar ConsultaPlacas EC: Gratis, Pro y Compra-Venta.",
+  title: "Precios | Revisa tu Carro EC",
+  description: "Planes simples para usar Revisa tu Carro EC: Gratis, Pro y Compra-Venta.",
 };
 
 const planes = [
@@ -59,7 +59,7 @@ export default function PreciosPage() {
         <h1 className="text-4xl sm:text-5xl font-bold">
           Planes <span className="text-brand-gradient">simples</span>
         </h1>
-        <p className="mt-3 text-zinc-400">
+        <p className="mt-3 text-slate-600">
           Empezá gratis. Escalá cuando lo necesites. Sin contratos ni letra chica.
         </p>
       </div>
@@ -68,37 +68,37 @@ export default function PreciosPage() {
         {planes.map((p) => (
           <article
             key={p.nombre}
-            className={`relative rounded-3xl border p-6 ${
+            className={`relative rounded-3xl border p-6 sombra-tarjeta ${
               p.destacado
-                ? "border-transparent bg-brand-gradient/10 ring-1 ring-pink-500/40"
-                : "border-zinc-800/60 bg-zinc-900/40"
+                ? "border-blue-300 bg-white ring-2 ring-blue-500/30"
+                : "border-slate-200 bg-white"
             }`}
           >
             {p.destacado && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-semibold text-zinc-950">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-semibold text-white shadow-sm">
                 Más popular
               </span>
             )}
-            <h3 className="text-xl font-bold">{p.nombre}</h3>
-            <p className="text-sm text-zinc-400">{p.descripcion}</p>
+            <h3 className="text-xl font-bold text-slate-900">{p.nombre}</h3>
+            <p className="text-sm text-slate-500">{p.descripcion}</p>
             <div className="mt-4 flex items-baseline gap-1">
-              <span className="text-4xl font-black">{p.precio}</span>
-              <span className="text-sm text-zinc-500">{p.unidad}</span>
+              <span className="text-4xl font-black text-slate-900">{p.precio}</span>
+              <span className="text-sm text-slate-400">{p.unidad}</span>
             </div>
-            <ul className="mt-5 space-y-2 text-sm text-zinc-300">
+            <ul className="mt-5 space-y-2 text-sm text-slate-700">
               {p.beneficios.map((b) => (
                 <li key={b} className="flex items-start gap-2">
-                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-brand-gradient" />
+                  <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gradient" />
                   {b}
                 </li>
               ))}
             </ul>
             <Link
               href={p.cta.href}
-              className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-sm font-medium ${
+              className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-sm font-semibold ${
                 p.destacado
-                  ? "bg-brand-gradient text-zinc-950 hover:opacity-90"
-                  : "border border-zinc-700 text-zinc-100 hover:bg-zinc-800"
+                  ? "bg-brand-gradient text-white shadow-sm hover:opacity-90"
+                  : "border border-slate-300 text-slate-700 hover:bg-slate-100"
               }`}
             >
               {p.cta.label}
@@ -107,9 +107,9 @@ export default function PreciosPage() {
         ))}
       </div>
 
-      <section className="mt-16 rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-8 text-center">
-        <h2 className="text-2xl font-bold">¿Por qué cobramos?</h2>
-        <p className="mt-3 mx-auto max-w-2xl text-sm text-zinc-400">
+      <section className="mt-16 sombra-tarjeta rounded-3xl border border-slate-200 bg-white p-8 text-center">
+        <h2 className="text-2xl font-bold text-slate-900">¿Por qué cobramos?</h2>
+        <p className="mt-3 mx-auto max-w-2xl text-sm text-slate-600">
           Cada consulta dispara hasta 4 procesos automatizados que extraen datos en tiempo real
           de fuentes oficiales. El plan Gratis cubre uso esporádico; los planes pagos sostienen
           la infraestructura y nos permiten agregar features (alertas, OCR, integración con más fuentes).

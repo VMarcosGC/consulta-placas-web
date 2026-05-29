@@ -42,7 +42,7 @@ export default function RegistroPage() {
   return (
     <div className="mx-auto max-w-md px-6 py-16">
       <h1 className="text-3xl font-bold">Crear cuenta</h1>
-      <p className="mt-2 text-sm text-zinc-400">
+      <p className="mt-2 text-sm text-slate-500">
         ¿Ya tenés cuenta?{" "}
         <Link href="/login" className="text-brand-gradient font-medium">Iniciar sesión</Link>
       </p>
@@ -52,19 +52,19 @@ export default function RegistroPage() {
         <CampoTexto label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" requerido />
         <CampoTexto label="Contraseña (8+ caracteres)" type="password" value={password} onChange={setPassword} autoComplete="new-password" requerido />
         {error && (
-          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={enviando}
-          className="w-full rounded-xl bg-brand-gradient px-4 py-3 font-semibold text-zinc-950 disabled:opacity-60"
+          className="w-full rounded-xl bg-brand-gradient px-4 py-3 font-semibold text-white shadow-sm disabled:opacity-60"
         >
           {enviando ? "Creando..." : "Crear cuenta gratis"}
         </button>
       </form>
-      <p className="mt-6 text-center text-xs text-zinc-500">
+      <p className="mt-6 text-center text-xs text-slate-400">
         Al registrarte aceptás guardar tu información de garage en nuestros servidores. No compartimos datos con terceros.
       </p>
     </div>

@@ -1,7 +1,7 @@
 import { ConsultaForm } from "@/components/ConsultaForm";
 
 export const metadata = {
-  title: "Consultar placa | ConsultaPlacas EC",
+  title: "Consultar placa | Revisa tu Carro EC",
 };
 
 export default function ConsultarPage() {
@@ -10,7 +10,7 @@ export default function ConsultarPage() {
       <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
         Ingresá la <span className="text-brand-gradient">placa</span> a consultar
       </h1>
-      <p className="mt-3 text-zinc-400">
+      <p className="mt-3 text-slate-600">
         Formato: 3 letras + 3 o 4 números. Ej: ABC1234.
       </p>
       <div className="mt-8 mx-auto max-w-xl">

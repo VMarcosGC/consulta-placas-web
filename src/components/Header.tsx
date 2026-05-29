@@ -34,22 +34,23 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-gradient text-zinc-950 text-sm font-black">
-            CP
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-gradient text-white text-sm font-black shadow-sm">
+            RC
           </span>
           <span>
-            Consulta<span className="text-brand-gradient">Placas</span>
+            Revisa tu <span className="text-brand-gradient">Carro</span>
+            <span className="ml-1 align-top text-[10px] font-bold text-slate-400">EC</span>
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
-          <Link href="/consultar" className="hover:text-zinc-100">Consultar</Link>
-          <Link href="/precios" className="hover:text-zinc-100">Precios</Link>
+        <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
+          <Link href="/consultar" className="hover:text-slate-900">Consultar</Link>
+          <Link href="/precios" className="hover:text-slate-900">Precios</Link>
           {logueado && (
-            <Link href="/mi-garage" className="hover:text-zinc-100">Mi garage</Link>
+            <Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link>
           )}
         </div>
 
@@ -57,7 +58,7 @@ export function Header() {
           {logueado ? (
             <button
               onClick={salir}
-              className="rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-300 hover:border-zinc-700 hover:text-zinc-100"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:border-slate-400 hover:text-slate-900"
             >
               Salir
             </button>
@@ -65,13 +66,13 @@ export function Header() {
             <>
               <Link
                 href="/login"
-                className="hidden sm:inline rounded-lg px-3 py-1.5 text-sm text-zinc-300 hover:text-zinc-100"
+                className="hidden sm:inline rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900"
               >
                 Iniciar sesión
               </Link>
               <Link
                 href="/registro"
-                className="rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-medium text-zinc-950 hover:opacity-90"
+                className="rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
               >
                 Crear cuenta
               </Link>

@@ -15,11 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ConsultaPlacas EC — Conocé el estado real de cualquier vehículo",
+  title: "Revisa tu Carro EC — Conocé el estado real de cualquier vehículo",
   description:
-    "Matriculación, citaciones, infracciones y denuncias en una sola consulta. Datos oficiales de ANT, AMT y Fiscalía del Ecuador.",
+    "Matriculación, citaciones, infracciones y denuncias en una sola consulta. Datos oficiales de ANT, AMT, SRI y Fiscalía del Ecuador.",
   keywords: [
     "consultar placa Ecuador",
+    "revisa tu carro",
     "ANT matriculación",
     "multas AMT",
     "infracciones tránsito Ecuador",
@@ -35,9 +36,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-zinc-100">
+      <body className="min-h-full flex flex-col text-slate-900">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

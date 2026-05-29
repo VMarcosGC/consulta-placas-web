@@ -52,20 +52,20 @@ export function ConsultaForm({ tamanio = "hero", placaInicial = "" }: Props) {
           placeholder="TBA3373"
           maxLength={8}
           aria-label="Placa del vehiculo"
-          className={`focus-glow flex-1 rounded-2xl border border-zinc-800 bg-zinc-900 px-5 font-mono text-center text-zinc-100 placeholder-zinc-600 ${inputClases}`}
+          className={`focus-glow flex-1 rounded-2xl border border-slate-300 bg-white px-5 font-mono text-center text-slate-900 placeholder-slate-300 shadow-sm ${inputClases}`}
         />
         <button
           type="submit"
-          className={`rounded-2xl bg-brand-gradient font-semibold text-zinc-950 hover:opacity-90 transition-opacity ${botonClases}`}
+          className={`rounded-2xl bg-brand-gradient font-semibold text-white shadow-sm hover:opacity-90 transition-opacity ${botonClases}`}
         >
           {tamanio === "hero" ? "Consultar gratis" : "Consultar"}
         </button>
       </div>
       {error && (
-        <p className="mt-2 text-sm text-amber-400">{error}</p>
+        <p className="mt-2 text-sm text-red-600">{error}</p>
       )}
       {tamanio === "hero" && (
-        <p className="mt-3 text-center text-sm text-zinc-500">
+        <p className="mt-3 text-center text-sm text-slate-500">
           Consulta anónima, sin registro. Resultados en segundos.
         </p>
       )}

@@ -166,3 +166,77 @@ export class ApiError extends Error {
     super(message);
   }
 }
+
+// ── Perfil Consolidado de Vehículo ──────────────────────────────────────────
+// Refleja `VehiculoConsolidadoResponse` del backend (src/modules/consulta/schemas.py).
+// Hoy el endpoint sigue respondiendo por-fuente; el frontend consolida en cliente
+// (ver src/lib/consolidar.ts) hasta que el backend cablee este contrato.
+
+export type EstadoFuenteConsolidada =
+  | "completada"
+  | "sin_resultados"
+  | "en_proceso"
+  | "error_fuente"
+  | "error"
+  | "consulta_externa"
+  | "no_integrada";
+
+export interface EstadoFuenteItem {
+  clave: string;
+  nombre: string;
+  prioridad: "alta" | "media" | "baja";
+  origen: "oficial" | "no_oficial";
+  estado: EstadoFuenteConsolidada;
+  detalle?: string | null;
+}
+
+export interface DatosBasicos {
+  marca: string | null;
+  modelo: string | null;
+  anio: number | string | null;
+  color: string | null;
+  clase: string | null;
+  servicio: string | null;
+  pais_origen: string | null;
+}
+
+export interface Identificacion {
+  vin_ofuscado: string | null;
+  numero_motor_ofuscado: string | null;
+  numero_chasis_ofuscado: string | null;
+  pais_origen: string | null;
+}
+
+export interface MultaItem {
+  fuente: string;
+  concepto: string | null;
+  valor_usd: number | null;
+  estado: string | null;
+  fecha: string | null;
+}
+
+export interface NovedadLegal {
+  fuente: string;
+  ndd: string | null;
+  delito: string | null;
+  fecha: string | null;
+  lugar: string | null;
+  unidad: string | null;
+}
+
+export interface ValoresTributarios {
+  fuente: string;
+  matricula_usd: number | null;
+  total_a_pagar_usd: number | null;
+  url_consulta: string | null;
+}
+
+export interface VehiculoConsolidado {
+  placa: string;
+  datos_basicos: DatosBasicos;
+  identificacion: Identificacion;
+  valores_tributarios: ValoresTributarios | null;
+  multas_pendientes: MultaItem[];
+  novedades_legales: NovedadLegal[];
+  estado_fuentes: EstadoFuenteItem[];
+}

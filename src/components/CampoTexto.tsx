@@ -21,7 +21,7 @@ export function CampoTexto({
 }: Props) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm text-zinc-300">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       <input
         type={type}
         value={value}
@@ -29,7 +29,7 @@ export function CampoTexto({
         autoComplete={autoComplete}
         required={requerido}
         placeholder={placeholder}
-        className="focus-glow w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-600"
+        className="focus-glow w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm"
       />
     </label>
   );

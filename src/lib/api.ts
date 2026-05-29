@@ -8,6 +8,7 @@ import {
   Token,
   Usuario,
   Vehiculo,
+  VehiculoConsolidado,
   VehiculoCrear,
 } from "@/types/api";
 import { obtenerToken } from "./auth";
@@ -54,6 +55,14 @@ async function fetchAPI<T>(
 export function consultarPlaca(placa: string) {
   return fetchAPI<ConsultaPlacaRespuesta>(
     `/consultar/${encodeURIComponent(placa)}`
+  );
+}
+
+// Perfil consolidado orientado a la entidad (secciones temáticas + estado_fuentes).
+// El backend agrega las fuentes; el frontend ya no consolida en cliente.
+export function consultarPerfil(placa: string) {
+  return fetchAPI<VehiculoConsolidado>(
+    `/consultar/${encodeURIComponent(placa)}/perfil`
   );
 }
 

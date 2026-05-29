@@ -15,26 +15,19 @@ export default function Home() {
 function HeroSection() {
   return (
     <section className="relative overflow-hidden">
-      {/* Glow de fondo */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-40"
-        style={{
-          background:
-            "radial-gradient(60% 60% at 50% 0%, rgba(139,92,246,0.3) 0%, rgba(0,0,0,0) 70%), radial-gradient(40% 40% at 80% 30%, rgba(236,72,153,0.25) 0%, rgba(0,0,0,0) 70%)",
-        }}
-      />
+      {/* Glow de fondo claro */}
+      <div aria-hidden className="hero-glow pointer-events-none absolute inset-0 -z-10" />
       <div className="mx-auto max-w-4xl px-6 pt-20 pb-16 text-center sm:pt-28">
-        <span className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/50 px-3 py-1 text-xs text-zinc-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           ANT · AMT · SRI · Fiscalía — en una sola consulta
         </span>
-        <h1 className="mt-6 text-5xl sm:text-7xl font-black tracking-tight leading-[1.05]">
+        <h1 className="mt-6 text-5xl sm:text-7xl font-black tracking-tight leading-[1.05] text-slate-900">
           Conocé el <span className="text-brand-gradient">estado real</span><br />
           de cualquier vehículo<br />
           del Ecuador
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
+        <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
           Matriculación, citaciones, infracciones municipales y denuncias asociadas.
           Datos oficiales agregados en segundos. Sin registro para consultas básicas.
         </p>
@@ -70,13 +63,13 @@ function ValoresSection() {
         {items.map((it) => (
           <article
             key={it.titulo}
-            className="rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-6 transition-colors hover:border-zinc-700"
+            className="sombra-tarjeta rounded-3xl border border-slate-200 bg-white p-6 transition hover:-translate-y-0.5 hover:border-blue-300"
           >
-            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-gradient text-2xl">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-gradient text-2xl shadow-sm">
               {it.emoji}
             </div>
-            <h3 className="text-lg font-semibold text-zinc-100">{it.titulo}</h3>
-            <p className="mt-2 text-sm text-zinc-400">{it.texto}</p>
+            <h3 className="text-lg font-semibold text-slate-900">{it.titulo}</h3>
+            <p className="mt-2 text-sm text-slate-600">{it.texto}</p>
           </article>
         ))}
       </div>
@@ -88,8 +81,8 @@ function PlanesSection() {
   return (
     <section id="planes" className="mx-auto max-w-6xl px-6 py-20">
       <div className="text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold">Planes simples</h2>
-        <p className="mt-2 text-zinc-400">Empezá gratis, escalá cuando lo necesites.</p>
+        <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Planes simples</h2>
+        <p className="mt-2 text-slate-600">Empezá gratis, escalá cuando lo necesites.</p>
       </div>
       <div className="mt-10 grid gap-5 md:grid-cols-3">
         <PlanCard
@@ -134,7 +127,7 @@ function PlanesSection() {
           destacado={false}
         />
       </div>
-      <p className="mt-8 text-center text-xs text-zinc-500">
+      <p className="mt-8 text-center text-xs text-slate-400">
         Los pagos llegan cuando integremos el gateway local (PlaceToPay/MercadoPago). Mientras tanto, registrate gratis y reservá tu lugar.
       </p>
     </section>
@@ -156,35 +149,35 @@ function PlanCard({ nombre, precio, unidad, descripcion, beneficios, cta, destac
     <article
       className={`relative rounded-3xl border p-6 ${
         destacado
-          ? "border-transparent bg-brand-gradient/10 ring-1 ring-pink-500/40"
-          : "border-zinc-800/60 bg-zinc-900/40"
+          ? "border-blue-300 bg-white ring-2 ring-blue-500/30 sombra-tarjeta"
+          : "border-slate-200 bg-white sombra-tarjeta"
       }`}
     >
       {destacado && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-semibold text-zinc-950">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-semibold text-white shadow-sm">
           Más popular
         </span>
       )}
-      <h3 className="text-xl font-bold">{nombre}</h3>
-      <p className="text-sm text-zinc-400">{descripcion}</p>
+      <h3 className="text-xl font-bold text-slate-900">{nombre}</h3>
+      <p className="text-sm text-slate-500">{descripcion}</p>
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-4xl font-black">{precio}</span>
-        <span className="text-sm text-zinc-500">{unidad}</span>
+        <span className="text-4xl font-black text-slate-900">{precio}</span>
+        <span className="text-sm text-slate-400">{unidad}</span>
       </div>
-      <ul className="mt-5 space-y-2 text-sm text-zinc-300">
+      <ul className="mt-5 space-y-2 text-sm text-slate-700">
         {beneficios.map((b) => (
           <li key={b} className="flex items-start gap-2">
-            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-brand-gradient" />
+            <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gradient" />
             {b}
           </li>
         ))}
       </ul>
       <Link
         href={cta.href}
-        className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-sm font-medium ${
+        className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-sm font-semibold ${
           destacado
-            ? "bg-brand-gradient text-zinc-950 hover:opacity-90"
-            : "border border-zinc-700 text-zinc-100 hover:bg-zinc-800"
+            ? "bg-brand-gradient text-white shadow-sm hover:opacity-90"
+            : "border border-slate-300 text-slate-700 hover:bg-slate-100"
         }`}
       >
         {cta.label}
@@ -196,8 +189,8 @@ function PlanCard({ nombre, precio, unidad, descripcion, beneficios, cta, destac
 function CtaSection() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-      <h2 className="text-3xl sm:text-4xl font-bold">¿Probás con una placa ahora?</h2>
-      <p className="mt-3 text-zinc-400">
+      <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">¿Probás con una placa ahora?</h2>
+      <p className="mt-3 text-slate-600">
         En menos de un minuto te decimos todo lo que sabe el Estado sobre ese vehículo.
       </p>
       <div className="mt-6 mx-auto max-w-md">

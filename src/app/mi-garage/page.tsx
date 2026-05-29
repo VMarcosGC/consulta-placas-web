@@ -60,7 +60,7 @@ export default function MiGaragePage() {
 
   if (cargando) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-16 text-center text-zinc-500">
+      <div className="mx-auto max-w-4xl px-6 py-16 text-center text-slate-400">
         Cargando tu garage…
       </div>
     );
@@ -73,14 +73,14 @@ export default function MiGaragePage() {
           <h1 className="text-3xl sm:text-4xl font-bold">
             Hola{usuario?.nombre ? `, ${usuario.nombre}` : ""} 👋
           </h1>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-slate-500">
             {vehiculos.length} {vehiculos.length === 1 ? "vehículo" : "vehículos"} registrado{vehiculos.length === 1 ? "" : "s"}
           </p>
         </div>
       </header>
 
       {error && (
-        <p className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+        <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
         </p>
       )}
@@ -89,24 +89,24 @@ export default function MiGaragePage() {
 
       <section className="mt-10 space-y-3">
         {vehiculos.length === 0 ? (
-          <p className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 text-center text-sm text-zinc-400">
+          <p className="sombra-tarjeta rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
             Todavía no agregaste ningún vehículo. Usá el formulario de arriba.
           </p>
         ) : (
           vehiculos.map((v) => (
             <article
               key={v.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5"
+              className="sombra-tarjeta flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5"
             >
               <div className="flex items-center gap-4">
-                <span className="grid h-12 w-20 place-items-center rounded-xl border border-zinc-700 bg-zinc-900 font-mono text-sm tracking-wider">
+                <span className="grid h-12 w-20 place-items-center rounded-xl border border-slate-300 bg-slate-50 font-mono text-sm font-semibold tracking-wider text-slate-900">
                   {v.placa}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-zinc-100">
+                  <p className="text-sm font-semibold text-slate-900">
                     {[v.marca, v.modelo].filter(Boolean).join(" ") || "Sin descripción"}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-slate-400">
                     {[v.anio, v.color].filter(Boolean).join(" · ") || "Agregá detalles"}
                   </p>
                 </div>
@@ -114,13 +114,13 @@ export default function MiGaragePage() {
               <div className="flex items-center gap-2">
                 <Link
                   href={`/consultar/${v.placa}`}
-                  className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
                 >
                   Consultar
                 </Link>
                 <button
                   onClick={() => borrar(v.id)}
-                  className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10"
+                  className="rounded-lg border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
                 >
                   Eliminar
                 </button>
@@ -170,7 +170,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
     return (
       <button
         onClick={() => setAbierto(true)}
-        className="w-full rounded-2xl border border-dashed border-zinc-700 px-6 py-6 text-center text-sm text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+        className="w-full rounded-2xl border border-dashed border-slate-300 px-6 py-6 text-center text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600"
       >
         + Agregar vehículo a mi garage
       </button>
@@ -178,7 +178,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-4">
+    <form onSubmit={submit} className="sombra-tarjeta rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoTexto label="Placa" value={placa} onChange={(v) => setPlaca(v.toUpperCase())} placeholder="ABC1234" requerido />
         <CampoTexto label="Marca" value={marca} onChange={setMarca} placeholder="Toyota" />
@@ -187,7 +187,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
         <CampoTexto label="Color" value={color} onChange={setColor} placeholder="Blanco" />
       </div>
       {error && (
-        <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
         </p>
       )}
@@ -195,14 +195,14 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
         <button
           type="submit"
           disabled={enviando}
-          className="rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-zinc-950 disabled:opacity-60"
+          className="rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
         >
           {enviando ? "Guardando..." : "Guardar"}
         </button>
         <button
           type="button"
           onClick={() => setAbierto(false)}
-          className="rounded-xl border border-zinc-700 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800"
+          className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-100"
         >
           Cancelar
         </button>
