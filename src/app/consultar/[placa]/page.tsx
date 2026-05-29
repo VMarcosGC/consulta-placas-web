@@ -56,7 +56,7 @@ export default async function ConsultarPlacaPage({ params }: Props) {
           </p>
         </div>
       ) : (
-        <ResultadoConsulta data={data} />
+        <ResultadoConsulta key={data.placa} inicial={data} />
       )}
     </div>
   );

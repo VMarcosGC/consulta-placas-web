@@ -4,6 +4,7 @@
 import {
   ApiError,
   ConsultaPlacaRespuesta,
+  FuenteRespuesta,
   Token,
   Usuario,
   Vehiculo,
@@ -53,6 +54,15 @@ async function fetchAPI<T>(
 export function consultarPlaca(placa: string) {
   return fetchAPI<ConsultaPlacaRespuesta>(
     `/consultar/${encodeURIComponent(placa)}`
+  );
+}
+
+// Fuerza un nuevo intento de una fuente del worker híbrido (AMT/FGE) que quedó
+// en error_fuente. Reencola el trabajo; el polling normal recoge el resultado.
+export function reintentarFuente(identificador: string, fuente: "AMT" | "FGE") {
+  return fetchAPI<FuenteRespuesta>(
+    `/consultar/${encodeURIComponent(identificador)}/reintentar/${fuente}`,
+    { method: "POST" }
   );
 }
 

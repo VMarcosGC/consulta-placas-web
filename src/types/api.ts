@@ -6,7 +6,12 @@ export type EstadoFuente =
   | "error"
   | "pendiente_integracion"
   | "sin_resultados"
-  | "bloqueado_captcha";
+  | "bloqueado_captcha"
+  // AMT/FGE vía worker híbrido: encolado (en_proceso) o fuente caída tras reintentos.
+  | "en_proceso"
+  | "error_fuente"
+  // SRI: passthrough al portal oficial (devuelve url_consulta).
+  | "consulta_externa";
 
 export interface FuenteRespuesta<TDatos = unknown> {
   fuente: "ANT" | "SRI" | "AMT" | "FGE";
@@ -15,6 +20,8 @@ export interface FuenteRespuesta<TDatos = unknown> {
   estado: EstadoFuente;
   datos: TDatos | null;
   error?: string;
+  // Solo presente cuando estado === "consulta_externa" (SRI → portal oficial).
+  url_consulta?: string;
   _cache?: boolean;
 }
 
@@ -87,10 +94,18 @@ export interface ResumenConsulta {
   sri_consultado: boolean;
   amt_consultado: boolean;
   fge_consultado: boolean;
+  // Worker híbrido: estado asíncrono de AMT/FGE.
+  amt_en_proceso: boolean;
+  fge_en_proceso: boolean;
+  amt_error_fuente: boolean;
+  fge_error_fuente: boolean;
   tiene_citaciones_pendientes_ant: boolean;
   total_citaciones_ant: number;
   valor_pendiente_sri: number;
   tiene_valores_pendientes_sri: boolean;
+  // SRI passthrough al portal oficial.
+  sri_consulta_externa: boolean;
+  url_consulta_sri: string | null;
   total_infracciones_amt: number;
   infracciones_pendientes_amt: number;
   valor_pendiente_amt: number;

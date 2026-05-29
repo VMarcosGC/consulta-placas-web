@@ -1,28 +1,53 @@
-// Server component — recibe la respuesta de la API y renderiza las 4 fuentes
-// con sus respectivas cards. Cada fuente muestra estado, datos relevantes, o
-// el motivo del error de manera elegante.
+// Client component — recibe la respuesta inicial (renderizada en el server para
+// SEO/primer pintado) y, mientras AMT/FGE estén `en_proceso` (worker híbrido),
+// hace polling silencioso cada 4s a /consultar/{placa}. Si una fuente queda en
+// `error_fuente` muestra un botón para reintentar la conexión. SRI usa passthrough
+// (`consulta_externa`): se ofrece un enlace al portal oficial.
 
+"use client";
+
+import { useEffect, useState } from "react";
+import { consultarPlaca, reintentarFuente } from "@/lib/api";
 import { ConsultaPlacaRespuesta } from "@/types/api";
 
+const INTERVALO_POLLING_MS = 4000;
+
 interface Props {
-  data: ConsultaPlacaRespuesta;
+  inicial: ConsultaPlacaRespuesta;
 }
+
+const ETIQUETA_ESTADO: Record<string, string> = {
+  consulta_realizada: "consulta realizada",
+  sin_resultados: "sin resultados",
+  en_proceso: "consultando…",
+  error_fuente: "fuente no disponible",
+  consulta_externa: "ver en portal",
+  bloqueado_captcha: "bloqueado",
+  pendiente_integracion: "pendiente",
+  error: "error",
+};
 
 function BadgeEstado({ estado, cache }: { estado: string; cache?: boolean }) {
   const colores: Record<string, string> = {
-    consulta_realizada:
-      "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+    consulta_realizada: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
     error: "bg-red-500/10 text-red-400 border-red-500/30",
-    bloqueado_captcha:
-      "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    sin_resultados:
-      "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
-    pendiente_integracion:
-      "bg-violet-500/10 text-violet-400 border-violet-500/30",
+    error_fuente: "bg-rose-500/10 text-rose-300 border-rose-500/30",
+    bloqueado_captcha: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+    sin_resultados: "bg-zinc-500/10 text-zinc-400 border-zinc-500/30",
+    pendiente_integracion: "bg-violet-500/10 text-violet-400 border-violet-500/30",
+    en_proceso: "bg-sky-500/10 text-sky-300 border-sky-500/30",
+    consulta_externa: "bg-violet-500/10 text-violet-300 border-violet-500/30",
   };
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${colores[estado] ?? colores.error}`}>
-      {estado.replace(/_/g, " ")}
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${
+        colores[estado] ?? colores.error
+      }`}
+    >
+      {estado === "en_proceso" && (
+        <span className="h-1.5 w-1.5 animate-ping rounded-full bg-sky-400" />
+      )}
+      {ETIQUETA_ESTADO[estado] ?? estado.replace(/_/g, " ")}
       {cache && (
         <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">
           cache
@@ -32,7 +57,7 @@ function BadgeEstado({ estado, cache }: { estado: string; cache?: boolean }) {
   );
 }
 
-function ResumenGeneral({ data }: Props) {
+function ResumenGeneral({ data }: { data: ConsultaPlacaRespuesta }) {
   const r = data.resumen;
   const tienePendientes = r.estado_general === "con_pendientes";
   return (
@@ -108,7 +133,60 @@ function CardFuente({
   );
 }
 
-function Campo({ label, valor }: { label: string; valor: string | number | null | undefined }) {
+// Placeholder animado mientras el worker procesa la fuente (estado en_proceso).
+function CuerpoSkeleton() {
+  return (
+    <div className="animate-pulse" aria-busy="true" aria-live="polite">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-3 w-16 rounded bg-zinc-800" />
+            <div className="h-4 w-24 rounded bg-zinc-700/50" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 h-16 rounded-2xl bg-zinc-800/40" />
+      <p className="mt-4 text-xs text-sky-300/80">
+        Consultando la fuente oficial… esto puede tardar unos segundos.
+      </p>
+    </div>
+  );
+}
+
+// Fuente caída tras agotar reintentos (error_fuente): mensaje + botón reintentar.
+function CuerpoErrorFuente({
+  mensaje,
+  onReintentar,
+  reintentando,
+}: {
+  mensaje?: string;
+  onReintentar: () => void;
+  reintentando: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4">
+      <p className="text-sm text-rose-200">
+        {mensaje || "La fuente oficial no respondió tras varios intentos."}
+      </p>
+      <button
+        type="button"
+        onClick={onReintentar}
+        disabled={reintentando}
+        className="mt-3 inline-flex items-center gap-2 rounded-full bg-rose-500/15 px-4 py-2 text-sm font-medium text-rose-200 transition hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {reintentando ? "Reintentando…" : "Reintentar conexión con la fuente"}
+      </button>
+    </div>
+  );
+}
+
+function Campo({
+  label,
+  valor,
+}: {
+  label: string;
+  valor: string | number | null | undefined;
+}) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-wide text-zinc-500">{label}</dt>
@@ -142,7 +220,11 @@ function CardANT({ ant }: { ant: ConsultaPlacaRespuesta["ant"] }) {
             <Campo label="Vence" valor={ant.datos.vehiculo.fecha_caducidad} />
           </dl>
           <div className="mt-6 grid grid-cols-3 sm:grid-cols-5 gap-3 text-center">
-            <Pildora label="Pendientes" valor={ant.datos.citaciones.pendientes} tono={ant.datos.citaciones.pendientes > 0 ? "alerta" : "ok"} />
+            <Pildora
+              label="Pendientes"
+              valor={ant.datos.citaciones.pendientes}
+              tono={ant.datos.citaciones.pendientes > 0 ? "alerta" : "ok"}
+            />
             <Pildora label="Pagadas" valor={ant.datos.citaciones.pagadas} tono="neutro" />
             <Pildora label="Anuladas" valor={ant.datos.citaciones.anuladas} tono="neutro" />
             <Pildora label="Impugnación" valor={ant.datos.citaciones.en_impugnacion} tono="neutro" />
@@ -154,7 +236,15 @@ function CardANT({ ant }: { ant: ConsultaPlacaRespuesta["ant"] }) {
   );
 }
 
-function CardAMT({ amt }: { amt: ConsultaPlacaRespuesta["amt"] }) {
+function CardAMT({
+  amt,
+  onReintentar,
+  reintentando,
+}: {
+  amt: ConsultaPlacaRespuesta["amt"];
+  onReintentar: () => void;
+  reintentando: boolean;
+}) {
   return (
     <CardFuente
       titulo="AMT Quito"
@@ -162,10 +252,16 @@ function CardAMT({ amt }: { amt: ConsultaPlacaRespuesta["amt"] }) {
       estado={amt.estado}
       cache={amt._cache}
     >
-      {amt.estado !== "consulta_realizada" || !amt.datos ? (
-        <p className="text-sm text-zinc-400">
-          {amt.error ?? "Sin datos disponibles."}
-        </p>
+      {amt.estado === "en_proceso" ? (
+        <CuerpoSkeleton />
+      ) : amt.estado === "error_fuente" ? (
+        <CuerpoErrorFuente
+          mensaje={amt.error}
+          onReintentar={onReintentar}
+          reintentando={reintentando}
+        />
+      ) : amt.estado !== "consulta_realizada" || !amt.datos ? (
+        <p className="text-sm text-zinc-400">{amt.error ?? "Sin datos disponibles."}</p>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
@@ -192,7 +288,13 @@ function CardAMT({ amt }: { amt: ConsultaPlacaRespuesta["amt"] }) {
   );
 }
 
-function CardSRI({ sri }: { sri: ConsultaPlacaRespuesta["sri"] }) {
+function CardSRI({
+  sri,
+  placa,
+}: {
+  sri: ConsultaPlacaRespuesta["sri"];
+  placa: string;
+}) {
   return (
     <CardFuente
       titulo="SRI"
@@ -200,24 +302,57 @@ function CardSRI({ sri }: { sri: ConsultaPlacaRespuesta["sri"] }) {
       estado={sri.estado}
       cache={sri._cache}
     >
-      {sri.estado === "bloqueado_captcha" ? (
+      {sri.estado === "consulta_externa" ? (
+        <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-4">
+          <p className="text-sm text-violet-100">
+            El portal del SRI no permite la consulta automatizada (reCAPTCHA). Consultá
+            los valores de matrícula directamente en el sitio oficial con la placa{" "}
+            <span className="font-mono font-semibold text-violet-200">{placa}</span>.
+          </p>
+          {sri.url_consulta && (
+            <a
+              href={sri.url_consulta}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-violet-500/20 px-4 py-2 text-sm font-medium text-violet-200 transition hover:bg-violet-500/30"
+            >
+              Consultar en el portal del SRI ↗
+            </a>
+          )}
+        </div>
+      ) : sri.estado === "bloqueado_captcha" ? (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-200">
-          El portal del SRI bloqueó la consulta automatizada con reCAPTCHA invisible. Esta limitación está documentada — estamos evaluando integración por API oficial.
+          El portal del SRI bloqueó la consulta automatizada con reCAPTCHA invisible. Esta
+          limitación está documentada — estamos evaluando integración por API oficial.
         </div>
       ) : sri.estado !== "consulta_realizada" || !sri.datos ? (
         <p className="text-sm text-zinc-400">{sri.error ?? "Sin datos disponibles."}</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Campo label="Matrícula" valor={`$${sri.datos.valores.matricula.toFixed(2)}`} />
-          <Campo label="Total a pagar" valor={`$${sri.datos.valores.total_a_pagar.toFixed(2)}`} />
-          <Campo label="Estado" valor={sri.datos.tiene_valores_pendientes ? "Con valores" : "Al día"} />
+          <Campo
+            label="Total a pagar"
+            valor={`$${sri.datos.valores.total_a_pagar.toFixed(2)}`}
+          />
+          <Campo
+            label="Estado"
+            valor={sri.datos.tiene_valores_pendientes ? "Con valores" : "Al día"}
+          />
         </div>
       )}
     </CardFuente>
   );
 }
 
-function CardFGE({ fge }: { fge: ConsultaPlacaRespuesta["fge"] }) {
+function CardFGE({
+  fge,
+  onReintentar,
+  reintentando,
+}: {
+  fge: ConsultaPlacaRespuesta["fge"];
+  onReintentar: () => void;
+  reintentando: boolean;
+}) {
   return (
     <CardFuente
       titulo="Fiscalía General del Estado"
@@ -225,7 +360,15 @@ function CardFGE({ fge }: { fge: ConsultaPlacaRespuesta["fge"] }) {
       estado={fge.estado}
       cache={fge._cache}
     >
-      {fge.estado !== "consulta_realizada" || !fge.datos ? (
+      {fge.estado === "en_proceso" ? (
+        <CuerpoSkeleton />
+      ) : fge.estado === "error_fuente" ? (
+        <CuerpoErrorFuente
+          mensaje={fge.error}
+          onReintentar={onReintentar}
+          reintentando={reintentando}
+        />
+      ) : fge.estado !== "consulta_realizada" || !fge.datos ? (
         <p className="text-sm text-zinc-400">{fge.error ?? "Sin datos disponibles."}</p>
       ) : fge.datos.denuncias.total_encontradas === 0 ? (
         <p className="text-sm text-emerald-300">
@@ -240,10 +383,14 @@ function CardFGE({ fge }: { fge: ConsultaPlacaRespuesta["fge"] }) {
             >
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <span className="font-mono text-xs text-zinc-500">NDD {d.ndd}</span>
-                <span className="text-xs text-zinc-400">{d.fecha} · {d.hora}</span>
+                <span className="text-xs text-zinc-400">
+                  {d.fecha} · {d.hora}
+                </span>
               </div>
               <p className="text-sm font-medium text-zinc-100">{d.delito}</p>
-              <p className="mt-1 text-xs text-zinc-400">{d.lugar} · {d.unidad}</p>
+              <p className="mt-1 text-xs text-zinc-400">
+                {d.lugar} · {d.unidad}
+              </p>
             </li>
           ))}
         </ul>
@@ -274,14 +421,62 @@ function Pildora({
   );
 }
 
-export function ResultadoConsulta({ data }: Props) {
+export function ResultadoConsulta({ inicial }: Props) {
+  const [data, setData] = useState<ConsultaPlacaRespuesta>(inicial);
+  const [reintentando, setReintentando] = useState<{ AMT?: boolean; FGE?: boolean }>({});
+
+  // Nota: al navegar a otra placa el componente se remonta vía `key={placa}` (page.tsx),
+  // así que el estado se reinicia sin un effect de reset (anti-patrón).
+
+  // Polling silencioso cada 4s mientras AMT/FGE estén en proceso. La dependencia en
+  // `data` re-arma el timeout tras cada actualización y lo detiene al resolverse.
+  useEffect(() => {
+    const hayEnProceso =
+      data.amt.estado === "en_proceso" || data.fge.estado === "en_proceso";
+    if (!hayEnProceso) return;
+
+    const t = setTimeout(async () => {
+      try {
+        setData(await consultarPlaca(data.placa));
+      } catch {
+        // Silencioso: mantener los datos previos y reintentar en el próximo ciclo.
+      }
+    }, INTERVALO_POLLING_MS);
+
+    return () => clearTimeout(t);
+  }, [data]);
+
+  async function reintentar(fuente: "AMT" | "FGE") {
+    setReintentando((r) => ({ ...r, [fuente]: true }));
+    // Optimista: volver la fuente a "en_proceso" reanuda el polling de inmediato.
+    setData((prev) =>
+      fuente === "AMT"
+        ? { ...prev, amt: { ...prev.amt, estado: "en_proceso", error: undefined } }
+        : { ...prev, fge: { ...prev.fge, estado: "en_proceso", error: undefined } }
+    );
+    try {
+      await reintentarFuente(data.placa, fuente);
+    } catch {
+      // El polling reintenta igual; el reencolado puede haberse hecho.
+    }
+    setReintentando((r) => ({ ...r, [fuente]: false }));
+  }
+
   return (
     <div className="space-y-6">
       <ResumenGeneral data={data} />
       <CardANT ant={data.ant} />
-      <CardAMT amt={data.amt} />
-      <CardSRI sri={data.sri} />
-      <CardFGE fge={data.fge} />
+      <CardAMT
+        amt={data.amt}
+        onReintentar={() => reintentar("AMT")}
+        reintentando={!!reintentando.AMT}
+      />
+      <CardSRI sri={data.sri} placa={data.placa} />
+      <CardFGE
+        fge={data.fge}
+        onReintentar={() => reintentar("FGE")}
+        reintentando={!!reintentando.FGE}
+      />
     </div>
   );
 }
