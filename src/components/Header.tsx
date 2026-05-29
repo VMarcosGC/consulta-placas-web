@@ -1,25 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { cerrarSesion, tieneSesion } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
-export function Header() {
-  const [logueado, setLogueado] = useState(false);
-  const router = useRouter();
+// Suscripción al estado de sesión (un store externo: localStorage).
+// "storage" cubre cambios desde otra pestaña; "sesion-cambiada" los del mismo tab.
+function suscribirSesion(alCambiar: () => void) {
+  window.addEventListener("storage", alCambiar);
+  window.addEventListener("sesion-cambiada", alCambiar);
+  return () => {
+    window.removeEventListener("storage", alCambiar);
+    window.removeEventListener("sesion-cambiada", alCambiar);
+  };
+}
 
-  useEffect(() => {
-    setLogueado(tieneSesion());
-    // Refresca el estado si otro tab cambia el token.
-    const handler = () => setLogueado(tieneSesion());
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
+export function Header() {
+  const router = useRouter();
+  // useSyncExternalStore lee el snapshot del cliente y, en SSR, el del servidor
+  // (false), evitando el setState-en-effect y los mismatches de hidratación.
+  const logueado = useSyncExternalStore(
+    suscribirSesion,
+    () => tieneSesion(),
+    () => false,
+  );
 
   function salir() {
     cerrarSesion();
-    setLogueado(false);
+    // Notifica al store en el mismo tab (el evento "storage" no se auto-dispara).
+    window.dispatchEvent(new Event("sesion-cambiada"));
     router.push("/");
   }
 

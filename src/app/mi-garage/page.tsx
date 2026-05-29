@@ -20,31 +20,37 @@ export default function MiGaragePage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Carga inicial. El fetch va en un IIFE async dentro del effect: todos los
+  // setState ocurren tras el await (no sincrónicamente), lo que satisface
+  // react-hooks/set-state-in-effect. `activo` evita setState tras desmontar.
   useEffect(() => {
     if (!tieneSesion()) {
       router.push("/login?next=/mi-garage");
       return;
     }
-    cargar();
-  }, [router]);
-
-  async function cargar() {
-    setCargando(true);
-    setError(null);
-    try {
-      const [perfil, lista] = await Promise.all([obtenerPerfil(), listarVehiculos()]);
-      setUsuario(perfil);
-      setVehiculos(lista);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        router.push("/login?next=/mi-garage");
-        return;
+    let activo = true;
+    (async () => {
+      try {
+        const [perfil, lista] = await Promise.all([obtenerPerfil(), listarVehiculos()]);
+        if (!activo) return;
+        setUsuario(perfil);
+        setVehiculos(lista);
+        setError(null);
+      } catch (err) {
+        if (!activo) return;
+        if (err instanceof ApiError && err.status === 401) {
+          router.push("/login?next=/mi-garage");
+          return;
+        }
+        setError("No pudimos cargar tu garage. Probá recargar.");
+      } finally {
+        if (activo) setCargando(false);
       }
-      setError("No pudimos cargar tu garage. Probá recargar.");
-    } finally {
-      setCargando(false);
-    }
-  }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [router]);
 
   async function borrar(id: number) {
     if (!confirm("¿Eliminar este vehículo de tu garage?")) return;
