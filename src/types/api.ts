@@ -169,8 +169,8 @@ export class ApiError extends Error {
 
 // ── Perfil Consolidado de Vehículo ──────────────────────────────────────────
 // Refleja `VehiculoConsolidadoResponse` del backend (src/modules/consulta/schemas.py).
-// Hoy el endpoint sigue respondiendo por-fuente; el frontend consolida en cliente
-// (ver src/lib/consolidar.ts) hasta que el backend cablee este contrato.
+// El backend entrega el objeto ya consolidado vía GET /consultar/{placa}/perfil; el
+// frontend solo lee y pinta (helpers de lectura en src/lib/perfil.ts).
 
 export type EstadoFuenteConsolidada =
   | "completada"

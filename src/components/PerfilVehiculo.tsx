@@ -15,7 +15,7 @@ import {
   estadoDeFuente,
   hayFuentesEnProceso,
   marcarFuenteEnProceso,
-} from "@/lib/consolidar";
+} from "@/lib/perfil";
 import type { EstadoFuenteItem, VehiculoConsolidado } from "@/types/api";
 
 const INTERVALO_POLLING_MS = 4000;
