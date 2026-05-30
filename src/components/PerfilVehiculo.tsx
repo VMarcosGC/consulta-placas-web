@@ -16,7 +16,12 @@ import {
   hayFuentesEnProceso,
   marcarFuenteEnProceso,
 } from "@/lib/perfil";
-import type { EstadoFuenteItem, VehiculoConsolidado } from "@/types/api";
+import type {
+  CategoriaMulta,
+  EstadoFuenteItem,
+  MultaDetalle,
+  VehiculoConsolidado,
+} from "@/types/api";
 
 const INTERVALO_POLLING_MS = 4000;
 
@@ -278,6 +283,8 @@ function TarjetaVehiculo({
         <Campo label="Color" valor={b.color} />
         <Campo label="Clase" valor={b.clase} />
         <Campo label="Servicio" valor={b.servicio} />
+        <Campo label="Matrícula" valor={b.fecha_matricula} />
+        <Campo label="Vence" valor={b.fecha_caducidad} />
         {b.pais_origen && <Campo label="Origen" valor={b.pais_origen} />}
       </dl>
 
@@ -289,6 +296,59 @@ function TarjetaVehiculo({
 }
 
 // ── Secciones temáticas ─────────────────────────────────────────────────────
+
+// Pastilla de categoría: "Pendientes: 2 · $45.50". Pendientes resaltadas en ámbar.
+function PildoraCategoria({ cat }: { cat: CategoriaMulta }) {
+  const esPendiente = cat.etiqueta.toLowerCase().startsWith("pendiente");
+  const tono = esPendiente
+    ? "bg-amber-100 text-amber-800 border-amber-200"
+    : "bg-white text-slate-600 border-slate-200";
+  const monto =
+    cat.monto_usd != null && cat.monto_usd > 0 ? ` · $${cat.monto_usd.toFixed(2)}` : "";
+  return (
+    <span className={`rounded-lg border px-2.5 py-1 text-xs font-medium ${tono}`}>
+      {cat.etiqueta}: <span className="font-bold">{cat.cantidad}</span>
+      {monto}
+    </span>
+  );
+}
+
+// Bloque de detalle por fuente (ANT/AMT/EPMTSD): ámbito, totales y categorías.
+function BloqueMulta({ d }: { d: MultaDetalle }) {
+  const tienePend = d.pendientes > 0 || (d.total_a_pagar_usd ?? 0) > 0;
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        tienePend ? "border-amber-200 bg-amber-50/60" : "border-slate-200 bg-slate-50"
+      }`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <MarcaFuente fuente={d.fuente} noOficial={false} />
+          <span className="text-sm font-semibold text-slate-700">{d.ambito}</span>
+        </div>
+        {d.total_a_pagar_usd != null && d.total_a_pagar_usd > 0 && (
+          <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800">
+            A pagar ${d.total_a_pagar_usd.toFixed(2)}
+          </span>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-slate-500">
+        {d.total_registros} registro{d.total_registros === 1 ? "" : "s"}
+        {d.pendientes > 0 ? ` · ${d.pendientes} pendiente${d.pendientes === 1 ? "" : "s"}` : ""}
+      </p>
+      {d.categorias.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {d.categorias.map((c) => (
+            <PildoraCategoria key={`${d.fuente}-${c.etiqueta}`} cat={c} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-sm font-medium text-emerald-700">Sin registros. ✓</p>
+      )}
+    </div>
+  );
+}
 
 function SeccionMultas({
   perfil,
@@ -303,49 +363,36 @@ function SeccionMultas({
   onReintentar: () => void;
   reintentando: boolean;
 }) {
-  const multas = perfil.multas_pendientes;
-  const noOficiales = clavesNoOficiales(perfil);
-  const hayNoOficial = multas.some((m) => noOficiales.has(m.fuente));
+  const detalle = perfil.multas_detalle;
   return (
     <Seccion
       titulo="Multas e infracciones"
       descripcion="Citaciones de tránsito (ANT) e infracciones municipales (AMT, EPMTSD)"
       cargando={cargandoAmt}
     >
-      {amtErrorFuente ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+      {amtErrorFuente && (
+        <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 p-4">
           <p className="text-sm text-rose-700">
             No pudimos consultar las infracciones municipales (AMT) tras varios intentos.
           </p>
           <BotonReintentar onReintentar={onReintentar} reintentando={reintentando} />
         </div>
-      ) : multas.length === 0 && cargandoAmt ? (
-        <SkeletonLista />
-      ) : multas.length === 0 ? (
-        <p className="text-sm font-medium text-emerald-700">Sin multas pendientes registradas.</p>
+      )}
+      {detalle.length === 0 ? (
+        cargandoAmt ? (
+          <SkeletonLista />
+        ) : (
+          <p className="text-sm font-medium text-emerald-700">
+            Sin multas ni infracciones registradas.
+          </p>
+        )
       ) : (
-        <>
-          <ul className="space-y-3">
-            {multas.map((m, i) => (
-              <li
-                key={`${m.fuente}-${i}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <div>
-                  <MarcaFuente fuente={m.fuente} noOficial={noOficiales.has(m.fuente)} />
-                  <p className="mt-1 text-sm font-medium text-slate-900">{m.concepto}</p>
-                </div>
-                {m.valor_usd != null && (
-                  <span className="shrink-0 rounded-lg bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800">
-                    ${m.valor_usd.toFixed(2)}
-                  </span>
-                )}
-              </li>
-            ))}
-            {cargandoAmt && <SkeletonLista />}
-          </ul>
-          {hayNoOficial && <DisclaimerNoOficial />}
-        </>
+        <div className="space-y-3">
+          {detalle.map((d) => (
+            <BloqueMulta key={d.fuente} d={d} />
+          ))}
+          {cargandoAmt && <SkeletonLista />}
+        </div>
       )}
     </Seccion>
   );

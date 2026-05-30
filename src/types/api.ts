@@ -197,7 +197,24 @@ export interface DatosBasicos {
   color: string | null;
   clase: string | null;
   servicio: string | null;
+  fecha_matricula: string | null;
+  fecha_caducidad: string | null;
   pais_origen: string | null;
+}
+
+export interface CategoriaMulta {
+  etiqueta: string;
+  cantidad: number;
+  monto_usd: number | null;
+}
+
+export interface MultaDetalle {
+  fuente: string;
+  ambito: string;
+  total_registros: number;
+  pendientes: number;
+  total_a_pagar_usd: number | null;
+  categorias: CategoriaMulta[];
 }
 
 export interface Identificacion {
@@ -237,6 +254,7 @@ export interface VehiculoConsolidado {
   identificacion: Identificacion;
   valores_tributarios: ValoresTributarios | null;
   multas_pendientes: MultaItem[];
+  multas_detalle: MultaDetalle[];
   novedades_legales: NovedadLegal[];
   estado_fuentes: EstadoFuenteItem[];
 }
