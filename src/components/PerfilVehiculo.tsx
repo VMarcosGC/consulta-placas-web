@@ -562,6 +562,57 @@ function SeccionValores({ perfil }: { perfil: VehiculoConsolidado }) {
   );
 }
 
+// Acceso destacado a la herramienta oficial de EPMTSD "Condición del vehículo".
+// Trae los datos más decisivos para una compra (robo, prendas, remarcado, traspasos,
+// RTV), pero su consulta es lenta (~50s) y solo cubre ciertos vehículos, así que NO la
+// traemos inline: la exponemos como enlace oficial (decisión: dato lento/inconsistente).
+function SeccionAntecedentes() {
+  const URL_EPMTSD_CONDICION = "https://servicios.epmtsd.gob.ec/vehiculo_seguro/";
+  const items = [
+    "Reporte de robo",
+    "Prenda comercial / industrial",
+    "Prohibición de enajenar",
+    "Remarcado de motor / chasis",
+    "Reserva de dominio",
+    "N° de traspasos",
+    "Revisión técnica vigente",
+  ];
+  return (
+    <Seccion
+      titulo="Condición y antecedentes"
+      descripcion="Verificación de gravámenes y estado legal del vehículo (EPMTSD · oficial)"
+    >
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+        <p className="text-sm text-blue-900">
+          Para una compra segura, revisá la <span className="font-semibold">condición del
+          vehículo</span> en el servicio oficial de EPMTSD. Verifica:
+        </p>
+        <ul className="mt-3 flex flex-wrap gap-2">
+          {items.map((t) => (
+            <li
+              key={t}
+              className="rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-xs font-medium text-blue-800"
+            >
+              {t}
+            </li>
+          ))}
+        </ul>
+        <a
+          href={URL_EPMTSD_CONDICION}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+        >
+          Consultar condición en EPMTSD ↗
+        </a>
+        <p className="mt-2 text-[11px] text-slate-500">
+          Servicio oficial; la consulta puede tardar y no cubre todos los vehículos.
+        </p>
+      </div>
+    </Seccion>
+  );
+}
+
 // ── Componente principal ────────────────────────────────────────────────────
 
 export function PerfilVehiculo({ inicial }: Props) {
@@ -601,8 +652,6 @@ export function PerfilVehiculo({ inicial }: Props) {
   return (
     <div className="space-y-6">
       <TarjetaVehiculo perfil={perfil} cargando={cargando} />
-      <SeccionIdentificacion perfil={perfil} noOficiales={noOficiales} />
-      <SeccionValores perfil={perfil} />
       <SeccionMultas
         perfil={perfil}
         cargandoAmt={estadoDeFuente(perfil, "AMT") === "en_proceso"}
@@ -610,6 +659,9 @@ export function PerfilVehiculo({ inicial }: Props) {
         onReintentar={() => reintentar("AMT")}
         reintentando={!!reintentando.AMT}
       />
+      <SeccionAntecedentes />
+      <SeccionIdentificacion perfil={perfil} noOficiales={noOficiales} />
+      <SeccionValores perfil={perfil} />
       <SeccionLegal
         perfil={perfil}
         cargandoFge={estadoDeFuente(perfil, "FGE") === "en_proceso"}
