@@ -95,10 +95,16 @@ export default function ReferenciarPage() {
             La revisará nuestro equipo y, una vez aprobada, aparecerá en el marketplace
             dentro de «Referencias externas».
           </p>
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/marketplace/mis-referencias"
+              className="rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              Ver mis referencias
+            </Link>
             <Link
               href="/marketplace"
-              className="rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+              className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               Volver al marketplace
             </Link>
@@ -120,9 +126,17 @@ export default function ReferenciarPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
-      <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
-        ← Volver al marketplace
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
+          ← Volver al marketplace
+        </Link>
+        <Link
+          href="/marketplace/mis-referencias"
+          className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+        >
+          Mis referencias →
+        </Link>
+      </div>
       <h1 className="mt-3 text-3xl font-black text-slate-900">Referenciar un anuncio</h1>
       <p className="mt-1 text-slate-500">
         ¿Viste un auto en venta en <span className="font-semibold">Facebook Marketplace</span>,
