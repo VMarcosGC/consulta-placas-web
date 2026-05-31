@@ -198,3 +198,23 @@ export function eliminarReferencia(id: number) {
     true
   );
 }
+
+// ─── Moderación de referencias (solo admin) ───────────────
+
+// Cola de referencias pendientes de aprobar. 403 si el usuario no es admin.
+export function listarReferenciasPendientes() {
+  return fetchAPI<PublicacionReferenciada[]>(
+    "/marketplace/referencias/pendientes",
+    {},
+    true
+  );
+}
+
+// Aprueba o rechaza una referencia. 403 si no es admin.
+export function moderarReferencia(id: number, decision: "aprobada" | "rechazada") {
+  return fetchAPI<PublicacionReferenciada>(
+    `/marketplace/referencias/${id}/moderar`,
+    { method: "POST", body: JSON.stringify({ decision }) },
+    true
+  );
+}

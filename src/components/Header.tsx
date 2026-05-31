@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { cerrarSesion, tieneSesion } from "@/lib/auth";
+import { obtenerPerfil } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 // Suscripción al estado de sesión (un store externo: localStorage).
@@ -25,6 +26,23 @@ export function Header() {
     () => tieneSesion(),
     () => false,
   );
+
+  // Solo los admins ven el acceso a moderación. Se resuelve consultando /auth/me
+  // (el backend marca es_admin según ADMIN_EMAILS). Se reevalúa al cambiar la sesión.
+  const [esAdmin, setEsAdmin] = useState(false);
+  useEffect(() => {
+    if (!logueado) {
+      setEsAdmin(false);
+      return;
+    }
+    let activo = true;
+    obtenerPerfil()
+      .then((u) => activo && setEsAdmin(Boolean(u.es_admin)))
+      .catch(() => activo && setEsAdmin(false));
+    return () => {
+      activo = false;
+    };
+  }, [logueado]);
 
   function salir() {
     cerrarSesion();
@@ -52,6 +70,11 @@ export function Header() {
           <Link href="/precios" className="hover:text-slate-900">Precios</Link>
           {logueado && (
             <Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link>
+          )}
+          {esAdmin && (
+            <Link href="/admin/moderacion" className="font-semibold text-blue-600 hover:text-blue-800">
+              Moderar
+            </Link>
           )}
         </div>
 

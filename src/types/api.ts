@@ -128,6 +128,9 @@ export interface Usuario {
   id: number;
   email: string;
   nombre: string | null;
+  saldo_tokens?: number;
+  // True si el email está en ADMIN_EMAILS (lo expone /auth/me). Habilita moderación.
+  es_admin?: boolean;
   creado_en: string;
 }
 
