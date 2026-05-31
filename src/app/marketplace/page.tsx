@@ -48,7 +48,7 @@ export default function MarketplacePage() {
         setFeed(data);
         setError(null);
       } catch {
-        if (activo) setError("No pudimos cargar el marketplace. Probá recargar.");
+        if (activo) setError("No pudimos cargar el marketplace. Intenta recargar.");
       } finally {
         if (activo) setCargando(false);
       }

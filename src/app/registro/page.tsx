@@ -33,7 +33,7 @@ export default function RegistroPage() {
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
-      else setError("No pudimos crear la cuenta. Probá de nuevo.");
+      else setError("No pudimos crear la cuenta. Inténtalo de nuevo.");
     } finally {
       setEnviando(false);
     }
@@ -43,7 +43,7 @@ export default function RegistroPage() {
     <div className="mx-auto max-w-md px-6 py-16">
       <h1 className="text-3xl font-bold">Crear cuenta</h1>
       <p className="mt-2 text-sm text-slate-500">
-        ¿Ya tenés cuenta?{" "}
+        ¿Ya tienes cuenta?{" "}
         <Link href="/login" className="text-brand-gradient font-medium">Iniciar sesión</Link>
       </p>
 
@@ -65,7 +65,7 @@ export default function RegistroPage() {
         </button>
       </form>
       <p className="mt-6 text-center text-xs text-slate-400">
-        Al registrarte aceptás guardar tu información de garage en nuestros servidores. No compartimos datos con terceros.
+        Al registrarte aceptas guardar tu información de garage en nuestros servidores. No compartimos datos con terceros.
       </p>
     </div>
   );

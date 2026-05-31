@@ -13,7 +13,7 @@ export default function LoginPage() {
     <div className="mx-auto max-w-md px-6 py-16">
       <h1 className="text-3xl font-bold">Iniciar sesión</h1>
       <p className="mt-2 text-sm text-slate-500">
-        ¿No tenés cuenta?{" "}
+        ¿No tienes cuenta?{" "}
         <Link href="/registro" className="text-brand-gradient font-medium">Crear una</Link>
       </p>
 
@@ -47,7 +47,7 @@ function LoginForm() {
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
-      else setError("No pudimos iniciar sesión. Probá de nuevo.");
+      else setError("No pudimos iniciar sesión. Inténtalo de nuevo.");
     } finally {
       setEnviando(false);
     }

@@ -23,7 +23,7 @@ function HeroSection() {
           ANT · AMT · SRI · Fiscalía — en una sola consulta
         </span>
         <h1 className="mt-6 text-5xl sm:text-7xl font-black tracking-tight leading-[1.05] text-slate-900">
-          Conocé el <span className="text-brand-gradient">estado real</span><br />
+          Conoce el <span className="text-brand-gradient">estado real</span><br />
           de cualquier vehículo<br />
           del Ecuador
         </h1>
@@ -45,32 +45,39 @@ function ValoresSection() {
       titulo: "Datos oficiales",
       texto: "Consultamos en tiempo real ANT, AMT y Fiscalía. No almacenamos información sensible.",
       emoji: "🔍",
+      href: "/consultar",
     },
     {
       titulo: "Historial privado",
-      texto: "Tu garage personal con kilometraje, mantenimientos y dueños históricos. Solo para vos.",
+      texto: "Tu garage personal con kilometraje, mantenimientos y dueños históricos. Solo para ti.",
       emoji: "📋",
+      href: "/mi-garage",
     },
     {
       titulo: "Modo compra-venta",
-      texto: "Compartí un token temporal con un comprador interesado. Decidís qué ve y por cuánto tiempo.",
+      texto: "Publica tu auto o comparte un enlace temporal con un comprador. Tú decides qué ve.",
       emoji: "🤝",
+      href: "/marketplace",
     },
   ];
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
       <div className="grid gap-6 sm:grid-cols-3">
         {items.map((it) => (
-          <article
+          <Link
             key={it.titulo}
-            className="sombra-tarjeta rounded-3xl border border-slate-200 bg-white p-6 transition hover:-translate-y-0.5 hover:border-blue-300"
+            href={it.href}
+            className="group sombra-tarjeta block rounded-3xl border border-slate-200 bg-white p-6 transition hover:-translate-y-0.5 hover:border-blue-300"
           >
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-brand-gradient text-2xl shadow-sm">
               {it.emoji}
             </div>
-            <h3 className="text-lg font-semibold text-slate-900">{it.titulo}</h3>
+            <h3 className="text-lg font-semibold text-slate-900">
+              {it.titulo}
+              <span className="ml-1 text-slate-300 transition group-hover:text-blue-500">→</span>
+            </h3>
             <p className="mt-2 text-sm text-slate-600">{it.texto}</p>
-          </article>
+          </Link>
         ))}
       </div>
     </section>
@@ -82,7 +89,7 @@ function PlanesSection() {
     <section id="planes" className="mx-auto max-w-6xl px-6 py-20">
       <div className="text-center">
         <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Planes simples</h2>
-        <p className="mt-2 text-slate-600">Empezá gratis, escalá cuando lo necesites.</p>
+        <p className="mt-2 text-slate-600">Empieza gratis, escala cuando lo necesites.</p>
       </div>
       <div className="mt-10 grid gap-5 md:grid-cols-3">
         <PlanCard
@@ -119,7 +126,7 @@ function PlanesSection() {
           descripcion="Pago por uso"
           beneficios={[
             "Link compartible del historial",
-            "Decidís qué campos ver",
+            "Tú decides qué campos ver",
             "Caduca en 7 días",
             "Pack de 5 tokens: $7.99",
           ]}
@@ -128,7 +135,7 @@ function PlanesSection() {
         />
       </div>
       <p className="mt-8 text-center text-xs text-slate-400">
-        Los pagos llegan cuando integremos el gateway local (PlaceToPay/MercadoPago). Mientras tanto, registrate gratis y reservá tu lugar.
+        Los pagos llegan cuando integremos el gateway local (PlaceToPay/MercadoPago). Mientras tanto, regístrate gratis y reserva tu lugar.
       </p>
     </section>
   );
@@ -189,7 +196,7 @@ function PlanCard({ nombre, precio, unidad, descripcion, beneficios, cta, destac
 function CtaSection() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-      <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">¿Probás con una placa ahora?</h2>
+      <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">¿Consultas una placa ahora?</h2>
       <p className="mt-3 text-slate-600">
         En menos de un minuto te decimos todo lo que sabe el Estado sobre ese vehículo.
       </p>

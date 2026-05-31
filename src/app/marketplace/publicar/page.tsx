@@ -58,7 +58,7 @@ export default function PublicarPage() {
 
     const precioNum = Number(precio);
     if (!Number.isFinite(precioNum) || precioNum <= 0) {
-      setError("Ingresá un precio válido mayor a 0.");
+      setError("Ingresa un precio válido mayor a 0.");
       return;
     }
 
@@ -81,7 +81,7 @@ export default function PublicarPage() {
         }
         if (err.status === 402) {
           // Saldo insuficiente para Premium: mensaje descriptivo del backend.
-          setError(`${err.message}. Podés publicar en plan Light (gratis) o recargar tokens.`);
+          setError(`${err.message}. Puedes publicar en plan Light (gratis) o recargar tokens.`);
         } else {
           setError(err.message || "No pudimos crear la publicación.");
         }

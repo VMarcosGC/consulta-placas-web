@@ -32,7 +32,7 @@ const planes = [
       "Exportar a PDF",
       "Soporte prioritario",
     ],
-    cta: { label: "Próximamente — sumate a la espera", href: "/registro" },
+    cta: { label: "Próximamente — súmate a la espera", href: "/registro" },
     destacado: true,
   },
   {
@@ -42,7 +42,7 @@ const planes = [
     descripcion: "Pago por uso",
     beneficios: [
       "Link compartible del historial completo",
-      "Decidís qué campos ver",
+      "Tú decides qué campos ver",
       "Token caduca en 7 días",
       "Pack de 5 tokens por $7.99",
       "Ideal para vender tu auto con confianza",
@@ -60,7 +60,7 @@ export default function PreciosPage() {
           Planes <span className="text-brand-gradient">simples</span>
         </h1>
         <p className="mt-3 text-slate-600">
-          Empezá gratis. Escalá cuando lo necesites. Sin contratos ni letra chica.
+          Empieza gratis. Escala cuando lo necesites. Sin contratos ni letra chica.
         </p>
       </div>
 

@@ -40,7 +40,7 @@ export default function MisReferenciasPage() {
           router.push("/login?next=/marketplace/mis-referencias");
           return;
         }
-        setError("No pudimos cargar tus referencias. Probá recargar.");
+        setError("No pudimos cargar tus referencias. Intenta recargar.");
       } finally {
         if (activo) setCargando(false);
       }
@@ -92,7 +92,7 @@ export default function MisReferenciasPage() {
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
           <p className="text-lg font-semibold text-slate-700">Todavía no referenciaste anuncios.</p>
           <p className="mt-1 text-slate-500">
-            Pegá el link de un auto en venta de Facebook u otro portal.
+            Pega el link de un auto en venta de Facebook u otro portal.
           </p>
           <Link
             href="/marketplace/referenciar"

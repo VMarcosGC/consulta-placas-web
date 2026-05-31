@@ -42,7 +42,7 @@ export default function MiGaragePage() {
           router.push("/login?next=/mi-garage");
           return;
         }
-        setError("No pudimos cargar tu garage. Probá recargar.");
+        setError("No pudimos cargar tu garage. Intenta recargar.");
       } finally {
         if (activo) setCargando(false);
       }
@@ -90,7 +90,7 @@ export default function MiGaragePage() {
       <section className="mt-10 space-y-3">
         {vehiculos.length === 0 ? (
           <p className="sombra-tarjeta rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-            Todavía no agregaste ningún vehículo. Usá el formulario de arriba.
+            Todavía no agregas ningún vehículo. Usa el formulario de arriba.
           </p>
         ) : (
           vehiculos.map((v) => (
@@ -107,7 +107,7 @@ export default function MiGaragePage() {
                     {[v.marca, v.modelo].filter(Boolean).join(" ") || "Sin descripción"}
                   </p>
                   <p className="text-xs text-slate-400">
-                    {[v.anio, v.color].filter(Boolean).join(" · ") || "Agregá detalles"}
+                    {[v.anio, v.color].filter(Boolean).join(" · ") || "Agrega detalles"}
                   </p>
                 </div>
               </div>

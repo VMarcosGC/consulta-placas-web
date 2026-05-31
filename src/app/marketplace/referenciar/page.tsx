@@ -37,7 +37,7 @@ export default function ReferenciarPage() {
 
     const urlTrim = url.trim();
     if (!/^https?:\/\/.+/i.test(urlTrim)) {
-      setError("Pegá un enlace válido que empiece con http:// o https://");
+      setError("Pega un enlace válido que empiece con http:// o https://");
       return;
     }
 
@@ -140,7 +140,7 @@ export default function ReferenciarPage() {
       <h1 className="mt-3 text-3xl font-black text-slate-900">Referenciar un anuncio</h1>
       <p className="mt-1 text-slate-500">
         ¿Viste un auto en venta en <span className="font-semibold">Facebook Marketplace</span>,
-        OLX o PatioTuerca? Pegá el link y completá los datos. Es{" "}
+        OLX o PatioTuerca? Pega el link y completa los datos. Es{" "}
         <span className="font-semibold">gratis</span>; nuestro equipo lo revisa antes de publicarlo.
       </p>
 
@@ -235,7 +235,7 @@ export default function ReferenciarPage() {
             inputMode="url"
           />
           <p className="mt-1 text-xs text-slate-400">
-            Pegá el enlace directo de una foto del anuncio, si lo tenés.
+            Pega el enlace directo de una foto del anuncio, si lo tienes.
           </p>
         </div>
 

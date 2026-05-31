@@ -30,7 +30,7 @@ async function consultarPerfil(placa: string): Promise<VehiculoConsolidado | nul
 export async function generateMetadata({ params }: Props) {
   const { placa } = await params;
   return {
-    title: `Placa ${placa.toUpperCase()} | ConsultaPlacas EC`,
+    title: `Placa ${placa.toUpperCase()} | Revisa tu Carro EC`,
     description: `Resultado oficial de la consulta para la placa ${placa.toUpperCase()} en ANT, AMT, SRI y Fiscalía del Ecuador.`,
   };
 }
@@ -51,7 +51,7 @@ export default async function ConsultarPlacaPage({ params }: Props) {
         <div className="sombra-tarjeta rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
           <h2 className="text-xl font-bold text-red-700">No pudimos completar la consulta</h2>
           <p className="mt-2 text-sm text-slate-600">
-            La API tardó más de lo esperado o respondió con un error. Probá de nuevo en unos segundos.
+            La API tardó más de lo esperado o respondió con un error. Inténtalo de nuevo en unos segundos.
             Si el problema persiste, puede que el backend esté arrancando (cold start ~30s).
           </p>
         </div>
