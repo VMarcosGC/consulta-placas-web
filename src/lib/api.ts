@@ -20,6 +20,29 @@ import { obtenerToken } from "./auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+// Normaliza el cuerpo de error de FastAPI a un texto legible. `detail` puede ser:
+//   - string (errores de negocio: 402/404/409…)
+//   - array de objetos {loc, msg, type} (errores de validación 422 de Pydantic)
+// Sin esto, un 422 se renderizaba como "[object Object]".
+function mensajeError(body: unknown, status: number): string {
+  if (typeof body === "string" && body) return body;
+  if (typeof body === "object" && body && "detail" in body) {
+    const detail = (body as { detail: unknown }).detail;
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      const msgs = detail
+        .map((d) =>
+          typeof d === "object" && d && "msg" in d
+            ? String((d as { msg: unknown }).msg)
+            : null
+        )
+        .filter(Boolean);
+      if (msgs.length) return msgs.join(". ");
+    }
+  }
+  return `Error ${status}`;
+}
+
 async function fetchAPI<T>(
   ruta: string,
   init: RequestInit = {},
@@ -44,11 +67,7 @@ async function fetchAPI<T>(
     } catch {
       body = await respuesta.text();
     }
-    const detalle =
-      typeof body === "object" && body && "detail" in body
-        ? (body as { detail: string }).detail
-        : `Error ${respuesta.status}`;
-    throw new ApiError(respuesta.status, detalle, body);
+    throw new ApiError(respuesta.status, mensajeError(body, respuesta.status), body);
   }
 
   if (respuesta.status === 204) return undefined as T;
