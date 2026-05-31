@@ -48,6 +48,7 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
           <Link href="/consultar" className="hover:text-slate-900">Consultar</Link>
+          <Link href="/marketplace" className="hover:text-slate-900">Marketplace</Link>
           <Link href="/precios" className="hover:text-slate-900">Precios</Link>
           {logueado && (
             <Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link>

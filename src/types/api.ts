@@ -218,6 +218,12 @@ export interface MultaDetalle {
 }
 
 export interface Identificacion {
+  // bloqueado=true → solo *_ofuscado; tras pagar tokens (POST .../desbloquear) llegan
+  // los campos en claro (vin/numero_motor/numero_chasis) y bloqueado=false.
+  bloqueado: boolean;
+  vin: string | null;
+  numero_motor: string | null;
+  numero_chasis: string | null;
   vin_ofuscado: string | null;
   numero_motor_ofuscado: string | null;
   numero_chasis_ofuscado: string | null;
@@ -257,4 +263,63 @@ export interface VehiculoConsolidado {
   multas_detalle: MultaDetalle[];
   novedades_legales: NovedadLegal[];
   estado_fuentes: EstadoFuenteItem[];
+}
+
+// ── Marketplace (Pilar 4): publicaciones internas + referenciadas ────────────
+// Refleja src/modules/marketplace/schemas.py del backend.
+
+export type PlanPublicacion = "light" | "premium";
+export type EstadoPublicacion = "activa" | "pausada" | "vendida";
+export type EstadoVerificacion = "no_verificado" | "pendiente" | "verificado";
+
+export interface ResumenMantenimientos {
+  total: number;
+  ultima_fecha: string | null;
+  ultimo_kilometraje: number | null;
+}
+
+export interface PublicacionInterna {
+  id: number;
+  placa: string;
+  titulo: string | null;
+  descripcion: string | null;
+  precio_usd: number;
+  plan: PlanPublicacion;
+  estado: EstadoPublicacion;
+  estado_verificacion: EstadoVerificacion;
+  destacado: boolean;
+  verificado: boolean;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  mantenimientos: ResumenMantenimientos | null;
+  creado_en: string;
+}
+
+export interface PublicacionReferenciada {
+  id: number;
+  placa: string | null;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  precio_usd: number | null;
+  fuente: string;
+  url_externa: string;
+  imagen_url: string | null;
+  creado_en: string;
+}
+
+export interface FeedMarketplace {
+  premium: PublicacionInterna[];
+  estandar: PublicacionInterna[];
+  referenciadas: PublicacionReferenciada[];
+}
+
+export interface PublicacionCrear {
+  placa: string;
+  titulo?: string;
+  descripcion?: string;
+  precio_usd: number;
+  plan: PlanPublicacion;
+  vehiculo_id?: number;
 }

@@ -4,7 +4,10 @@
 import {
   ApiError,
   ConsultaPlacaRespuesta,
+  FeedMarketplace,
   FuenteRespuesta,
+  PublicacionCrear,
+  PublicacionInterna,
   Token,
   Usuario,
   Vehiculo,
@@ -117,4 +120,32 @@ export function crearVehiculo(datos: VehiculoCrear) {
 
 export function eliminarVehiculo(id: number) {
   return fetchAPI<void>(`/vehiculos/${id}`, { method: "DELETE" }, true);
+}
+
+// ─── Marketplace ──────────────────────────────────────────
+
+// Feed público mixto: premium destacados, light, y referenciados externos.
+export function obtenerFeedMarketplace() {
+  return fetchAPI<FeedMarketplace>("/marketplace/feed");
+}
+
+// Publica un vehículo. plan="premium" debita tokens (402 si no alcanza el saldo).
+export function crearPublicacion(datos: PublicacionCrear) {
+  return fetchAPI<PublicacionInterna>(
+    "/marketplace/publicaciones",
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function listarMisPublicaciones() {
+  return fetchAPI<PublicacionInterna[]>("/marketplace/publicaciones/mias", {}, true);
+}
+
+export function eliminarPublicacion(id: number) {
+  return fetchAPI<void>(
+    `/marketplace/publicaciones/${id}`,
+    { method: "DELETE" },
+    true
+  );
 }

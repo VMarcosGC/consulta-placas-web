@@ -1,16 +1,18 @@
-// Vista del Perfil Consolidado de Vehículo. Orientada a la ENTIDAD (una gran
-// tarjeta del auto + secciones temáticas: Identificación, Multas, Legal, Valores),
-// no a los proveedores de datos. Recibe el objeto ya consolidado por el backend
-// (GET /consultar/{placa}/perfil → VehiculoConsolidado).
+// Vista del Perfil Consolidado de Vehículo como BENTO GRID: todo el "estado de
+// salud" del auto (veredicto, multas, matrícula, datos, condición, legal) cabe en
+// el primer pantallazo en desktop/tablet. En mobile colapsa a tarjetas pequeñas
+// apiladas. Recibe el objeto ya consolidado por el backend
+// (GET /consultar/{placa}/perfil → VehiculoConsolidado); el frontend solo lee y pinta.
 //
-// Los datos de fuentes NO oficiales se marcan con ⓘ + disclaimer (referenciales).
-// Polling silencioso cada 4s mientras alguna fuente del worker (AMT/FGE/…) esté
-// `en_proceso`, y botón de reintento si una fuente cae.
+// Las fuentes NO oficiales se marcan con ⓘ + disclaimer. Los enlaces a portales
+// externos (SRI, EPMTSD, ConsultasEcuador) y el tablero de fuentes van AL FINAL.
+// Polling silencioso cada 4s mientras una fuente del worker (AMT/FGE) siga en proceso.
 
 "use client";
 
 import { useEffect, useState } from "react";
 import { consultarPerfil, reintentarFuente } from "@/lib/api";
+import { BentoCard, Insignia, type TonoInsignia } from "@/components/BentoCard";
 import {
   estadoDeFuente,
   hayFuentesEnProceso,
@@ -29,7 +31,585 @@ interface Props {
   inicial: VehiculoConsolidado;
 }
 
-// ── Tablero de estado de fuentes ────────────────────────────────────────────
+// ── Helpers de fuentes no oficiales ─────────────────────────────────────────
+
+function clavesNoOficiales(perfil: VehiculoConsolidado): Set<string> {
+  return new Set(
+    perfil.estado_fuentes.filter((f) => f.origen === "no_oficial").map((f) => f.clave)
+  );
+}
+
+function MarcaFuente({ fuente, noOficial }: { fuente: string; noOficial: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide font-semibold text-slate-500">
+        {fuente}
+      </span>
+      {noOficial && (
+        <span
+          title="Dato de fuente no oficial — referencial, puede no estar actualizado"
+          className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+        >
+          ⓘ no oficial
+        </span>
+      )}
+    </span>
+  );
+}
+
+function DisclaimerNoOficial() {
+  return (
+    <p className="mt-2 text-[11px] text-amber-700/80">
+      ⓘ Datos de fuentes no oficiales; referenciales, pueden no estar actualizados.
+    </p>
+  );
+}
+
+function BotonReintentar({
+  onReintentar,
+  reintentando,
+}: {
+  onReintentar: () => void;
+  reintentando: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onReintentar}
+      disabled={reintentando}
+      className="mt-2 inline-flex items-center gap-2 rounded-full bg-rose-100 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {reintentando ? "Reintentando…" : "Reintentar conexión"}
+    </button>
+  );
+}
+
+function SkeletonLista({ filas = 2 }: { filas?: number }) {
+  return (
+    <div className="animate-pulse space-y-2" aria-busy="true" aria-live="polite">
+      {Array.from({ length: filas }).map((_, i) => (
+        <div key={i} className="h-10 rounded-xl bg-slate-100" />
+      ))}
+    </div>
+  );
+}
+
+// Dato compacto label/valor para las grillas internas de las tarjetas.
+function Dato({
+  label,
+  valor,
+}: {
+  label: string;
+  valor: string | number | null | undefined;
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[10px] uppercase tracking-wide text-slate-400">{label}</dt>
+      <dd className="truncate text-sm font-semibold text-slate-900">
+        {valor ?? <span className="text-slate-300">—</span>}
+      </dd>
+    </div>
+  );
+}
+
+// ── Cálculo del veredicto global ────────────────────────────────────────────
+
+interface Veredicto {
+  tienePendientes: boolean;
+  totalAPagar: number;
+  multasPendientes: number;
+  novedades: number;
+}
+
+function calcularVeredicto(perfil: VehiculoConsolidado): Veredicto {
+  const totalMultas = perfil.multas_detalle.reduce(
+    (acc, d) => acc + (d.total_a_pagar_usd ?? 0),
+    0
+  );
+  const totalSri = perfil.valores_tributarios?.total_a_pagar_usd ?? 0;
+  const multasPendientes = perfil.multas_detalle.reduce((acc, d) => acc + d.pendientes, 0);
+  const novedades = perfil.novedades_legales.length;
+  const totalAPagar = totalMultas + totalSri;
+  return {
+    tienePendientes: totalAPagar > 0 || multasPendientes > 0 || novedades > 0,
+    totalAPagar,
+    multasPendientes,
+    novedades,
+  };
+}
+
+// ── Hero del veredicto (full width, dominante) ──────────────────────────────
+
+function VeredictoHero({
+  perfil,
+  cargando,
+}: {
+  perfil: VehiculoConsolidado;
+  cargando: boolean;
+}) {
+  const b = perfil.datos_basicos;
+  const titulo = [b.marca, b.modelo].filter(Boolean).join(" ") || "Vehículo";
+  const v = calcularVeredicto(perfil);
+
+  // Mientras una fuente sigue en proceso no damos veredicto definitivo.
+  const gradiente = cargando
+    ? "from-blue-600 via-sky-500 to-cyan-500"
+    : v.tienePendientes
+      ? "from-amber-500 via-orange-500 to-rose-500"
+      : "from-emerald-500 via-teal-500 to-emerald-400";
+  const etiqueta = cargando ? "Consultando…" : v.tienePendientes ? "Con deudas" : "Limpio";
+  const emoji = cargando ? "⏳" : v.tienePendientes ? "⚠️" : "✓";
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradiente} p-5 text-white shadow-lg sm:p-6`}
+    >
+      <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" aria-hidden />
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-widest text-white/70">
+            Perfil del vehículo
+          </p>
+          <h1 className="mt-0.5 truncate text-2xl font-black sm:text-3xl">{titulo}</h1>
+          <p className="mt-0.5 font-mono text-base tracking-[0.3em] text-white/80">
+            {perfil.placa}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          {/* Indicadores rápidos */}
+          <div className="flex gap-2">
+            {v.totalAPagar > 0 && (
+              <div className="rounded-2xl bg-white/15 px-3 py-2 text-center backdrop-blur-sm">
+                <p className="text-[10px] uppercase tracking-wide text-white/70">A pagar</p>
+                <p className="text-lg font-black leading-none">${v.totalAPagar.toFixed(0)}</p>
+              </div>
+            )}
+            {v.multasPendientes > 0 && (
+              <div className="rounded-2xl bg-white/15 px-3 py-2 text-center backdrop-blur-sm">
+                <p className="text-[10px] uppercase tracking-wide text-white/70">Multas</p>
+                <p className="text-lg font-black leading-none">{v.multasPendientes}</p>
+              </div>
+            )}
+            {v.novedades > 0 && (
+              <div className="rounded-2xl bg-white/15 px-3 py-2 text-center backdrop-blur-sm">
+                <p className="text-[10px] uppercase tracking-wide text-white/70">Legal</p>
+                <p className="text-lg font-black leading-none">{v.novedades}</p>
+              </div>
+            )}
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-black text-slate-900 shadow-sm">
+            {cargando && <span className="h-2 w-2 animate-ping rounded-full bg-blue-500" />}
+            <span className="text-lg">{emoji}</span>
+            {etiqueta}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Bento: Datos básicos ────────────────────────────────────────────────────
+
+function BentoDatos({ perfil, className }: { perfil: VehiculoConsolidado; className?: string }) {
+  const b = perfil.datos_basicos;
+  return (
+    <BentoCard titulo="Datos del auto" icono="🚗" acento="azul" className={className}>
+      <dl className="grid grid-cols-3 gap-x-3 gap-y-3">
+        <Dato label="Año" valor={b.anio} />
+        <Dato label="Color" valor={b.color} />
+        <Dato label="Clase" valor={b.clase} />
+        <Dato label="Servicio" valor={b.servicio} />
+        <Dato label="Origen" valor={b.pais_origen} />
+      </dl>
+    </BentoCard>
+  );
+}
+
+// ── Bento: Matrícula (fechas) ───────────────────────────────────────────────
+
+function BentoMatricula({ perfil, className }: { perfil: VehiculoConsolidado; className?: string }) {
+  const b = perfil.datos_basicos;
+  // Veredicto de vigencia: si hay fecha de caducidad, indicamos al día / vencida.
+  let tono: TonoInsignia = "neutro";
+  let etiqueta = "—";
+  if (b.fecha_caducidad) {
+    const vence = new Date(b.fecha_caducidad);
+    const vencida = !Number.isNaN(vence.getTime()) && vence < new Date();
+    tono = vencida ? "peligro" : "ok";
+    etiqueta = vencida ? "Vencida" : "Vigente";
+  }
+  return (
+    <BentoCard
+      titulo="Matrícula"
+      icono="📄"
+      acento="esmeralda"
+      className={className}
+      badge={<Insignia tono={tono}>{etiqueta}</Insignia>}
+    >
+      <dl className="grid grid-cols-1 gap-3">
+        <Dato label="Matriculado" valor={b.fecha_matricula} />
+        <Dato label="Vence" valor={b.fecha_caducidad} />
+      </dl>
+    </BentoCard>
+  );
+}
+
+// ── Bento: Multas e infracciones ────────────────────────────────────────────
+
+function PildoraCategoria({ cat }: { cat: CategoriaMulta }) {
+  const esPendiente = cat.etiqueta.toLowerCase().startsWith("pendiente");
+  const tono = esPendiente
+    ? "bg-amber-100 text-amber-800 border-amber-200"
+    : "bg-slate-50 text-slate-600 border-slate-200";
+  const monto =
+    cat.monto_usd != null && cat.monto_usd > 0 ? ` · $${cat.monto_usd.toFixed(2)}` : "";
+  return (
+    <span className={`rounded-lg border px-2 py-0.5 text-[11px] font-medium ${tono}`}>
+      {cat.etiqueta}: <span className="font-bold">{cat.cantidad}</span>
+      {monto}
+    </span>
+  );
+}
+
+function BloqueMulta({ d }: { d: MultaDetalle }) {
+  const tienePend = d.pendientes > 0 || (d.total_a_pagar_usd ?? 0) > 0;
+  return (
+    <div
+      className={`rounded-xl border p-3 ${
+        tienePend ? "border-amber-200 bg-amber-50/60" : "border-slate-200 bg-slate-50"
+      }`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <MarcaFuente fuente={d.fuente} noOficial={false} />
+          <span className="text-xs font-semibold text-slate-700">{d.ambito}</span>
+        </div>
+        {d.total_a_pagar_usd != null && d.total_a_pagar_usd > 0 && (
+          <span className="rounded-lg bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+            ${d.total_a_pagar_usd.toFixed(2)}
+          </span>
+        )}
+      </div>
+      {d.categorias.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {d.categorias.map((c) => (
+            <PildoraCategoria key={`${d.fuente}-${c.etiqueta}`} cat={c} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-1 text-xs font-medium text-emerald-700">Sin registros ✓</p>
+      )}
+    </div>
+  );
+}
+
+function BentoMultas({
+  perfil,
+  cargandoAmt,
+  amtErrorFuente,
+  onReintentar,
+  reintentando,
+  className,
+}: {
+  perfil: VehiculoConsolidado;
+  cargandoAmt: boolean;
+  amtErrorFuente: boolean;
+  onReintentar: () => void;
+  reintentando: boolean;
+  className?: string;
+}) {
+  const detalle = perfil.multas_detalle;
+  const totalPend = detalle.reduce((acc, d) => acc + d.pendientes, 0);
+  const badge =
+    detalle.length === 0 && cargandoAmt ? null : totalPend > 0 ? (
+      <Insignia tono="alerta">{totalPend} pendientes</Insignia>
+    ) : (
+      <Insignia tono="ok">Limpio</Insignia>
+    );
+  return (
+    <BentoCard
+      titulo="Multas e infracciones"
+      icono="🚦"
+      acento="ambar"
+      cargando={cargandoAmt}
+      badge={badge}
+      className={className}
+    >
+      {amtErrorFuente && (
+        <div className="mb-2 rounded-xl border border-rose-200 bg-rose-50 p-3">
+          <p className="text-xs text-rose-700">
+            No pudimos consultar las infracciones municipales (AMT).
+          </p>
+          <BotonReintentar onReintentar={onReintentar} reintentando={reintentando} />
+        </div>
+      )}
+      {detalle.length === 0 ? (
+        cargandoAmt ? (
+          <SkeletonLista />
+        ) : (
+          <p className="text-sm font-medium text-emerald-700">
+            Sin multas ni infracciones registradas ✓
+          </p>
+        )
+      ) : (
+        <div className="space-y-2">
+          {detalle.map((d) => (
+            <BloqueMulta key={d.fuente} d={d} />
+          ))}
+          {cargandoAmt && <SkeletonLista filas={1} />}
+        </div>
+      )}
+    </BentoCard>
+  );
+}
+
+// ── Bento: Valores tributarios (SRI) ────────────────────────────────────────
+
+function BentoValores({
+  perfil,
+  className,
+}: {
+  perfil: VehiculoConsolidado;
+  className?: string;
+}) {
+  const v = perfil.valores_tributarios;
+  // El SRI es consulta_externa (reCAPTCHA): el enlace al portal va al pie (lo deriva
+  // el padre); aquí solo indicamos que se consulta allá.
+  const externo = v?.url_consulta != null;
+  const conValores = (v?.total_a_pagar_usd ?? 0) > 0;
+  return (
+    <BentoCard
+      titulo="Valores SRI"
+      icono="💵"
+      acento="cian"
+      className={className}
+      badge={
+        v && !externo ? (
+          <Insignia tono={conValores ? "alerta" : "ok"}>
+            {conValores ? "Con valores" : "Al día"}
+          </Insignia>
+        ) : undefined
+      }
+    >
+      {!v ? (
+        <p className="text-sm text-slate-500">Sin datos disponibles.</p>
+      ) : externo ? (
+        <p className="text-xs text-slate-500">
+          El portal del SRI usa reCAPTCHA; consultá los valores en el enlace oficial
+          (al pie de la página).
+        </p>
+      ) : (
+        <dl className="grid grid-cols-1 gap-3">
+          <Dato
+            label="Matrícula"
+            valor={v.matricula_usd != null ? `$${v.matricula_usd.toFixed(2)}` : null}
+          />
+          <Dato
+            label="Total a pagar"
+            valor={v.total_a_pagar_usd != null ? `$${v.total_a_pagar_usd.toFixed(2)}` : null}
+          />
+        </dl>
+      )}
+    </BentoCard>
+  );
+}
+
+// ── Bento: Identificación (VIN/motor/chasis ofuscados) ──────────────────────
+
+function BentoIdentificacion({
+  perfil,
+  noOficiales,
+  className,
+}: {
+  perfil: VehiculoConsolidado;
+  noOficiales: Set<string>;
+  className?: string;
+}) {
+  const id = perfil.identificacion;
+  const hayDatos =
+    !!id.vin_ofuscado ||
+    !!id.numero_motor_ofuscado ||
+    !!id.numero_chasis_ofuscado ||
+    !!id.pais_origen;
+
+  // ConsultasEcuador (no oficial) aportaría chasis/VIN, pero está tras reCAPTCHA:
+  // se expone como enlace externo (al pie, lo deriva el padre).
+  const urlExterna = urlConsultasEcuador(perfil);
+
+  if (!hayDatos && !urlExterna) return null;
+
+  const muestraNoOficial = hayDatos && noOficiales.has("ConsultasEcuador");
+
+  return (
+    <BentoCard titulo="Identificación" icono="🔐" acento="indigo" className={className}>
+      {hayDatos ? (
+        <dl className="grid grid-cols-1 gap-3">
+          <Dato label="VIN" valor={id.vin_ofuscado} />
+          <Dato label="N° motor" valor={id.numero_motor_ofuscado} />
+          <Dato label="N° chasis" valor={id.numero_chasis_ofuscado} />
+        </dl>
+      ) : (
+        <p className="text-xs text-slate-500">
+          El VIN/chasis no se obtiene automáticamente; consultá el enlace al pie.
+        </p>
+      )}
+      {muestraNoOficial && <DisclaimerNoOficial />}
+    </BentoCard>
+  );
+}
+
+// ── Bento: Novedades legales (FGE) ──────────────────────────────────────────
+
+function BentoLegal({
+  perfil,
+  cargandoFge,
+  fgeErrorFuente,
+  onReintentar,
+  reintentando,
+  noOficiales,
+  className,
+}: {
+  perfil: VehiculoConsolidado;
+  cargandoFge: boolean;
+  fgeErrorFuente: boolean;
+  onReintentar: () => void;
+  reintentando: boolean;
+  noOficiales: Set<string>;
+  className?: string;
+}) {
+  const novedades = perfil.novedades_legales;
+  const hayNoOficial = novedades.some((n) => noOficiales.has(n.fuente));
+  const badge =
+    novedades.length === 0 && cargandoFge ? null : novedades.length > 0 ? (
+      <Insignia tono="peligro">{novedades.length}</Insignia>
+    ) : (
+      <Insignia tono="ok">Sin novedades</Insignia>
+    );
+  return (
+    <BentoCard
+      titulo="Novedades legales"
+      icono="⚖️"
+      acento="rosa"
+      cargando={cargandoFge}
+      badge={badge}
+      className={className}
+    >
+      {fgeErrorFuente ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
+          <p className="text-xs text-rose-700">No pudimos consultar la Fiscalía (FGE).</p>
+          <BotonReintentar onReintentar={onReintentar} reintentando={reintentando} />
+        </div>
+      ) : novedades.length === 0 && cargandoFge ? (
+        <SkeletonLista />
+      ) : novedades.length === 0 ? (
+        <p className="text-sm font-medium text-emerald-700">
+          Sin noticias del delito asociadas ✓
+        </p>
+      ) : (
+        <>
+          <ul className="space-y-2">
+            {novedades.map((n, i) => (
+              <li
+                key={n.ndd ?? `${n.fuente}-${i}`}
+                className="rounded-xl border border-rose-100 bg-rose-50/50 p-3"
+              >
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                  <MarcaFuente fuente={n.fuente} noOficial={noOficiales.has(n.fuente)} />
+                  <span className="text-[11px] text-slate-500">{n.fecha}</span>
+                </div>
+                <p className="text-sm font-semibold text-slate-900">{n.delito}</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  {[n.lugar, n.unidad].filter(Boolean).join(" · ")}
+                </p>
+              </li>
+            ))}
+          </ul>
+          {hayNoOficial && <DisclaimerNoOficial />}
+        </>
+      )}
+    </BentoCard>
+  );
+}
+
+// ── Bento: Condición y antecedentes (EPMTSD, enlace oficial) ────────────────
+
+function BentoCondicion({ className }: { className?: string }) {
+  const items = ["Robo", "Prendas", "Prohibición de enajenar", "Remarcado", "Traspasos", "RTV"];
+  return (
+    <BentoCard
+      titulo="Condición y antecedentes"
+      icono="🛡️"
+      acento="indigo"
+      className={className}
+      badge={<Insignia tono="info">EPMTSD</Insignia>}
+    >
+      <p className="text-xs text-slate-500">
+        Para una compra segura, verificá gravámenes y estado legal en el servicio oficial
+        (enlace al pie):
+      </p>
+      <ul className="mt-2 flex flex-wrap gap-1.5">
+        {items.map((t) => (
+          <li
+            key={t}
+            className="rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700"
+          >
+            {t}
+          </li>
+        ))}
+      </ul>
+    </BentoCard>
+  );
+}
+
+// ── Pie: enlaces externos + tablero de fuentes ──────────────────────────────
+
+interface EnlaceExterno {
+  etiqueta: string;
+  descripcion: string;
+  url: string;
+  oficial: boolean;
+}
+
+const URL_EPMTSD_CONDICION = "https://servicios.epmtsd.gob.ec/vehiculo_seguro/";
+
+// URL del portal ConsultasEcuador si la fuente vino como consulta_externa.
+function urlConsultasEcuador(perfil: VehiculoConsolidado): string | null {
+  const ce = perfil.estado_fuentes.find((f) => f.clave === "ConsultasEcuador");
+  return ce?.estado === "consulta_externa" && ce.detalle?.startsWith("http")
+    ? ce.detalle
+    : null;
+}
+
+// Construye la lista de portales externos a mostrar al pie, de forma determinista
+// (sin efectos secundarios en el render de las tarjetas).
+function derivarEnlaces(perfil: VehiculoConsolidado): EnlaceExterno[] {
+  const enlaces: EnlaceExterno[] = [];
+  const urlSri = perfil.valores_tributarios?.url_consulta;
+  if (urlSri) {
+    enlaces.push({
+      etiqueta: "Valores SRI",
+      descripcion: "Consultar matrícula e impuestos en el portal oficial",
+      url: urlSri,
+      oficial: true,
+    });
+  }
+  enlaces.push({
+    etiqueta: "Condición del vehículo",
+    descripcion: "Robo, prendas, remarcado, traspasos y RTV (EPMTSD oficial)",
+    url: URL_EPMTSD_CONDICION,
+    oficial: true,
+  });
+  const urlCe = urlConsultasEcuador(perfil);
+  if (urlCe) {
+    enlaces.push({
+      etiqueta: "VIN / chasis",
+      descripcion: "Consultar en ConsultasEcuador (fuente no oficial)",
+      url: urlCe,
+      oficial: false,
+    });
+  }
+  return enlaces;
+}
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   completada: "lista",
@@ -53,563 +633,72 @@ const COLOR_ESTADO: Record<string, string> = {
 
 function ChipFuente({ fuente }: { fuente: EstadoFuenteItem }) {
   const color = COLOR_ESTADO[fuente.estado] ?? COLOR_ESTADO.error;
-  // Para fuentes consulta_externa (SRI, portales no oficiales) el `detalle` es la URL
-  // del portal → el chip se vuelve un enlace para ir a consultar ahí.
-  const url =
-    fuente.estado === "consulta_externa" && fuente.detalle?.startsWith("http")
-      ? fuente.detalle
-      : null;
-  const clase = `inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${color}`;
-  const contenido = (
-    <>
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${color}`}
+      title={fuente.detalle ?? fuente.nombre}
+    >
       {fuente.estado === "en_proceso" && (
         <span className="h-1.5 w-1.5 animate-ping rounded-full bg-blue-500" />
       )}
       <span className="font-semibold">{fuente.clave}</span>
-      <span className="opacity-70">
-        {ETIQUETA_ESTADO[fuente.estado] ?? fuente.estado}
-        {url && " ↗"}
-      </span>
+      <span className="opacity-70">{ETIQUETA_ESTADO[fuente.estado] ?? fuente.estado}</span>
       {fuente.origen === "no_oficial" && (
         <span title="Fuente no oficial" className="text-amber-600">
           ⓘ
         </span>
       )}
-    </>
-  );
-  if (url) {
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${clase} transition hover:brightness-125`}
-        title={`${fuente.nombre} — abrir portal`}
-      >
-        {contenido}
-      </a>
-    );
-  }
-  return (
-    <span className={clase} title={fuente.detalle ?? fuente.nombre}>
-      {contenido}
     </span>
   );
 }
 
-function TableroFuentes({ fuentes }: { fuentes: EstadoFuenteItem[] }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {fuentes.map((f) => (
-        <ChipFuente key={f.clave} fuente={f} />
-      ))}
-    </div>
-  );
-}
-
-// ── Marcadores de fuente no oficial ─────────────────────────────────────────
-
-// Claves de fuentes no oficiales del perfil (derivadas del catálogo vía estado_fuentes).
-function clavesNoOficiales(perfil: VehiculoConsolidado): Set<string> {
-  return new Set(
-    perfil.estado_fuentes.filter((f) => f.origen === "no_oficial").map((f) => f.clave)
-  );
-}
-
-// Badge de la fuente de un dato; agrega ⓘ "no oficial" si corresponde.
-function MarcaFuente({ fuente, noOficial }: { fuente: string; noOficial: boolean }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide font-semibold text-slate-500">
-        {fuente}
-      </span>
-      {noOficial && (
-        <span
-          title="Dato de fuente no oficial — referencial, puede no estar actualizado"
-          className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
-        >
-          ⓘ no oficial
-        </span>
-      )}
-    </span>
-  );
-}
-
-// Nota al pie de una sección que mezcla datos no oficiales.
-function DisclaimerNoOficial() {
-  return (
-    <p className="mt-3 text-[11px] text-amber-700/80">
-      ⓘ Los datos marcados provienen de fuentes no oficiales; son referenciales y
-      pueden no estar actualizados.
-    </p>
-  );
-}
-
-// ── Secciones genéricas ─────────────────────────────────────────────────────
-
-function Seccion({
-  titulo,
-  descripcion,
-  cargando,
-  children,
-}: {
-  titulo: string;
-  descripcion?: string;
-  cargando?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="sombra-tarjeta rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 animate-fade-in-up">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">{titulo}</h2>
-          {descripcion && <p className="text-sm text-slate-500">{descripcion}</p>}
-        </div>
-        {cargando && (
-          <span className="inline-flex items-center gap-2 text-xs text-blue-600">
-            <span className="h-1.5 w-1.5 animate-ping rounded-full bg-blue-500" />
-            actualizando…
-          </span>
-        )}
-      </header>
-      {children}
-    </section>
-  );
-}
-
-function SkeletonLista() {
-  return (
-    <div className="animate-pulse space-y-3" aria-busy="true" aria-live="polite">
-      {Array.from({ length: 2 }).map((_, i) => (
-        <div key={i} className="h-16 rounded-2xl bg-slate-100" />
-      ))}
-      <p className="text-xs text-blue-500">
-        Consultando la fuente oficial… esto puede tardar unos segundos.
-      </p>
-    </div>
-  );
-}
-
-function Campo({
-  label,
-  valor,
-}: {
-  label: string;
-  valor: string | number | null | undefined;
-}) {
-  return (
-    <div>
-      <dt className="text-xs uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-sm font-semibold text-slate-900">
-        {valor ?? <span className="text-slate-300">—</span>}
-      </dd>
-    </div>
-  );
-}
-
-function BotonReintentar({
-  onReintentar,
-  reintentando,
-}: {
-  onReintentar: () => void;
-  reintentando: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onReintentar}
-      disabled={reintentando}
-      className="mt-3 inline-flex items-center gap-2 rounded-full bg-rose-100 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {reintentando ? "Reintentando…" : "Reintentar conexión con la fuente"}
-    </button>
-  );
-}
-
-// ── Cabecera: tarjeta principal del auto ────────────────────────────────────
-
-function TarjetaVehiculo({
+function PieFuentes({
   perfil,
-  cargando,
+  enlaces,
 }: {
   perfil: VehiculoConsolidado;
-  cargando: boolean;
+  enlaces: EnlaceExterno[];
 }) {
-  const b = perfil.datos_basicos;
-  const tienePendientes =
-    perfil.multas_pendientes.length > 0 || perfil.novedades_legales.length > 0;
-  const titulo = [b.marca, b.modelo].filter(Boolean).join(" ") || "Vehículo";
-
-  // Mientras alguna fuente sigue en proceso no damos un veredicto definitivo:
-  // un auto "Sin pendientes" podría volverse "Tiene pendientes" al llegar AMT/FGE.
-  const borde = cargando
-    ? "border-slate-200 bg-white"
-    : tienePendientes
-      ? "border-amber-200 bg-amber-50"
-      : "border-emerald-200 bg-emerald-50";
-  const badge = cargando
-    ? "bg-blue-100 text-blue-700"
-    : tienePendientes
-      ? "bg-amber-100 text-amber-800"
-      : "bg-emerald-100 text-emerald-800";
-  const etiquetaVeredicto = cargando
-    ? "Consultando…"
-    : tienePendientes
-      ? "Tiene pendientes"
-      : "Sin pendientes";
-
   return (
-    <div className={`sombra-tarjeta rounded-3xl border p-6 sm:p-8 ${borde}`}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500">Perfil del vehículo</p>
-          <h1 className="mt-1 text-3xl sm:text-4xl font-black text-slate-900">{titulo}</h1>
-          <p className="mt-1 font-mono text-lg tracking-widest text-slate-500">
-            {perfil.placa}
-          </p>
-        </div>
-        <span
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${badge}`}
-        >
-          {cargando && (
-            <span className="h-1.5 w-1.5 animate-ping rounded-full bg-blue-500" />
-          )}
-          {etiquetaVeredicto}
-        </span>
-      </div>
-
-      <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Campo label="Año" valor={b.anio} />
-        <Campo label="Color" valor={b.color} />
-        <Campo label="Clase" valor={b.clase} />
-        <Campo label="Servicio" valor={b.servicio} />
-        <Campo label="Matrícula" valor={b.fecha_matricula} />
-        <Campo label="Vence" valor={b.fecha_caducidad} />
-        {b.pais_origen && <Campo label="Origen" valor={b.pais_origen} />}
-      </dl>
-
-      <div className="mt-6 border-t border-slate-200 pt-4">
-        <TableroFuentes fuentes={perfil.estado_fuentes} />
-      </div>
-    </div>
-  );
-}
-
-// ── Secciones temáticas ─────────────────────────────────────────────────────
-
-// Pastilla de categoría: "Pendientes: 2 · $45.50". Pendientes resaltadas en ámbar.
-function PildoraCategoria({ cat }: { cat: CategoriaMulta }) {
-  const esPendiente = cat.etiqueta.toLowerCase().startsWith("pendiente");
-  const tono = esPendiente
-    ? "bg-amber-100 text-amber-800 border-amber-200"
-    : "bg-white text-slate-600 border-slate-200";
-  const monto =
-    cat.monto_usd != null && cat.monto_usd > 0 ? ` · $${cat.monto_usd.toFixed(2)}` : "";
-  return (
-    <span className={`rounded-lg border px-2.5 py-1 text-xs font-medium ${tono}`}>
-      {cat.etiqueta}: <span className="font-bold">{cat.cantidad}</span>
-      {monto}
-    </span>
-  );
-}
-
-// Bloque de detalle por fuente (ANT/AMT/EPMTSD): ámbito, totales y categorías.
-function BloqueMulta({ d }: { d: MultaDetalle }) {
-  const tienePend = d.pendientes > 0 || (d.total_a_pagar_usd ?? 0) > 0;
-  return (
-    <div
-      className={`rounded-2xl border p-4 ${
-        tienePend ? "border-amber-200 bg-amber-50/60" : "border-slate-200 bg-slate-50"
-      }`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <MarcaFuente fuente={d.fuente} noOficial={false} />
-          <span className="text-sm font-semibold text-slate-700">{d.ambito}</span>
-        </div>
-        {d.total_a_pagar_usd != null && d.total_a_pagar_usd > 0 && (
-          <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-800">
-            A pagar ${d.total_a_pagar_usd.toFixed(2)}
-          </span>
-        )}
-      </div>
-      <p className="mt-1 text-xs text-slate-500">
-        {d.total_registros} registro{d.total_registros === 1 ? "" : "s"}
-        {d.pendientes > 0 ? ` · ${d.pendientes} pendiente${d.pendientes === 1 ? "" : "s"}` : ""}
-      </p>
-      {d.categorias.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {d.categorias.map((c) => (
-            <PildoraCategoria key={`${d.fuente}-${c.etiqueta}`} cat={c} />
-          ))}
-        </div>
-      ) : (
-        <p className="mt-2 text-sm font-medium text-emerald-700">Sin registros. ✓</p>
-      )}
-    </div>
-  );
-}
-
-function SeccionMultas({
-  perfil,
-  cargandoAmt,
-  amtErrorFuente,
-  onReintentar,
-  reintentando,
-}: {
-  perfil: VehiculoConsolidado;
-  cargandoAmt: boolean;
-  amtErrorFuente: boolean;
-  onReintentar: () => void;
-  reintentando: boolean;
-}) {
-  const detalle = perfil.multas_detalle;
-  return (
-    <Seccion
-      titulo="Multas e infracciones"
-      descripcion="Citaciones de tránsito (ANT) e infracciones municipales (AMT, EPMTSD)"
-      cargando={cargandoAmt}
-    >
-      {amtErrorFuente && (
-        <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 p-4">
-          <p className="text-sm text-rose-700">
-            No pudimos consultar las infracciones municipales (AMT) tras varios intentos.
-          </p>
-          <BotonReintentar onReintentar={onReintentar} reintentando={reintentando} />
-        </div>
-      )}
-      {detalle.length === 0 ? (
-        cargandoAmt ? (
-          <SkeletonLista />
-        ) : (
-          <p className="text-sm font-medium text-emerald-700">
-            Sin multas ni infracciones registradas.
-          </p>
-        )
-      ) : (
-        <div className="space-y-3">
-          {detalle.map((d) => (
-            <BloqueMulta key={d.fuente} d={d} />
-          ))}
-          {cargandoAmt && <SkeletonLista />}
-        </div>
-      )}
-    </Seccion>
-  );
-}
-
-function SeccionLegal({
-  perfil,
-  cargandoFge,
-  fgeErrorFuente,
-  onReintentar,
-  reintentando,
-}: {
-  perfil: VehiculoConsolidado;
-  cargandoFge: boolean;
-  fgeErrorFuente: boolean;
-  onReintentar: () => void;
-  reintentando: boolean;
-}) {
-  const novedades = perfil.novedades_legales;
-  const noOficiales = clavesNoOficiales(perfil);
-  const hayNoOficial = novedades.some((n) => noOficiales.has(n.fuente));
-  return (
-    <Seccion
-      titulo="Novedades legales"
-      descripcion="Noticias del delito asociadas (Fiscalía General del Estado)"
-      cargando={cargandoFge}
-    >
-      {fgeErrorFuente ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
-          <p className="text-sm text-rose-700">
-            No pudimos consultar la Fiscalía (FGE) tras varios intentos.
-          </p>
-          <BotonReintentar onReintentar={onReintentar} reintentando={reintentando} />
-        </div>
-      ) : novedades.length === 0 && cargandoFge ? (
-        <SkeletonLista />
-      ) : novedades.length === 0 ? (
-        <p className="text-sm font-medium text-emerald-700">Sin novedades legales registradas.</p>
-      ) : (
-        <>
-          <ul className="space-y-3">
-            {novedades.map((n, i) => (
-              <li
-                key={n.ndd ?? `${n.fuente}-${i}`}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 sombra-tarjeta">
+      {enlaces.length > 0 && (
+        <div className="mb-4">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+            Consultar en portales oficiales
+          </h3>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {enlaces.map((e) => (
+              <a
+                key={e.url}
+                href={e.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm transition hover:brightness-[0.98] ${
+                  e.oficial
+                    ? "border-blue-200 bg-blue-50 text-blue-800"
+                    : "border-amber-200 bg-amber-50 text-amber-800"
+                }`}
               >
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <MarcaFuente fuente={n.fuente} noOficial={noOficiales.has(n.fuente)} />
-                  <span className="text-xs text-slate-500">{n.fecha}</span>
-                </div>
-                {n.ndd && (
-                  <span className="font-mono text-xs text-slate-400">NDD {n.ndd}</span>
-                )}
-                <p className="mt-1 text-sm font-semibold text-slate-900">{n.delito}</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {[n.lugar, n.unidad].filter(Boolean).join(" · ")}
-                </p>
-              </li>
+                <span className="min-w-0">
+                  <span className="block font-semibold">{e.etiqueta} ↗</span>
+                  <span className="block truncate text-[11px] opacity-70">{e.descripcion}</span>
+                </span>
+              </a>
             ))}
-          </ul>
-          {hayNoOficial && <DisclaimerNoOficial />}
-        </>
-      )}
-    </Seccion>
-  );
-}
-
-function SeccionIdentificacion({
-  perfil,
-  noOficiales,
-}: {
-  perfil: VehiculoConsolidado;
-  noOficiales: Set<string>;
-}) {
-  const id = perfil.identificacion;
-  const hayDatos =
-    !!id.vin_ofuscado ||
-    !!id.numero_motor_ofuscado ||
-    !!id.numero_chasis_ofuscado ||
-    !!id.pais_origen;
-
-  // ConsultasEcuador (no oficial) aportaría chasis/VIN, pero está tras reCAPTCHA:
-  // se expone como enlace externo (consulta_externa), sin scraping. Tomamos su URL
-  // del tablero de fuentes (detalle = url_consulta).
-  const ce = perfil.estado_fuentes.find((f) => f.clave === "ConsultasEcuador");
-  const urlExterna = ce?.estado === "consulta_externa" ? ce.detalle : null;
-
-  // Nada que mostrar si no hay dato ofuscado ni enlace externo.
-  if (!hayDatos && !urlExterna) return null;
-
-  const muestraNoOficial = hayDatos && noOficiales.has("ConsultasEcuador");
-
-  return (
-    <Seccion
-      titulo="Identificación"
-      descripcion="VIN, motor y chasis (ofuscados por privacidad)"
-    >
-      {hayDatos && (
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Campo label="VIN" valor={id.vin_ofuscado} />
-          <Campo label="N° de motor" valor={id.numero_motor_ofuscado} />
-          <Campo label="N° de chasis" valor={id.numero_chasis_ofuscado} />
-          {id.pais_origen && <Campo label="Origen" valor={id.pais_origen} />}
-        </dl>
-      )}
-      {urlExterna && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm text-amber-900">
-            El VIN/chasis no se obtiene automáticamente (el portal usa reCAPTCHA).
-            Podés consultarlo en <span className="font-semibold">ConsultasEcuador</span>,
-            una <span className="font-semibold">fuente no oficial</span> (referencial).
-          </p>
-          <a
-            href={urlExterna}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600"
-          >
-            Consultar VIN/chasis en ConsultasEcuador ↗
-          </a>
+          </div>
         </div>
       )}
-      {muestraNoOficial && <DisclaimerNoOficial />}
-    </Seccion>
-  );
-}
-
-function SeccionValores({ perfil }: { perfil: VehiculoConsolidado }) {
-  const v = perfil.valores_tributarios;
-  return (
-    <Seccion titulo="Valores tributarios" descripcion="Matrícula e impuestos (SRI)">
-      {!v ? (
-        <p className="text-sm text-slate-500">Sin datos disponibles.</p>
-      ) : v.url_consulta ? (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-          <p className="text-sm text-blue-900">
-            El portal del SRI no permite la consulta automatizada (reCAPTCHA). Consultá los
-            valores directamente en el sitio oficial con la placa{" "}
-            <span className="font-mono font-semibold text-blue-700">{perfil.placa}</span>.
-          </p>
-          <a
-            href={v.url_consulta}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
-            Consultar en el portal del SRI ↗
-          </a>
-        </div>
-      ) : (
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <Campo
-            label="Matrícula"
-            valor={v.matricula_usd != null ? `$${v.matricula_usd.toFixed(2)}` : null}
-          />
-          <Campo
-            label="Total a pagar"
-            valor={v.total_a_pagar_usd != null ? `$${v.total_a_pagar_usd.toFixed(2)}` : null}
-          />
-          <Campo
-            label="Estado"
-            valor={(v.total_a_pagar_usd ?? 0) > 0 ? "Con valores" : "Al día"}
-          />
-        </dl>
-      )}
-    </Seccion>
-  );
-}
-
-// Acceso destacado a la herramienta oficial de EPMTSD "Condición del vehículo".
-// Trae los datos más decisivos para una compra (robo, prendas, remarcado, traspasos,
-// RTV), pero su consulta es lenta (~50s) y solo cubre ciertos vehículos, así que NO la
-// traemos inline: la exponemos como enlace oficial (decisión: dato lento/inconsistente).
-function SeccionAntecedentes() {
-  const URL_EPMTSD_CONDICION = "https://servicios.epmtsd.gob.ec/vehiculo_seguro/";
-  const items = [
-    "Reporte de robo",
-    "Prenda comercial / industrial",
-    "Prohibición de enajenar",
-    "Remarcado de motor / chasis",
-    "Reserva de dominio",
-    "N° de traspasos",
-    "Revisión técnica vigente",
-  ];
-  return (
-    <Seccion
-      titulo="Condición y antecedentes"
-      descripcion="Verificación de gravámenes y estado legal del vehículo (EPMTSD · oficial)"
-    >
-      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-        <p className="text-sm text-blue-900">
-          Para una compra segura, revisá la <span className="font-semibold">condición del
-          vehículo</span> en el servicio oficial de EPMTSD. Verifica:
-        </p>
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {items.map((t) => (
-            <li
-              key={t}
-              className="rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-xs font-medium text-blue-800"
-            >
-              {t}
-            </li>
+      <div>
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+          Fuentes consultadas
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {perfil.estado_fuentes.map((f) => (
+            <ChipFuente key={f.clave} fuente={f} />
           ))}
-        </ul>
-        <a
-          href={URL_EPMTSD_CONDICION}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-        >
-          Consultar condición en EPMTSD ↗
-        </a>
-        <p className="mt-2 text-[11px] text-slate-500">
-          Servicio oficial; la consulta puede tardar y no cubre todos los vehículos.
-        </p>
+        </div>
       </div>
-    </Seccion>
+    </div>
   );
 }
 
@@ -622,14 +711,13 @@ export function PerfilVehiculo({ inicial }: Props) {
   const cargando = hayFuentesEnProceso(perfil);
 
   // Polling silencioso cada 4s mientras alguna fuente del worker siga en proceso.
-  // Al navegar a otra placa el componente se remonta vía key={placa} (page.tsx).
   useEffect(() => {
     if (!cargando) return;
     const t = setTimeout(async () => {
       try {
         setPerfil(await consultarPerfil(perfil.placa));
       } catch {
-        // Silencioso: conservar los datos previos y reintentar en el próximo ciclo.
+        // Silencioso: conservar datos previos y reintentar en el próximo ciclo.
       }
     }, INTERVALO_POLLING_MS);
     return () => clearTimeout(t);
@@ -637,7 +725,6 @@ export function PerfilVehiculo({ inicial }: Props) {
 
   async function reintentar(fuente: "AMT" | "FGE") {
     setReintentando((r) => ({ ...r, [fuente]: true }));
-    // Optimista: volver la fuente a en_proceso reanuda el polling de inmediato.
     setPerfil((prev) => marcarFuenteEnProceso(prev, fuente));
     try {
       await reintentarFuente(perfil.placa, fuente);
@@ -648,27 +735,45 @@ export function PerfilVehiculo({ inicial }: Props) {
   }
 
   const noOficiales = clavesNoOficiales(perfil);
+  // Enlaces a portales externos, derivados del perfil; se pintan todos juntos al
+  // pie (requisito: enlaces externos al final).
+  const enlaces = derivarEnlaces(perfil);
 
   return (
-    <div className="space-y-6">
-      <TarjetaVehiculo perfil={perfil} cargando={cargando} />
-      <SeccionMultas
-        perfil={perfil}
-        cargandoAmt={estadoDeFuente(perfil, "AMT") === "en_proceso"}
-        amtErrorFuente={estadoDeFuente(perfil, "AMT") === "error_fuente"}
-        onReintentar={() => reintentar("AMT")}
-        reintentando={!!reintentando.AMT}
-      />
-      <SeccionAntecedentes />
-      <SeccionIdentificacion perfil={perfil} noOficiales={noOficiales} />
-      <SeccionValores perfil={perfil} />
-      <SeccionLegal
-        perfil={perfil}
-        cargandoFge={estadoDeFuente(perfil, "FGE") === "en_proceso"}
-        fgeErrorFuente={estadoDeFuente(perfil, "FGE") === "error_fuente"}
-        onReintentar={() => reintentar("FGE")}
-        reintentando={!!reintentando.FGE}
-      />
+    <div className="space-y-4">
+      <VeredictoHero perfil={perfil} cargando={cargando} />
+
+      {/* Bento Grid: denso, sin scroll en desktop/tablet; apila en mobile. */}
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4 lg:grid-flow-dense">
+        <BentoMultas
+          perfil={perfil}
+          cargandoAmt={estadoDeFuente(perfil, "AMT") === "en_proceso"}
+          amtErrorFuente={estadoDeFuente(perfil, "AMT") === "error_fuente"}
+          onReintentar={() => reintentar("AMT")}
+          reintentando={!!reintentando.AMT}
+          className="md:col-span-2 lg:col-span-2 lg:row-span-2"
+        />
+        <BentoDatos perfil={perfil} className="lg:col-span-2" />
+        <BentoMatricula perfil={perfil} className="lg:col-span-1" />
+        <BentoValores perfil={perfil} className="lg:col-span-1" />
+        <BentoLegal
+          perfil={perfil}
+          cargandoFge={estadoDeFuente(perfil, "FGE") === "en_proceso"}
+          fgeErrorFuente={estadoDeFuente(perfil, "FGE") === "error_fuente"}
+          onReintentar={() => reintentar("FGE")}
+          reintentando={!!reintentando.FGE}
+          noOficiales={noOficiales}
+          className="md:col-span-2 lg:col-span-2"
+        />
+        <BentoIdentificacion
+          perfil={perfil}
+          noOficiales={noOficiales}
+          className="lg:col-span-1"
+        />
+        <BentoCondicion className="md:col-span-2 lg:col-span-3" />
+      </div>
+
+      <PieFuentes perfil={perfil} enlaces={enlaces} />
     </div>
   );
 }
