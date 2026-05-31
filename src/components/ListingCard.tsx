@@ -110,8 +110,25 @@ export function ListingInternaCard({
 // ── Publicación referenciada (externa) ──────────────────────────────────────
 
 export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada }) {
+  // Toda la tarjeta es un enlace vivo al anuncio original (Facebook/OLX/…): al
+  // hacer clic abre la publicación de origen en una pestaña nueva.
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sombra-tarjeta animate-fade-in-up">
+    <a
+      href={pub.url_externa}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sombra-tarjeta animate-fade-in-up transition hover:-translate-y-0.5 hover:border-blue-300"
+    >
+      {/* Foto del anuncio si el aportante la pegó. */}
+      {pub.imagen_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={pub.imagen_url}
+          alt={tituloVehiculo(pub)}
+          className="h-44 w-full object-cover"
+          loading="lazy"
+        />
+      )}
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="mb-2 flex items-center justify-between gap-2">
           <Insignia tono="neutro">Referencia · {pub.fuente}</Insignia>
@@ -122,16 +139,11 @@ export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada 
         )}
         <div className="mt-auto flex items-end justify-between gap-2 pt-4">
           <p className="text-xl font-black text-slate-900">{precioFmt(pub.precio_usd)}</p>
-          <a
-            href={pub.url_externa}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400"
-          >
-            Ver anuncio ↗
-          </a>
+          <span className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition group-hover:border-blue-400 group-hover:text-blue-700">
+            Ver en {pub.fuente} ↗
+          </span>
         </div>
       </div>
-    </article>
+    </a>
   );
 }
