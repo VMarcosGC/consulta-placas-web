@@ -557,6 +557,16 @@ export function PerfilVehiculo({ inicial }: Props) {
 
   const enlaces = derivarEnlaces(perfil);
 
+  // Tarjetas accesorias: solo se muestran si traen datos (valores SRI en línea o
+  // identificadores ofuscados). Si ambas vienen vacías, no pintamos el bloque.
+  const id = perfil.identificacion;
+  const hayValoresInline =
+    perfil.valores_tributarios != null && perfil.valores_tributarios.url_consulta == null;
+  const hayIdentificacion = !!(
+    id.vin_ofuscado || id.numero_motor_ofuscado || id.numero_chasis_ofuscado
+  );
+  const hayAccesorias = hayValoresInline || hayIdentificacion;
+
   return (
     <div className="space-y-5">
       <Encabezado perfil={perfil} cargando={cargando} />
@@ -564,24 +574,29 @@ export function PerfilVehiculo({ inicial }: Props) {
       {/* Datos del auto enseguida del nombre, para identificar el vehículo. */}
       <CardDatos perfil={perfil} />
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      {/* Multas e infracciones (izquierda) + Matrícula (derecha) en un mismo bloque. */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         <CardMultas
           perfil={perfil}
           cargandoAmt={estadoDeFuente(perfil, "AMT") === "en_proceso"}
           amtErrorFuente={estadoDeFuente(perfil, "AMT") === "error_fuente"}
           onReintentar={reintentarAmt}
           reintentando={reintentando}
-          className="lg:col-span-2"
+          className="md:col-span-2"
         />
         <CardMatricula perfil={perfil} />
-
-        {/* Consulta oficial: subida porque hoy es lo más útil. */}
-        <CardConsultaOficial enlaces={enlaces} className="lg:col-span-3" />
-
-        {/* Accesorias, solo si traen datos. */}
-        <CardValores perfil={perfil} />
-        <CardIdentificacion perfil={perfil} className="lg:col-span-2" />
       </div>
+
+      {/* Consulta oficial: subida porque hoy es lo más útil. */}
+      <CardConsultaOficial enlaces={enlaces} />
+
+      {/* Accesorias, solo si traen datos. */}
+      {hayAccesorias && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <CardValores perfil={perfil} />
+          <CardIdentificacion perfil={perfil} className="lg:col-span-2" />
+        </div>
+      )}
 
       <PieFuentes perfil={perfil} />
     </div>

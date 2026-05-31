@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { cerrarSesion, tieneSesion } from "@/lib/auth";
 import { obtenerPerfil } from "@/lib/api";
+import type { Usuario } from "@/types/api";
 import { useRouter } from "next/navigation";
 
 // Suscripción al estado de sesión (un store externo: localStorage).
@@ -27,27 +28,29 @@ export function Header() {
     () => false,
   );
 
-  // Solo los admins ven el acceso a moderación. Se resuelve consultando /auth/me
-  // (el backend marca es_admin según ADMIN_EMAILS). Se reevalúa al cambiar la sesión.
-  const [esAdmin, setEsAdmin] = useState(false);
+  // Datos del usuario logueado (nombre para mostrarlo, es_admin para moderación).
+  // Se resuelve consultando /auth/me y se reevalúa al cambiar la sesión.
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
   useEffect(() => {
-    if (!logueado) {
-      setEsAdmin(false);
-      return;
-    }
     let activo = true;
+    if (!logueado) {
+      setUsuario(null);
+      return () => {
+        activo = false;
+      };
+    }
     obtenerPerfil()
-      .then((u) => activo && setEsAdmin(Boolean(u.es_admin)))
-      .catch(() => activo && setEsAdmin(false));
+      .then((u) => activo && setUsuario(u))
+      .catch(() => activo && setUsuario(null));
     return () => {
       activo = false;
     };
   }, [logueado]);
 
+  const nombreCorto = usuario?.nombre?.trim() || usuario?.email?.split("@")[0] || "Mi cuenta";
+
   function salir() {
-    cerrarSesion();
-    // Notifica al store en el mismo tab (el evento "storage" no se auto-dispara).
-    window.dispatchEvent(new Event("sesion-cambiada"));
+    cerrarSesion(); // dispara "sesion-cambiada" → el header se actualiza solo
     router.push("/");
   }
 
@@ -71,7 +74,7 @@ export function Header() {
           {logueado && (
             <Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link>
           )}
-          {esAdmin && (
+          {usuario?.es_admin && (
             <Link href="/admin/moderacion" className="font-semibold text-blue-600 hover:text-blue-800">
               Moderar
             </Link>
@@ -80,12 +83,25 @@ export function Header() {
 
         <div className="flex items-center gap-3">
           {logueado ? (
-            <button
-              onClick={salir}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:border-slate-400 hover:text-slate-900"
-            >
-              Salir
-            </button>
+            <>
+              {/* Nombre del usuario: confirma visualmente la sesión activa y enlaza al garage. */}
+              <Link
+                href="/mi-garage"
+                className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 sm:inline-flex"
+                title="Ir a mi garage"
+              >
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-gradient text-[11px] font-black text-white">
+                  {nombreCorto.charAt(0).toUpperCase()}
+                </span>
+                <span className="max-w-[10rem] truncate">{nombreCorto}</span>
+              </Link>
+              <button
+                onClick={salir}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:border-slate-400 hover:text-slate-900"
+              >
+                Salir
+              </button>
+            </>
           ) : (
             <>
               <Link

@@ -96,10 +96,10 @@ export default function MiGaragePage() {
           vehiculos.map((v) => (
             <article
               key={v.id}
-              className="sombra-tarjeta flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5"
+              className="sombra-tarjeta flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-300"
             >
               <div className="flex items-center gap-4">
-                <span className="grid h-12 w-20 place-items-center rounded-xl border border-slate-300 bg-slate-50 font-mono text-sm font-semibold tracking-wider text-slate-900">
+                <span className="grid h-12 w-20 place-items-center rounded-xl border border-blue-200 bg-blue-50 font-mono text-sm font-bold tracking-wider text-blue-900">
                   {v.placa}
                 </span>
                 <div>
@@ -109,6 +109,9 @@ export default function MiGaragePage() {
                   <p className="text-xs text-slate-400">
                     {[v.anio, v.color].filter(Boolean).join(" · ") || "Agrega detalles"}
                   </p>
+                  {v.ciudad_registro && (
+                    <p className="mt-0.5 text-xs font-medium text-slate-500">📍 {v.ciudad_registro}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -140,6 +143,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
   const [modelo, setModelo] = useState("");
   const [anio, setAnio] = useState("");
   const [color, setColor] = useState("");
+  const [ciudad, setCiudad] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -154,9 +158,10 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
         modelo: modelo || undefined,
         anio: anio ? Number(anio) : undefined,
         color: color || undefined,
+        ciudad_registro: ciudad || undefined,
       });
       onCreado(v);
-      setPlaca(""); setMarca(""); setModelo(""); setAnio(""); setColor("");
+      setPlaca(""); setMarca(""); setModelo(""); setAnio(""); setColor(""); setCiudad("");
       setAbierto(false);
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
@@ -185,6 +190,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
         <CampoTexto label="Modelo" value={modelo} onChange={setModelo} placeholder="Corolla" />
         <CampoTexto label="Año" type="number" value={anio} onChange={setAnio} placeholder="2009" />
         <CampoTexto label="Color" value={color} onChange={setColor} placeholder="Blanco" />
+        <CampoTexto label="Ciudad donde está el vehículo" value={ciudad} onChange={setCiudad} placeholder="Quito, Cuenca, Guayaquil…" />
       </div>
       {error && (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">

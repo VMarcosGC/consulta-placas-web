@@ -149,6 +149,7 @@ export interface Vehiculo {
   modelo: string | null;
   anio: number | null;
   color: string | null;
+  ciudad_registro: string | null;
   creado_en: string;
   actualizado_en: string;
 }
@@ -162,6 +163,7 @@ export interface VehiculoCrear {
   modelo?: string;
   anio?: number;
   color?: string;
+  ciudad_registro?: string;
 }
 
 export class ApiError extends Error {
