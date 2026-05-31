@@ -296,6 +296,8 @@ export interface PublicacionInterna {
   creado_en: string;
 }
 
+export type EstadoModeracion = "pendiente" | "aprobada" | "rechazada";
+
 export interface PublicacionReferenciada {
   id: number;
   placa: string | null;
@@ -306,7 +308,23 @@ export interface PublicacionReferenciada {
   fuente: string;
   url_externa: string;
   imagen_url: string | null;
+  // El feed público solo trae aprobadas; "mias" puede traer cualquier estado.
+  estado_moderacion: EstadoModeracion;
+  activa: boolean;
   creado_en: string;
+}
+
+// Referencia que aporta el usuario: pega el link de un anuncio externo (Facebook
+// Marketplace, OLX…) y completa los datos a mano. No raspamos el portal. La `fuente`
+// la deriva el backend del dominio del link. Entra en moderación "pendiente".
+export interface ReferenciaCrear {
+  url_externa: string;
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  precio_usd?: number;
+  imagen_url?: string;
+  placa?: string;
 }
 
 export interface FeedMarketplace {

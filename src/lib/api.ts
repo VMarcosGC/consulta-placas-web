@@ -8,6 +8,8 @@ import {
   FuenteRespuesta,
   PublicacionCrear,
   PublicacionInterna,
+  PublicacionReferenciada,
+  ReferenciaCrear,
   Token,
   Usuario,
   Vehiculo,
@@ -145,6 +147,34 @@ export function listarMisPublicaciones() {
 export function eliminarPublicacion(id: number) {
   return fetchAPI<void>(
     `/marketplace/publicaciones/${id}`,
+    { method: "DELETE" },
+    true
+  );
+}
+
+// ─── Referencias externas aportadas por el usuario ────────
+
+// Aporta una referencia (link externo + datos). Es gratis. Entra en moderación
+// "pendiente": no aparece en el feed hasta que un admin la apruebe.
+export function crearReferencia(datos: ReferenciaCrear) {
+  return fetchAPI<PublicacionReferenciada>(
+    "/marketplace/referencias",
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function listarMisReferencias() {
+  return fetchAPI<PublicacionReferenciada[]>(
+    "/marketplace/referencias/mias",
+    {},
+    true
+  );
+}
+
+export function eliminarReferencia(id: number) {
+  return fetchAPI<void>(
+    `/marketplace/referencias/${id}`,
     { method: "DELETE" },
     true
   );
