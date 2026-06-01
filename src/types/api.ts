@@ -205,6 +205,8 @@ export interface DatosBasicos {
   fecha_matricula: string | null;
   fecha_caducidad: string | null;
   pais_origen: string | null;
+  matricula_vigente: boolean | null;
+  bloqueado: boolean;
 }
 
 export interface CategoriaMulta {
@@ -259,6 +261,16 @@ export interface ValoresTributarios {
   url_consulta: string | null;
 }
 
+export interface ProductoEstado {
+  codigo: string;
+  nombre: string;
+  tokens: number;
+  sensibilidad: string;
+  descripcion: string;
+  desbloqueado: boolean;
+  disponible: boolean;
+}
+
 export interface VehiculoConsolidado {
   placa: string;
   datos_basicos: DatosBasicos;
@@ -266,8 +278,11 @@ export interface VehiculoConsolidado {
   valores_tributarios: ValoresTributarios | null;
   multas_pendientes: MultaItem[];
   multas_detalle: MultaDetalle[];
+  multas_bloqueado: boolean;
   novedades_legales: NovedadLegal[];
   estado_fuentes: EstadoFuenteItem[];
+  productos: ProductoEstado[];
+  tiene_pendientes: boolean;
 }
 
 // ── Marketplace (Pilar 4): publicaciones internas + referenciadas ────────────

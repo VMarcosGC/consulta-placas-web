@@ -83,10 +83,24 @@ export function consultarPlaca(placa: string) {
 }
 
 // Perfil consolidado orientado a la entidad (secciones temáticas + estado_fuentes).
-// El backend agrega las fuentes; el frontend ya no consolida en cliente.
+// Auth OPCIONAL: si hay token, se envía para que el backend revele los microdesbloqueos
+// que el usuario ya pagó para esta placa. Sin token → teaser (todo gateado).
 export function consultarPerfil(placa: string) {
+  const token = obtenerToken();
   return fetchAPI<VehiculoConsolidado>(
-    `/consultar/${encodeURIComponent(placa)}/perfil`
+    `/consultar/${encodeURIComponent(placa)}/perfil`,
+    token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+  );
+}
+
+// Desbloquea un producto del catálogo para esta placa (cobra tokens). Requiere sesión.
+// Devuelve el perfil ya con la sección revelada. 402 si no alcanza el saldo; 409 si el
+// dato no está disponible para esa placa.
+export function desbloquearProducto(placa: string, codigo: string) {
+  return fetchAPI<VehiculoConsolidado>(
+    `/consultar/${encodeURIComponent(placa)}/desbloquear/${codigo}`,
+    { method: "POST" },
+    true
   );
 }
 

@@ -8,19 +8,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { consultarPerfil, reintentarFuente } from "@/lib/api";
+import { consultarPerfil, desbloquearProducto, reintentarFuente } from "@/lib/api";
+import { tieneSesion } from "@/lib/auth";
 import { BentoCard, Insignia, type TonoInsignia } from "@/components/BentoCard";
 import {
   estadoDeFuente,
   hayFuentesEnProceso,
   marcarFuenteEnProceso,
 } from "@/lib/perfil";
-import type {
-  CategoriaMulta,
-  EstadoFuenteItem,
-  MultaDetalle,
-  VehiculoConsolidado,
+import {
+  ApiError,
+  type CategoriaMulta,
+  type EstadoFuenteItem,
+  type MultaDetalle,
+  type ProductoEstado,
+  type VehiculoConsolidado,
 } from "@/types/api";
+
+// Callback que reemplaza el perfil tras un desbloqueo (lo provee el componente raíz).
+type AlDesbloquear = (perfil: VehiculoConsolidado) => void;
+
+function productoDe(perfil: VehiculoConsolidado, codigo: string): ProductoEstado | undefined {
+  return perfil.productos?.find((p) => p.codigo === codigo);
+}
 
 const INTERVALO_POLLING_MS = 4000;
 
@@ -70,6 +80,69 @@ function BotonReintentar({
   );
 }
 
+// Botón de microdesbloqueo: cobra tokens y revela una sección. Maneja 401/402/409.
+function BotonDesbloqueo({
+  placa,
+  producto,
+  alDesbloquear,
+}: {
+  placa: string;
+  producto: ProductoEstado | undefined;
+  alDesbloquear: AlDesbloquear;
+}) {
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Si la fuente no entrega ese dato para la placa, no ofrecemos el botón (no se cobra).
+  if (!producto || !producto.disponible) return null;
+  const prod = producto; // narrow estable para el closure async
+
+  async function desbloquear() {
+    if (!tieneSesion()) {
+      window.location.href = `/login?next=/consultar/${placa}`;
+      return;
+    }
+    setCargando(true);
+    setError(null);
+    try {
+      alDesbloquear(await desbloquearProducto(placa, prod.codigo));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          window.location.href = `/login?next=/consultar/${placa}`;
+          return;
+        }
+        if (err.status === 402) setError("No te alcanzan los tokens. Recarga para continuar.");
+        else if (err.status === 409) setError("Ese dato no está disponible para esta placa por ahora.");
+        else setError(err.message || "No se pudo desbloquear.");
+      } else {
+        setError("No se pudo desbloquear.");
+      }
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={desbloquear}
+        disabled={cargando}
+        className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+      >
+        {cargando ? (
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        ) : (
+          <span aria-hidden>🔓</span>
+        )}
+        Desbloquear · {producto.tokens} {producto.tokens === 1 ? "token" : "tokens"}
+      </button>
+      {error && <p className="mt-1.5 text-xs text-rose-600">{error}</p>}
+    </div>
+  );
+}
+
 function SkeletonLista({ filas = 2 }: { filas?: number }) {
   return (
     <div className="animate-pulse space-y-2" aria-busy="true" aria-live="polite">
@@ -104,6 +177,7 @@ interface Veredicto {
   tienePendientes: boolean;
   totalAPagar: number;
   multasPendientes: number;
+  detalleDisponible: boolean;
 }
 
 function calcularVeredicto(perfil: VehiculoConsolidado): Veredicto {
@@ -111,11 +185,13 @@ function calcularVeredicto(perfil: VehiculoConsolidado): Veredicto {
   const totalMultas = activas.reduce((acc, d) => acc + (d.total_a_pagar_usd ?? 0), 0);
   const totalSri = perfil.valores_tributarios?.total_a_pagar_usd ?? 0;
   const multasPendientes = activas.reduce((acc, d) => acc + d.pendientes, 0);
-  const totalAPagar = totalMultas + totalSri;
   return {
-    tienePendientes: totalAPagar > 0 || multasPendientes > 0,
-    totalAPagar,
+    // Veredicto GRATIS: lo decide el backend (vale aunque el detalle esté bloqueado).
+    tienePendientes: perfil.tiene_pendientes,
+    totalAPagar: totalMultas + totalSri,
     multasPendientes,
+    // Los montos/conteos solo se conocen si el detalle de multas está desbloqueado.
+    detalleDisponible: !perfil.multas_bloqueado,
   };
 }
 
@@ -143,7 +219,10 @@ function Encabezado({ perfil, cargando }: { perfil: VehiculoConsolidado; cargand
       ? { clase: "bg-amber-500 text-white", texto: "Con pendientes", icono: "⚠" }
       : { clase: "bg-emerald-500 text-white", texto: "Limpio", icono: "✓" };
 
-  const hayMetricas = !cargando && (v.totalAPagar > 0 || v.multasPendientes > 0);
+  // Métricas con cifras solo si el detalle de multas está desbloqueado; si no, el
+  // veredicto (pill) ya comunica "con pendientes / limpio" sin revelar montos.
+  const hayMetricas =
+    !cargando && v.detalleDisponible && (v.totalAPagar > 0 || v.multasPendientes > 0);
 
   return (
     <div className="rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 sombra-tarjeta">
@@ -183,17 +262,38 @@ function Encabezado({ perfil, cargando }: { perfil: VehiculoConsolidado; cargand
 
 // ── Datos del auto (enseguida del nombre, para identificar el vehículo) ──────
 
-function CardDatos({ perfil, className }: { perfil: VehiculoConsolidado; className?: string }) {
+function CardDatos({
+  perfil,
+  alDesbloquear,
+  className,
+}: {
+  perfil: VehiculoConsolidado;
+  alDesbloquear: AlDesbloquear;
+  className?: string;
+}) {
   const b = perfil.datos_basicos;
+  // Marca/modelo/año/color son gratis (teaser); clase/servicio/fechas quedan tras
+  // `vehiculo_basico`. La vigencia de matrícula es gratis (sin revelar la fecha).
   return (
-    <BentoCard titulo="Datos del auto" className={className}>
+    <BentoCard
+      titulo="Datos del auto"
+      className={className}
+      badge={b.bloqueado ? <Insignia tono="neutro">🔒 ampliado</Insignia> : undefined}
+    >
       <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
         <Dato label="Año" valor={b.anio} />
         <Dato label="Color" valor={b.color} />
-        <Dato label="Clase" valor={b.clase} />
-        <Dato label="Servicio" valor={b.servicio} />
-        {b.pais_origen && <Dato label="Origen" valor={b.pais_origen} />}
+        <Dato label="Clase" valor={b.bloqueado ? "🔒" : b.clase} />
+        <Dato label="Servicio" valor={b.bloqueado ? "🔒" : b.servicio} />
+        {!b.bloqueado && b.pais_origen && <Dato label="Origen" valor={b.pais_origen} />}
       </dl>
+      {b.bloqueado && (
+        <BotonDesbloqueo
+          placa={perfil.placa}
+          producto={productoDe(perfil, "vehiculo_basico")}
+          alDesbloquear={alDesbloquear}
+        />
+      )}
     </BentoCard>
   );
 }
@@ -247,6 +347,7 @@ function CardMultas({
   amtErrorFuente,
   onReintentar,
   reintentando,
+  alDesbloquear,
   className,
 }: {
   perfil: VehiculoConsolidado;
@@ -254,8 +355,39 @@ function CardMultas({
   amtErrorFuente: boolean;
   onReintentar: () => void;
   reintentando: boolean;
+  alDesbloquear: AlDesbloquear;
   className?: string;
 }) {
+  // Bloqueado: el teaser solo dice si hay pendientes (gratis); el detalle con montos
+  // se revela con `vehiculo_multas`.
+  if (perfil.multas_bloqueado) {
+    return (
+      <BentoCard
+        titulo="Multas e infracciones"
+        cargando={cargandoAmt}
+        badge={
+          perfil.tiene_pendientes ? (
+            <Insignia tono="alerta">Con pendientes</Insignia>
+          ) : (
+            <Insignia tono="ok">Al día</Insignia>
+          )
+        }
+        className={className}
+      >
+        <p className="text-sm text-slate-600">
+          {perfil.tiene_pendientes
+            ? "Este vehículo tiene multas o infracciones registradas. Desbloquea el detalle con montos por fuente (ANT/AMT)."
+            : "Sin multas ni infracciones pendientes. Desbloquea el detalle completo si quieres verlo."}
+        </p>
+        <BotonDesbloqueo
+          placa={perfil.placa}
+          producto={productoDe(perfil, "vehiculo_multas")}
+          alDesbloquear={alDesbloquear}
+        />
+      </BentoCard>
+    );
+  }
+
   const detalle = multasActivas(perfil);
   const totalPend = detalle.reduce((acc, d) => acc + d.pendientes, 0);
   const badge =
@@ -343,9 +475,11 @@ function CardValores({ perfil, className }: { perfil: VehiculoConsolidado; class
 
 function CardIdentificacion({
   perfil,
+  alDesbloquear,
   className,
 }: {
   perfil: VehiculoConsolidado;
+  alDesbloquear: AlDesbloquear;
   className?: string;
 }) {
   const id = perfil.identificacion;
@@ -353,12 +487,23 @@ function CardIdentificacion({
     !!id.vin_ofuscado || !!id.numero_motor_ofuscado || !!id.numero_chasis_ofuscado;
   if (!hayDatos) return null;
   return (
-    <BentoCard titulo="Identificación" className={className}>
+    <BentoCard
+      titulo="Identificación"
+      className={className}
+      badge={id.bloqueado ? <Insignia tono="neutro">🔒 ofuscado</Insignia> : <Insignia tono="ok">visible</Insignia>}
+    >
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Dato label="VIN" valor={id.vin_ofuscado} />
-        <Dato label="N° motor" valor={id.numero_motor_ofuscado} />
-        <Dato label="N° chasis" valor={id.numero_chasis_ofuscado} />
+        <Dato label="VIN" valor={id.vin ?? id.vin_ofuscado} />
+        <Dato label="N° motor" valor={id.numero_motor ?? id.numero_motor_ofuscado} />
+        <Dato label="N° chasis" valor={id.numero_chasis ?? id.numero_chasis_ofuscado} />
       </dl>
+      {id.bloqueado && (
+        <BotonDesbloqueo
+          placa={perfil.placa}
+          producto={productoDe(perfil, "vehiculo_identificadores")}
+          alDesbloquear={alDesbloquear}
+        />
+      )}
     </BentoCard>
   );
 }
@@ -544,6 +689,24 @@ export function PerfilVehiculo({ inicial }: Props) {
     return () => clearTimeout(t);
   }, [perfil, cargando]);
 
+  // El perfil inicial llega del server SIN sesión (teaser). Si hay sesión en el cliente,
+  // re-consultamos CON token para aplicar los microdesbloqueos ya pagados de esta placa.
+  useEffect(() => {
+    if (!tieneSesion()) return;
+    let activo = true;
+    (async () => {
+      try {
+        const p = await consultarPerfil(inicial.placa);
+        if (activo) setPerfil(p);
+      } catch {
+        // Silencioso: si falla, queda el teaser.
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [inicial.placa]);
+
   async function reintentarAmt() {
     setReintentando(true);
     setPerfil((prev) => marcarFuenteEnProceso(prev, "AMT"));
@@ -572,7 +735,7 @@ export function PerfilVehiculo({ inicial }: Props) {
       <Encabezado perfil={perfil} cargando={cargando} />
 
       {/* Datos del auto enseguida del nombre, para identificar el vehículo. */}
-      <CardDatos perfil={perfil} />
+      <CardDatos perfil={perfil} alDesbloquear={setPerfil} />
 
       {/* Multas e infracciones (izquierda) + Matrícula (derecha) en un mismo bloque. */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
@@ -582,6 +745,7 @@ export function PerfilVehiculo({ inicial }: Props) {
           amtErrorFuente={estadoDeFuente(perfil, "AMT") === "error_fuente"}
           onReintentar={reintentarAmt}
           reintentando={reintentando}
+          alDesbloquear={setPerfil}
           className="md:col-span-2"
         />
         <CardMatricula perfil={perfil} />
@@ -594,7 +758,7 @@ export function PerfilVehiculo({ inicial }: Props) {
       {hayAccesorias && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <CardValores perfil={perfil} />
-          <CardIdentificacion perfil={perfil} className="lg:col-span-2" />
+          <CardIdentificacion perfil={perfil} alDesbloquear={setPerfil} className="lg:col-span-2" />
         </div>
       )}
 
