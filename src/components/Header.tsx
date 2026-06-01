@@ -89,6 +89,17 @@ export function Header() {
         <div className="flex items-center gap-3">
           {logueado ? (
             <>
+              {/* Saldo de tokens: visible para que el usuario sepa con qué cuenta para desbloquear. */}
+              {typeof usuario?.saldo_tokens === "number" && (
+                <Link
+                  href="/precios"
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1.5 text-sm font-bold text-amber-700 hover:bg-amber-100"
+                  title="Tus tokens — toca para ver precios"
+                >
+                  <span aria-hidden>🪙</span>
+                  {usuario.saldo_tokens}
+                </Link>
+              )}
               {/* Nombre del usuario: confirma visualmente la sesión activa y enlaza al garage. */}
               <Link
                 href="/mi-garage"

@@ -77,6 +77,12 @@ export default function MarketplacePage() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
+            href="/marketplace/mis-publicaciones"
+            className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            Mis publicaciones
+          </Link>
+          <Link
             href="/marketplace/referenciar"
             className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           >

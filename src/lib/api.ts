@@ -185,6 +185,16 @@ export function eliminarPublicacion(id: number) {
   );
 }
 
+// El dueño solicita la verificación "Verificado por la plataforma" de su publicación
+// premium (cobra tokens). 402 si no alcanza; 422 si la publicación no es premium.
+export function solicitarVerificacion(id: number) {
+  return fetchAPI<PublicacionInterna>(
+    `/marketplace/publicaciones/${id}/solicitar-verificacion`,
+    { method: "POST" },
+    true
+  );
+}
+
 // ─── Referencias externas aportadas por el usuario ────────
 
 // Aporta una referencia (link externo + datos). Es gratis. Entra en moderación
