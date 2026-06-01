@@ -89,54 +89,44 @@ function PlanesSection() {
   return (
     <section id="planes" className="mx-auto max-w-6xl px-6 py-20">
       <div className="text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Planes simples</h2>
-        <p className="mt-2 text-slate-600">Empieza gratis, escala cuando lo necesites.</p>
+        <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Precios claros</h2>
+        <p className="mt-2 text-slate-600">
+          Los datos públicos son gratis. Pagas con tokens solo lo que tiene costo o valor real.
+        </p>
       </div>
-      <div className="mt-10 grid gap-5 md:grid-cols-3">
+      <div className="mt-10 grid gap-5 md:grid-cols-2">
         <PlanCard
           nombre="Gratis"
           precio="$0"
-          unidad="/mes"
-          descripcion="Para uso ocasional"
+          unidad="siempre"
+          descripcion="La consulta pública"
           beneficios={[
-            "5 consultas públicas / mes",
-            "1 vehículo en tu garage",
-            "Soporte por email",
+            "Marca, modelo, año, color, clase y servicio",
+            "Estado de matrícula y veredicto sí/no",
+            "Enlaces oficiales y estado de fuentes",
+            "Sin registro para consultar",
           ]}
-          cta={{ label: "Empezar", href: "/registro" }}
+          cta={{ label: "Consultar gratis", href: "/consultar" }}
           destacado={false}
-        />
-        <PlanCard
-          nombre="Pro"
-          precio="$4.99"
-          unidad="/mes"
-          descripcion="Para dueños activos"
-          beneficios={[
-            "Consultas ilimitadas",
-            "Garage ilimitado",
-            "Alertas por email de nuevas citaciones",
-            "Exportar a PDF",
-          ]}
-          cta={{ label: "Próximamente", href: "#" }}
-          destacado
         />
         <PlanCard
           nombre="Datos por tokens"
           precio="$0.04"
           unidad="/ token"
-          descripcion="Pago por uso"
+          descripcion="Desbloquea solo lo que necesitas"
           beneficios={[
-            "Datos públicos siempre gratis",
+            "Identificadores técnicos, multas con valores y más",
             "Pagas solo datos con costo real",
             "Desde $1 = 25 tokens",
             "5 tokens de cortesía al registrarte",
           ]}
           cta={{ label: "Ver precios", href: "/precios" }}
-          destacado={false}
+          destacado
         />
       </div>
       <p className="mt-8 text-center text-xs text-slate-400">
-        Los pagos llegan cuando integremos el gateway local (PlaceToPay/MercadoPago). Mientras tanto, regístrate gratis y reserva tu lugar.
+        1 token ≈ USD 0.04. Los pagos llegan cuando integremos el gateway local
+        (PlaceToPay/MercadoPago). Mientras tanto, regístrate y recibe 5 tokens de cortesía.
       </p>
     </section>
   );
