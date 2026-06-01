@@ -136,7 +136,8 @@ function BotonDesbloqueo({
         ) : (
           <span aria-hidden>🔓</span>
         )}
-        Desbloquear · {producto.tokens} {producto.tokens === 1 ? "token" : "tokens"}
+        {/* El nombre del producto ya es la acción (ej. "Ver multas con valores"); lo envía el backend. */}
+        {producto.nombre} · {producto.tokens} {producto.tokens === 1 ? "token" : "tokens"}
       </button>
       {error && <p className="mt-1.5 text-xs text-rose-600">{error}</p>}
     </div>
@@ -264,36 +265,23 @@ function Encabezado({ perfil, cargando }: { perfil: VehiculoConsolidado; cargand
 
 function CardDatos({
   perfil,
-  alDesbloquear,
   className,
 }: {
   perfil: VehiculoConsolidado;
-  alDesbloquear: AlDesbloquear;
   className?: string;
 }) {
   const b = perfil.datos_basicos;
-  // Marca/modelo/año/color son gratis (teaser); clase/servicio/fechas quedan tras
-  // `vehiculo_basico`. La vigencia de matrícula es gratis (sin revelar la fecha).
+  // Datos públicos GRATIS (Fase 2.5): marca/modelo/año/color/clase/servicio vienen de la
+  // fuente pública (ANT) y no se cobran. La vigencia de matrícula también es gratis.
   return (
-    <BentoCard
-      titulo="Datos del auto"
-      className={className}
-      badge={b.bloqueado ? <Insignia tono="neutro">🔒 ampliado</Insignia> : undefined}
-    >
+    <BentoCard titulo="Datos del auto" className={className}>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
         <Dato label="Año" valor={b.anio} />
         <Dato label="Color" valor={b.color} />
-        <Dato label="Clase" valor={b.bloqueado ? "🔒" : b.clase} />
-        <Dato label="Servicio" valor={b.bloqueado ? "🔒" : b.servicio} />
-        {!b.bloqueado && b.pais_origen && <Dato label="Origen" valor={b.pais_origen} />}
+        <Dato label="Clase" valor={b.clase} />
+        <Dato label="Servicio" valor={b.servicio} />
+        {b.pais_origen && <Dato label="Origen" valor={b.pais_origen} />}
       </dl>
-      {b.bloqueado && (
-        <BotonDesbloqueo
-          placa={perfil.placa}
-          producto={productoDe(perfil, "vehiculo_basico")}
-          alDesbloquear={alDesbloquear}
-        />
-      )}
     </BentoCard>
   );
 }
@@ -359,7 +347,7 @@ function CardMultas({
   className?: string;
 }) {
   // Bloqueado: el teaser solo dice si hay pendientes (gratis); el detalle con montos
-  // se revela con `vehiculo_multas`.
+  // se revela con `multas_con_montos`.
   if (perfil.multas_bloqueado) {
     return (
       <BentoCard
@@ -376,12 +364,12 @@ function CardMultas({
       >
         <p className="text-sm text-slate-600">
           {perfil.tiene_pendientes
-            ? "Este vehículo tiene multas o infracciones registradas. Desbloquea el detalle con montos por fuente (ANT/AMT)."
-            : "Sin multas ni infracciones pendientes. Desbloquea el detalle completo si quieres verlo."}
+            ? "Este vehículo tiene multas o infracciones registradas. Ver multas con valores por fuente (ANT/AMT)."
+            : "Sin multas ni infracciones pendientes. Ver el detalle completo si quieres confirmarlo."}
         </p>
         <BotonDesbloqueo
           placa={perfil.placa}
-          producto={productoDe(perfil, "vehiculo_multas")}
+          producto={productoDe(perfil, "multas_con_montos")}
           alDesbloquear={alDesbloquear}
         />
       </BentoCard>
@@ -500,7 +488,7 @@ function CardIdentificacion({
       {id.bloqueado && (
         <BotonDesbloqueo
           placa={perfil.placa}
-          producto={productoDe(perfil, "vehiculo_identificadores")}
+          producto={productoDe(perfil, "identificadores_tecnicos")}
           alDesbloquear={alDesbloquear}
         />
       )}
@@ -735,7 +723,7 @@ export function PerfilVehiculo({ inicial }: Props) {
       <Encabezado perfil={perfil} cargando={cargando} />
 
       {/* Datos del auto enseguida del nombre, para identificar el vehículo. */}
-      <CardDatos perfil={perfil} alDesbloquear={setPerfil} />
+      <CardDatos perfil={perfil} />
 
       {/* Multas e infracciones (izquierda) + Matrícula (derecha) en un mismo bloque. */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">

@@ -20,7 +20,7 @@ function HeroSection() {
       <div className="mx-auto max-w-4xl px-6 pt-20 pb-16 text-center sm:pt-28">
         <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          ANT · AMT · SRI · Fiscalía — en una sola consulta
+          ANT · AMT — y enlaces oficiales para el resto
         </span>
         <h1 className="mt-6 text-5xl sm:text-7xl font-black tracking-tight leading-[1.05] text-slate-900">
           Conoce el <span className="text-brand-gradient">estado real</span><br />
@@ -28,8 +28,9 @@ function HeroSection() {
           del Ecuador
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
-          Matriculación, citaciones, infracciones municipales y denuncias asociadas.
-          Datos oficiales agregados en segundos. Sin registro para consultas básicas.
+          Matriculación, citaciones e infracciones municipales en una sola consulta.
+          Consultamos las fuentes disponibles y te mostramos enlaces oficiales cuando una
+          validación requiere confirmación externa. Sin registro para la consulta básica.
         </p>
         <div className="mt-10 mx-auto max-w-xl">
           <ConsultaForm tamanio="hero" />
@@ -43,7 +44,7 @@ function ValoresSection() {
   const items = [
     {
       titulo: "Datos oficiales",
-      texto: "Consultamos en tiempo real ANT, AMT y Fiscalía. No almacenamos información sensible.",
+      texto: "Consultamos las fuentes disponibles (ANT, AMT) y te mostramos enlaces oficiales cuando una validación requiere confirmación externa. No almacenamos información sensible.",
       emoji: "🔍",
       href: "/consultar",
     },
@@ -120,17 +121,17 @@ function PlanesSection() {
           destacado
         />
         <PlanCard
-          nombre="Compra-Venta"
-          precio="$1.99"
+          nombre="Datos por tokens"
+          precio="$0.04"
           unidad="/ token"
           descripcion="Pago por uso"
           beneficios={[
-            "Link compartible del historial",
-            "Tú decides qué campos ver",
-            "Caduca en 7 días",
-            "Pack de 5 tokens: $7.99",
+            "Datos públicos siempre gratis",
+            "Pagas solo datos con costo real",
+            "Desde $1 = 25 tokens",
+            "5 tokens de cortesía al registrarte",
           ]}
-          cta={{ label: "Próximamente", href: "#" }}
+          cta={{ label: "Ver precios", href: "/precios" }}
           destacado={false}
         />
       </div>

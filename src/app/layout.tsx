@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Revisa tu Carro EC — Conocé el estado real de cualquier vehículo",
+  title: "Revisa tu Carro EC — Conoce el estado real de cualquier vehículo",
   description:
-    "Matriculación, citaciones, infracciones y denuncias en una sola consulta. Datos oficiales de ANT, AMT, SRI y Fiscalía del Ecuador.",
+    "Matriculación, citaciones e infracciones del vehículo en una sola consulta. Consultamos las fuentes disponibles y te mostramos enlaces oficiales cuando una validación requiere confirmación externa.",
   keywords: [
     "consultar placa Ecuador",
     "revisa tu carro",

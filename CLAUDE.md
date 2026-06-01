@@ -8,7 +8,7 @@ App web comercial que expone la plataforma `ConsultaPlacas EC`. Cuatro flujos:
 1. **Landing** — captación de usuarios, planes.
 2. **Consulta pública** (`/consultar/[placa]`) — sin auth, agregada de ANT/AMT/SRI/Fiscalía.
 3. **Auth** + **Mi garage** — usuario autenticado guarda vehículos.
-4. **Precios** — monetización futura (Pro mensual + tokens compra-venta).
+4. **Precios** (`/precios`) — modelo por tokens (Fase 2.5): datos públicos **gratis**; se paga con tokens solo por datos con costo de proveedor / dificultad / valor real. **1 token ≈ USD 0.04**; paquetes $1=25, $2.50=65, $5=135, $10=280. No prometer SRI/Fiscalía como datos automáticos: enlaces oficiales cuando una validación requiere confirmación externa.
 
 ## Stack
 
