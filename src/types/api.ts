@@ -275,7 +275,7 @@ export interface VehiculoConsolidado {
 
 export type PlanPublicacion = "light" | "premium";
 export type EstadoPublicacion = "activa" | "pausada" | "vendida";
-export type EstadoVerificacion = "no_verificado" | "pendiente" | "verificado";
+export type EstadoVerificacion = "no_verificado" | "pendiente" | "verificado" | "rechazado";
 
 export interface ResumenMantenimientos {
   total: number;
@@ -294,6 +294,7 @@ export interface PublicacionInterna {
   estado_verificacion: EstadoVerificacion;
   destacado: boolean;
   verificado: boolean;
+  verificado_en: string | null;
   marca: string | null;
   modelo: string | null;
   anio: number | null;

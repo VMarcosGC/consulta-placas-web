@@ -75,9 +75,14 @@ export function Header() {
             <Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link>
           )}
           {usuario?.es_admin && (
-            <Link href="/admin/moderacion" className="font-semibold text-blue-600 hover:text-blue-800">
-              Moderar
-            </Link>
+            <>
+              <Link href="/admin/moderacion" className="font-semibold text-blue-600 hover:text-blue-800">
+                Moderar
+              </Link>
+              <Link href="/admin/verificaciones" className="font-semibold text-blue-600 hover:text-blue-800">
+                Verificar
+              </Link>
+            </>
           )}
         </div>
 

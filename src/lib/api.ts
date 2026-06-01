@@ -218,3 +218,23 @@ export function moderarReferencia(id: number, decision: "aprobada" | "rechazada"
     true
   );
 }
+
+// ─── Verificación de publicaciones premium (solo admin) ───
+
+// Cola de publicaciones premium pendientes de verificación. 403 si no es admin.
+export function listarPublicacionesPendientesVerificacion() {
+  return fetchAPI<PublicacionInterna[]>(
+    "/marketplace/publicaciones/pendientes-verificacion",
+    {},
+    true
+  );
+}
+
+// Marca una publicación premium como verificada o rechazada. 403 si no es admin.
+export function verificarPublicacion(id: number, decision: "verificado" | "rechazado") {
+  return fetchAPI<PublicacionInterna>(
+    `/marketplace/publicaciones/${id}/verificar`,
+    { method: "POST", body: JSON.stringify({ decision }) },
+    true
+  );
+}
