@@ -261,10 +261,22 @@ export interface ValoresTributarios {
   url_consulta: string | null;
 }
 
+// Validación del titular (PII). El backend NUNCA envía el nombre completo: como máximo,
+// validación (sí hay titular registrado) + nombre ofuscado (iniciales). Producto
+// `titular_validado`. Ver politica_datos_sensibles.md del backend.
+export interface Titular {
+  bloqueado: boolean;
+  disponible: boolean;
+  validado: boolean | null;
+  nombre_ofuscado: string | null;
+  mensaje: string | null;
+}
+
 export interface ProductoEstado {
   codigo: string;
   nombre: string;
   tokens: number;
+  precio_referencial_usd?: string | number | null;
   sensibilidad: string;
   descripcion: string;
   desbloqueado: boolean;
@@ -275,6 +287,7 @@ export interface VehiculoConsolidado {
   placa: string;
   datos_basicos: DatosBasicos;
   identificacion: Identificacion;
+  titular: Titular;
   valores_tributarios: ValoresTributarios | null;
   multas_pendientes: MultaItem[];
   multas_detalle: MultaDetalle[];
