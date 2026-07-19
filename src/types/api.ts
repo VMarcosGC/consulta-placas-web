@@ -327,6 +327,8 @@ export interface PublicacionInterna {
   modelo: string | null;
   anio: number | null;
   mantenimientos: ResumenMantenimientos | null;
+  // % de completitud de la ficha técnica. null = el vendedor aún no la crea.
+  completitud_ficha?: number | null;
   creado_en: string;
 }
 
@@ -374,4 +376,92 @@ export interface PublicacionCrear {
   precio_usd: number;
   plan: PlanPublicacion;
   vehiculo_id?: number;
+}
+
+// ── Ficha técnica de la publicación (market de autos) ────────────────────────
+// Mirror de los schemas de src/modules/marketplace/schemas.py (bloque §Ficha).
+// 3 bloques (motor_suspensión / carrocería / interiores) + extras. Todos los campos
+// de bloque son opcionales/nullable: el vendedor llena lo que sabe. Es gratis
+// (transparencia, no se cobra). Las etiquetas legibles es-EC viven en src/lib/ficha.ts.
+
+export type Combustible = "gasolina" | "diesel" | "hibrido" | "electrico" | "glp";
+export type Transmision = "manual" | "automatica" | "cvt" | "semiautomatica";
+export type Traccion = "4x2" | "4x4" | "awd";
+export type EstadoComponente = "excelente" | "bueno" | "regular" | "requiere_atencion";
+export type TipoCarroceria =
+  | "sedan"
+  | "suv"
+  | "hatchback"
+  | "camioneta"
+  | "coupe"
+  | "furgoneta"
+  | "bus"
+  | "camion"
+  | "moto"
+  | "otro";
+export type EstadoPintura =
+  | "original"
+  | "retoques"
+  | "repintado_parcial"
+  | "repintado_total";
+export type MaterialAsientos = "tela" | "cuero" | "cuerina" | "mixto";
+
+export interface BloqueMotorSuspension {
+  combustible?: Combustible | null;
+  cilindraje_cc?: number | null; // 49–10000
+  transmision?: Transmision | null;
+  traccion?: Traccion | null;
+  estado_motor?: EstadoComponente | null;
+  estado_suspension?: EstadoComponente | null;
+  fugas_visibles?: boolean | null;
+  cambios_recientes?: string | null; // <= 500
+  observaciones?: string | null; // <= 1000
+}
+
+export interface BloqueCarroceria {
+  tipo?: TipoCarroceria | null;
+  numero_puertas?: number | null; // 0–6
+  color?: string | null; // <= 40
+  estado_pintura?: EstadoPintura | null;
+  choques_reparados?: boolean | null;
+  oxido_visible?: boolean | null;
+  estado_general?: EstadoComponente | null;
+  observaciones?: string | null; // <= 1000
+}
+
+export interface BloqueInteriores {
+  material_asientos?: MaterialAsientos | null;
+  estado_asientos?: EstadoComponente | null;
+  aire_acondicionado?: boolean | null;
+  sistema_audio?: string | null; // <= 120
+  estado_tablero?: EstadoComponente | null;
+  observaciones?: string | null; // <= 1000
+}
+
+export interface ExtraVehiculo {
+  nombre: string; // 2–80
+  detalle?: string | null; // <= 300
+}
+
+export interface FichaSalida {
+  motor_suspension: BloqueMotorSuspension | null;
+  carroceria: BloqueCarroceria | null;
+  interiores: BloqueInteriores | null;
+  extras: ExtraVehiculo[];
+  completitud: number; // 0–100
+  actualizado_en: string | null;
+}
+
+// Edición parcial: enviar un bloque lo REEMPLAZA completo; null lo borra; omitirlo lo
+// deja intacto (el backend usa model_fields_set). extras: la lista enviada reemplaza.
+export interface FichaActualizar {
+  motor_suspension?: BloqueMotorSuspension | null;
+  carroceria?: BloqueCarroceria | null;
+  interiores?: BloqueInteriores | null;
+  extras?: ExtraVehiculo[];
+}
+
+// Detalle público de una publicación: todo lo del feed + la ficha técnica.
+export interface PublicacionDetalle extends PublicacionInterna {
+  ficha: FichaSalida | null;
 }

@@ -3,6 +3,7 @@
 //   etiqueta "Verificado por la plataforma" y argumentos extra (mantenimientos).
 // - ListingReferenciadaCard: anuncio raspado de un portal externo (referencia).
 
+import Link from "next/link";
 import { Insignia } from "@/components/BentoCard";
 import type { PublicacionInterna, PublicacionReferenciada } from "@/types/api";
 
@@ -58,6 +59,9 @@ export function ListingInternaCard({
           {pub.estado !== "activa" && (
             <Insignia tono="neutro">{pub.estado}</Insignia>
           )}
+          {pub.completitud_ficha != null && (
+            <Insignia tono="info">Ficha {pub.completitud_ficha}% completa</Insignia>
+          )}
         </div>
 
         <h3 className="text-lg font-bold text-slate-900">{tituloVehiculo(pub)}</h3>
@@ -92,7 +96,7 @@ export function ListingInternaCard({
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-4">
           <p className="text-2xl font-black text-slate-900">{precioFmt(pub.precio_usd)}</p>
-          {onEliminar && (
+          {onEliminar ? (
             <button
               type="button"
               onClick={() => onEliminar(pub.id)}
@@ -100,6 +104,13 @@ export function ListingInternaCard({
             >
               Eliminar
             </button>
+          ) : (
+            <Link
+              href={`/marketplace/${pub.id}`}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-blue-400 hover:text-blue-700"
+            >
+              Ver detalle →
+            </Link>
           )}
         </div>
       </div>

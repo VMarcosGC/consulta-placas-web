@@ -5,8 +5,11 @@ import {
   ApiError,
   ConsultaPlacaRespuesta,
   FeedMarketplace,
+  FichaActualizar,
+  FichaSalida,
   FuenteRespuesta,
   PublicacionCrear,
+  PublicacionDetalle,
   PublicacionInterna,
   PublicacionReferenciada,
   ReferenciaCrear,
@@ -175,6 +178,23 @@ export function crearPublicacion(datos: PublicacionCrear) {
 
 export function listarMisPublicaciones() {
   return fetchAPI<PublicacionInterna[]>("/marketplace/publicaciones/mias", {}, true);
+}
+
+// Detalle público de una publicación (anuncio + ficha técnica). Sin sesión.
+// 404 si no existe o no está activa.
+export function obtenerPublicacionDetalle(id: number) {
+  return fetchAPI<PublicacionDetalle>(`/marketplace/publicaciones/${id}`);
+}
+
+// Actualiza la ficha técnica (solo el dueño). Guardado parcial: se envía SOLO el
+// bloque editado; los demás se omiten para no tocarlos. Es gratis (no cobra tokens).
+// 404 si la publicación no es tuya.
+export function actualizarFichaPublicacion(id: number, ficha: FichaActualizar) {
+  return fetchAPI<FichaSalida>(
+    `/marketplace/publicaciones/${id}/ficha`,
+    { method: "PATCH", body: JSON.stringify(ficha) },
+    true
+  );
 }
 
 export function eliminarPublicacion(id: number) {
