@@ -3,10 +3,14 @@
 
 import {
   ApiError,
+  CloudinaryError,
   ConsultaPlacaRespuesta,
   FeedMarketplace,
   FichaActualizar,
   FichaSalida,
+  FirmaSubida,
+  FotoRegistrar,
+  FotoSalida,
   FuenteRespuesta,
   PublicacionCrear,
   PublicacionDetalle,
@@ -193,6 +197,80 @@ export function actualizarFichaPublicacion(id: number, ficha: FichaActualizar) {
   return fetchAPI<FichaSalida>(
     `/marketplace/publicaciones/${id}/ficha`,
     { method: "PATCH", body: JSON.stringify(ficha) },
+    true
+  );
+}
+
+// ─── Fotos de la publicación (M2) ─────────────────────────────────────────
+// Flujo: 1) pedir firma al backend, 2) subir el archivo DIRECTO a Cloudinary,
+// 3) registrar la URL devuelta. Solo el dueño. 503 si Cloudinary no está configurado.
+
+// 1) Firma de subida (solo el dueño). 503 si el backend no tiene Cloudinary configurado.
+export function firmarSubidaFoto(id: number) {
+  return fetchAPI<FirmaSubida>(
+    `/marketplace/publicaciones/${id}/fotos/firma`,
+    { method: "POST" },
+    true
+  );
+}
+
+// 2) Sube el archivo DIRECTO a Cloudinary (host externo, no nuestro backend) y devuelve
+// la `secure_url`. No usa el wrapper fetchAPI (que apunta al backend).
+export async function subirACloudinary(firma: FirmaSubida, archivo: File): Promise<string> {
+  const form = new FormData();
+  form.append("file", archivo);
+  form.append("api_key", firma.api_key);
+  form.append("timestamp", String(firma.timestamp));
+  form.append("signature", firma.signature);
+  form.append("folder", firma.folder);
+
+  const url = `https://api.cloudinary.com/v1_1/${firma.cloud_name}/image/upload`;
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(url, { method: "POST", body: form });
+  } catch {
+    throw new CloudinaryError("No pudimos conectar con el servicio de imágenes. Revisa tu conexión.");
+  }
+  if (!respuesta.ok) {
+    // CloudinaryError (no ApiError): su status HTTP no debe interpretarse como el del backend.
+    let detalle = "No pudimos subir la imagen. Intenta de nuevo.";
+    try {
+      const body = await respuesta.json();
+      detalle = body?.error?.message || detalle;
+    } catch {
+      /* respuesta no-JSON: dejamos el mensaje genérico */
+    }
+    throw new CloudinaryError(detalle);
+  }
+  const datos = (await respuesta.json()) as { secure_url?: string };
+  if (!datos.secure_url) throw new CloudinaryError("El servicio de imágenes no devolvió una URL válida.");
+  return datos.secure_url;
+}
+
+// 3) Registra la URL ya subida en nuestro backend (solo el dueño).
+// 400 si la URL no es de nuestro cloud; 409 si ya hay 12 fotos.
+export function registrarFoto(id: number, datos: FotoRegistrar) {
+  return fetchAPI<FotoSalida>(
+    `/marketplace/publicaciones/${id}/fotos`,
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+// Nuevo orden de la galería: lista de foto_id en la secuencia deseada. 422 si no calza
+// exactamente con las fotos de la publicación. Devuelve la lista ya reordenada.
+export function reordenarFotos(id: number, ordenIds: number[]) {
+  return fetchAPI<FotoSalida[]>(
+    `/marketplace/publicaciones/${id}/fotos/orden`,
+    { method: "PATCH", body: JSON.stringify({ orden: ordenIds }) },
+    true
+  );
+}
+
+export function eliminarFoto(id: number, fotoId: number) {
+  return fetchAPI<void>(
+    `/marketplace/publicaciones/${id}/fotos/${fotoId}`,
+    { method: "DELETE" },
     true
   );
 }

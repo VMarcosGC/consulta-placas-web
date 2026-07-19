@@ -43,6 +43,16 @@ export function ListingInternaCard({
       {premium && (
         <span className="block h-1.5 w-full bg-brand-gradient" aria-hidden />
       )}
+      {/* Portada: la primera foto de la publicación (M2), si el vendedor subió alguna. */}
+      {pub.foto_portada && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={pub.foto_portada}
+          alt={tituloVehiculo(pub)}
+          className="h-44 w-full object-cover"
+          loading="lazy"
+        />
+      )}
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
           {premium && (

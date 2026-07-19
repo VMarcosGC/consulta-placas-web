@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import { FichaEditor } from "@/components/FichaEditor";
+import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
 import { ApiError, EstadoVerificacion, PublicacionInterna } from "@/types/api";
 
 // Costo referencial (lo cobra el backend; aquí solo para el rótulo del botón).
@@ -34,6 +35,7 @@ export default function MisPublicacionesPage() {
   const [procesando, setProcesando] = useState<number | null>(null);
   // Id de la publicación cuya ficha técnica está abierta para editar (null = ninguna).
   const [fichaAbierta, setFichaAbierta] = useState<number | null>(null);
+  const [fotosAbierta, setFotosAbierta] = useState<number | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -141,6 +143,7 @@ export default function MisPublicacionesPage() {
             esPremium &&
             (p.estado_verificacion === "no_verificado" || p.estado_verificacion === "rechazado");
           const fichaVisible = fichaAbierta === p.id;
+          const fotosVisible = fotosAbierta === p.id;
           return (
             <div key={p.id} className="space-y-3">
               <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta sm:flex-row sm:items-center">
@@ -178,6 +181,13 @@ export default function MisPublicacionesPage() {
                     >
                       {fichaVisible ? "Cerrar ficha técnica" : "Editar ficha técnica"}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setFotosAbierta(fotosVisible ? null : p.id)}
+                      className="font-medium text-slate-600 hover:text-slate-900"
+                    >
+                      {fotosVisible ? "Cerrar fotos" : "Gestionar fotos"}
+                    </button>
                   </div>
                 </div>
                 <div className="flex flex-row gap-2 sm:flex-col">
@@ -210,6 +220,7 @@ export default function MisPublicacionesPage() {
                 </div>
               </div>
               {fichaVisible && <FichaEditor publicacionId={p.id} />}
+              {fotosVisible && <GaleriaFotosEditor publicacionId={p.id} />}
             </div>
           );
         })}

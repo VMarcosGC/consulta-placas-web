@@ -29,6 +29,7 @@ import {
   ApiError,
   EstadoComponente,
   FichaSalida,
+  FotoSalida,
   PublicacionDetalle,
 } from "@/types/api";
 
@@ -258,6 +259,44 @@ function BarraCompletitud({ pct }: { pct: number }) {
   );
 }
 
+// ── Galería de fotos (solo lectura, vista pública) ──────────────────────────
+
+function GaleriaFotos({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
+  const [activa, setActiva] = useState(0);
+  if (fotos.length === 0) return null;
+  const principal = fotos[Math.min(activa, fotos.length - 1)];
+  return (
+    <section className="mt-6">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 sombra-tarjeta">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={principal.url}
+          alt={`Foto del ${titulo}`}
+          className="max-h-[28rem] w-full object-contain"
+        />
+      </div>
+      {fotos.length > 1 && (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {fotos.map((f, i) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setActiva(i)}
+              className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                i === activa ? "border-blue-500" : "border-transparent hover:border-slate-300"
+              }`}
+              aria-label={`Ver foto ${i + 1} de ${fotos.length}`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={f.url} alt={`Miniatura ${i + 1}`} className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Página ──────────────────────────────────────────────────────────────────
 
 export default function PublicacionDetallePage() {
@@ -358,6 +397,9 @@ export default function PublicacionDetallePage() {
               <p className="mt-4 whitespace-pre-line text-slate-600">{pub.descripcion}</p>
             )}
           </header>
+
+          {/* Galería de fotos (si el vendedor subió alguna) */}
+          <GaleriaFotos fotos={pub.fotos} titulo={tituloVehiculo(pub)} />
 
           {/* Resumen de mantenimientos documentados (argumento premium) */}
           {pub.mantenimientos && pub.mantenimientos.total > 0 && (

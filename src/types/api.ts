@@ -172,6 +172,10 @@ export class ApiError extends Error {
   }
 }
 
+// Error de la subida directa a Cloudinary (host externo). Se distingue de ApiError para
+// no confundir sus códigos HTTP (401/409 de Cloudinary) con los del backend propio.
+export class CloudinaryError extends Error {}
+
 // ── Perfil Consolidado de Vehículo ──────────────────────────────────────────
 // Refleja `VehiculoConsolidadoResponse` del backend (src/modules/consulta/schemas.py).
 // El backend entrega el objeto ya consolidado vía GET /consultar/{placa}/perfil; el
@@ -329,6 +333,8 @@ export interface PublicacionInterna {
   mantenimientos: ResumenMantenimientos | null;
   // % de completitud de la ficha técnica. null = el vendedor aún no la crea.
   completitud_ficha?: number | null;
+  // URL de la primera foto (portada del feed). null si la publicación no tiene fotos.
+  foto_portada?: string | null;
   creado_en: string;
 }
 
@@ -461,7 +467,37 @@ export interface FichaActualizar {
   extras?: ExtraVehiculo[];
 }
 
-// Detalle público de una publicación: todo lo del feed + la ficha técnica.
+// ── Fotos de la publicación (M2) ─────────────────────────────────────────────
+// El navegador sube directo a Cloudinary con una firma que da el backend; luego se
+// registra la URL. Ver src/lib/api.ts (firmarSubidaFoto/subirACloudinary/registrarFoto).
+
+export type BloqueFoto = "motor_suspension" | "carroceria" | "interiores" | "general";
+
+// Datos que devuelve el backend para subir directo a Cloudinary (firmado).
+export interface FirmaSubida {
+  cloud_name: string;
+  api_key: string;
+  timestamp: number;
+  signature: string;
+  folder: string;
+}
+
+// Registro de una foto ya subida a Cloudinary (solo se persiste la URL).
+export interface FotoRegistrar {
+  url: string;
+  bloque?: BloqueFoto | null;
+  orden?: number | null;
+}
+
+export interface FotoSalida {
+  id: number;
+  url: string;
+  bloque: string | null;
+  orden: number;
+}
+
+// Detalle público de una publicación: todo lo del feed + la ficha técnica + las fotos.
 export interface PublicacionDetalle extends PublicacionInterna {
   ficha: FichaSalida | null;
+  fotos: FotoSalida[];
 }
