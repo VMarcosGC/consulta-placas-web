@@ -13,8 +13,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BentoCard, Insignia } from "@/components/BentoCard";
-import { listarMisPublicaciones, obtenerPublicacionDetalle } from "@/lib/api";
+import {
+  consultarPerfil,
+  listarMisPublicaciones,
+  obtenerPublicacionDetalle,
+} from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
+import { fuenteInactiva } from "@/lib/fuentes";
 import {
   COMBUSTIBLE_LABEL,
   ESTADO_COMPONENTE_LABEL,
@@ -34,6 +39,7 @@ import {
   FichaSalida,
   FotoSalida,
   PublicacionDetalle,
+  VehiculoConsolidado,
 } from "@/types/api";
 
 function precioFmt(v: number | null): string {
@@ -305,6 +311,170 @@ function GaleriaFotos({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }
   );
 }
 
+// ── Datos oficiales (M2.6) ──────────────────────────────────────────────────
+// Contracara de la ficha: esto NO lo declara el vendedor, sale de las fuentes públicas.
+// Se consume el perfil consolidado de la placa del anuncio y se muestran SOLO las fuentes
+// activas (las que están en stand-by por captcha se ocultan, igual que en la consulta).
+// El detalle de multas con montos es un microdesbloqueo de pago: aquí solo se muestra el
+// veredicto gratis (sí/no) para no regalar lo que se cobra en /consultar.
+
+// Fecha legible es-EC a partir del ISO que manda el backend ("consultado el …").
+function fechaLegible(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("es-EC", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+function SelloConsulta({ iso }: { iso: string | null | undefined }) {
+  const fecha = fechaLegible(iso);
+  if (!fecha) return null;
+  return <p className="mt-2 text-[11px] text-slate-400">Consultado el {fecha}</p>;
+}
+
+function DatosOficiales({ placa }: { placa: string }) {
+  const [perfil, setPerfil] = useState<VehiculoConsolidado | null>(null);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    let activo = true;
+    (async () => {
+      try {
+        const p = await consultarPerfil(placa);
+        if (activo) setPerfil(p);
+      } catch {
+        // Silencioso: la sección degrada a "en proceso". Nunca rompe el anuncio.
+      } finally {
+        if (activo) setCargando(false);
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [placa]);
+
+  // Estado por fuente, ya filtrado por el stand-by (SRI/FGE fuera).
+  const fuentes = (perfil?.estado_fuentes ?? []).filter((f) => !fuenteInactiva(f.clave));
+  const ant = fuentes.find((f) => f.clave === "ANT");
+  const amt = fuentes.find((f) => f.clave === "AMT");
+  const b = perfil?.datos_basicos;
+
+  const hayMatricula = !!(b?.fecha_matricula || b?.fecha_caducidad);
+  const multas = (perfil?.multas_detalle ?? []).filter((d) => !fuenteInactiva(d.fuente));
+  const antResuelta = ant?.estado === "completada" || ant?.estado === "sin_resultados";
+
+  // Las infracciones municipales llegan por el worker y pueden seguir en camino. Mientras
+  // tanto NO se puede afirmar "Al día": el veredicto estaría incompleto y, en un anuncio de
+  // venta, ese falso negativo favorece al vendedor. Se muestra un estado neutro.
+  const municipalesEnProceso = ["AMT", "EPMTSD"].some(
+    (clave) => fuentes.find((f) => f.clave === clave)?.estado === "en_proceso"
+  );
+
+  // "En proceso": todavía no hay NADA que mostrar. Basta con que la ANT haya resuelto (o
+  // que haya matrícula/multas) para pintar la sección, aunque el municipio siga cargando.
+  const enProceso =
+    cargando || (!antResuelta && !hayMatricula && multas.length === 0);
+
+  return (
+    <section className="mt-8">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-bold text-slate-900">Datos oficiales</h2>
+        <Insignia tono="info">Fuentes públicas</Insignia>
+      </div>
+      <p className="mb-4 text-xs text-slate-500">
+        Esto no lo declara el vendedor: viene de las fuentes públicas del Estado (ANT y las
+        agencias municipales de tránsito).
+      </p>
+
+      {enProceso ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
+          <p className="font-semibold text-slate-700">Datos oficiales en proceso</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Estamos consultando las fuentes públicas para esta placa. Vuelve en un momento.
+          </p>
+          <Link
+            href={`/consultar/${encodeURIComponent(placa)}`}
+            className="mt-4 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+          >
+            Consultar la placa por mi cuenta →
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Matriculación (ANT) */}
+          {hayMatricula && (
+            <BentoCard
+              titulo="Matrícula (ANT)"
+              badge={
+                b?.matricula_vigente == null ? undefined : b.matricula_vigente ? (
+                  <Insignia tono="ok">Vigente</Insignia>
+                ) : (
+                  <Insignia tono="peligro">Vencida</Insignia>
+                )
+              }
+            >
+              <dl>
+                {b?.fecha_matricula && (
+                  <Fila etiqueta="Matriculado">{b.fecha_matricula}</Fila>
+                )}
+                {b?.fecha_caducidad && <Fila etiqueta="Vence">{b.fecha_caducidad}</Fila>}
+              </dl>
+              <SelloConsulta iso={ant?.consultado_en} />
+            </BentoCard>
+          )}
+
+          {/* Multas e infracciones (ANT + AMT). El detalle con montos es de pago: si viene
+              bloqueado mostramos solo el veredicto y enviamos a la consulta. */}
+          <BentoCard
+            titulo="Multas e infracciones"
+            cargando={municipalesEnProceso}
+            badge={
+              // Con el municipio aún consultando solo se afirma lo que ya se sabe: si hay
+              // pendientes, se dice; si no, se calla hasta tener la foto completa.
+              perfil?.tiene_pendientes ? (
+                <Insignia tono="alerta">Con pendientes</Insignia>
+              ) : municipalesEnProceso ? (
+                <Insignia tono="neutro">Consultando…</Insignia>
+              ) : (
+                <Insignia tono="ok">Al día</Insignia>
+              )
+            }
+          >
+            {perfil?.multas_bloqueado || multas.length === 0 ? (
+              <p className="text-sm text-slate-600">
+                {perfil?.tiene_pendientes
+                  ? "Este vehículo tiene multas o infracciones registradas."
+                  : municipalesEnProceso
+                    ? "Ya tenemos las citaciones de la ANT. Seguimos consultando las infracciones municipales."
+                    : "Sin multas ni infracciones pendientes."}
+              </p>
+            ) : (
+              <dl>
+                {multas.map((d) => (
+                  <Fila key={d.fuente} etiqueta={`${d.ambito} (${d.fuente})`}>
+                    {d.pendientes > 0 ? `${d.pendientes} pendientes` : "Sin registros"}
+                  </Fila>
+                ))}
+              </dl>
+            )}
+            {/* Sin el municipio resuelto no se estampa fecha: sellar con la hora de la ANT
+                daría una sensación de completitud que todavía no existe. */}
+            <SelloConsulta
+              iso={municipalesEnProceso ? null : (amt?.consultado_en ?? ant?.consultado_en)}
+            />
+            <Link
+              href={`/consultar/${encodeURIComponent(placa)}`}
+              className="mt-3 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Ver el detalle completo de la placa →
+            </Link>
+          </BentoCard>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Página ──────────────────────────────────────────────────────────────────
 
 export default function PublicacionDetallePage() {
@@ -476,6 +646,9 @@ export default function PublicacionDetallePage() {
               </div>
             </div>
           )}
+
+          {/* Datos oficiales: la contracara de lo declarado por el vendedor. */}
+          <DatosOficiales placa={pub.placa} />
 
           {pub.ficha ? (
             <FichaTecnica ficha={pub.ficha} />

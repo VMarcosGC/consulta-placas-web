@@ -1,11 +1,19 @@
+// Landing market-first (M2.6). El producto ES el market de autos: comprar y vender con
+// transparencia. La consulta por placa baja a "Herramientas" — sigue accesible y completa,
+// pero deja de ser la promesa principal mientras las fuentes estatales sigan bloqueadas.
+// Español de Ecuador (tuteo), tono no agresivo.
+
 import Link from "next/link";
 import { ConsultaForm } from "@/components/ConsultaForm";
+import { DestacadosMarket } from "@/components/DestacadosMarket";
 
 export default function Home() {
   return (
     <div>
       <HeroSection />
+      <DestacadosMarket />
       <ValoresSection />
+      <HerramientasSection />
       <PlanesSection />
       <CtaSection />
     </div>
@@ -20,21 +28,34 @@ function HeroSection() {
       <div className="mx-auto max-w-4xl px-6 pt-20 pb-16 text-center sm:pt-28">
         <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          ANT · AMT — y enlaces oficiales para el resto
+          Ficha técnica declarada + datos oficiales de la placa
         </span>
         <h1 className="mt-6 text-5xl sm:text-7xl font-black tracking-tight leading-[1.05] text-slate-900">
-          Conoce el <span className="text-brand-gradient">estado real</span><br />
-          de cualquier vehículo<br />
-          del Ecuador
+          Compra y vende autos<br />
+          con <span className="text-brand-gradient">transparencia</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
-          Matriculación, citaciones e infracciones municipales en una sola consulta.
-          Consultamos las fuentes disponibles y te mostramos enlaces oficiales cuando una
-          validación requiere confirmación externa. Sin registro para la consulta básica.
+          Cada anuncio muestra la ficha técnica que declara el vendedor y, junto a ella, los
+          datos oficiales de la placa: matrícula e infracciones. Así sabes qué estás viendo
+          antes de ir a verlo.
         </p>
-        <div className="mt-10 mx-auto max-w-xl">
-          <ConsultaForm tamanio="hero" />
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            href="/marketplace"
+            className="w-full rounded-full bg-brand-gradient px-8 py-3.5 text-center text-sm font-semibold text-white shadow-sm transition hover:opacity-90 sm:w-auto"
+          >
+            Ver autos en venta
+          </Link>
+          <Link
+            href="/marketplace/publicar"
+            className="w-full rounded-full border border-slate-300 bg-white px-8 py-3.5 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto"
+          >
+            Publica tu auto
+          </Link>
         </div>
+        <p className="mt-4 text-xs text-slate-400">
+          Publicar es gratis. Ver los anuncios no necesita cuenta.
+        </p>
       </div>
     </section>
   );
@@ -43,22 +64,22 @@ function HeroSection() {
 function ValoresSection() {
   const items = [
     {
-      titulo: "Datos oficiales",
-      texto: "Consultamos las fuentes disponibles (ANT, AMT) y te mostramos enlaces oficiales cuando una validación requiere confirmación externa. No almacenamos información sensible.",
+      titulo: "Ficha técnica completa",
+      texto: "Motor y suspensión, carrocería e interiores. El vendedor declara lo que sabe y el anuncio muestra qué tan completa está su ficha.",
+      emoji: "📋",
+      href: "/marketplace",
+    },
+    {
+      titulo: "Datos oficiales de la placa",
+      texto: "Junto a lo declarado, el anuncio muestra matrícula e infracciones consultadas en las fuentes públicas (ANT, AMT).",
       emoji: "🔍",
       href: "/consultar",
     },
     {
-      titulo: "Historial privado",
-      texto: "Tu garage personal con kilometraje, mantenimientos y dueños históricos. Solo para ti.",
-      emoji: "📋",
+      titulo: "Tu garage privado",
+      texto: "Kilometraje, mantenimientos y dueños históricos. Un historial documentado es tu mejor argumento al vender.",
+      emoji: "🔧",
       href: "/mi-garage",
-    },
-    {
-      titulo: "Modo compra-venta",
-      texto: "Publica tu auto o comparte un enlace temporal con un comprador. Tú decides qué ve.",
-      emoji: "🤝",
-      href: "/marketplace",
     },
   ];
   return (
@@ -85,13 +106,39 @@ function ValoresSection() {
   );
 }
 
+// Consulta por placa: ahora es una HERRAMIENTA de apoyo al market, no la promesa principal.
+// Sigue accesible y completa en /consultar; acá solo pierde protagonismo.
+function HerramientasSection() {
+  return (
+    <section className="mx-auto max-w-4xl px-6 py-16">
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 sombra-tarjeta sm:p-10">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Herramientas
+        </span>
+        <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
+          Consulta el historial de una placa
+        </h2>
+        <p className="mt-2 max-w-2xl text-slate-600">
+          ¿Te interesa un auto que viste en otro lado? Consulta su placa: matriculación e
+          infracciones de las fuentes públicas disponibles. Los datos básicos son gratis y
+          no necesitas cuenta.
+        </p>
+        <div className="mt-6 max-w-md">
+          <ConsultaForm tamanio="compacto" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PlanesSection() {
   return (
     <section id="planes" className="mx-auto max-w-6xl px-6 py-20">
       <div className="text-center">
         <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Precios claros</h2>
         <p className="mt-2 text-slate-600">
-          Los datos públicos son gratis. Pagas con tokens solo lo que tiene costo o valor real.
+          Publicar y completar tu ficha es gratis. Pagas con tokens solo lo que tiene costo
+          o valor real.
         </p>
       </div>
       <div className="mt-10 grid gap-5 md:grid-cols-2">
@@ -99,24 +146,24 @@ function PlanesSection() {
           nombre="Gratis"
           precio="$0"
           unidad="siempre"
-          descripcion="La consulta pública"
+          descripcion="Publicar y navegar el market"
           beneficios={[
-            "Marca, modelo, año, color, clase y servicio",
-            "Estado de matrícula y veredicto sí/no",
-            "Enlaces oficiales y estado de fuentes",
-            "Sin registro para consultar",
+            "Publica tu auto en el feed estándar",
+            "Ficha técnica completa y fotos",
+            "Ver todos los anuncios sin cuenta",
+            "Consulta pública de placa: datos básicos",
           ]}
-          cta={{ label: "Consultar gratis", href: "/consultar" }}
+          cta={{ label: "Publicar gratis", href: "/marketplace/publicar" }}
           destacado={false}
         />
         <PlanCard
           nombre="Datos por tokens"
           precio="$0.04"
           unidad="/ token"
-          descripcion="Desbloquea solo lo que necesitas"
+          descripcion="Destaca tu anuncio o desbloquea datos"
           beneficios={[
-            "Identificadores técnicos, multas con valores y más",
-            "Pagas solo datos con costo real",
+            "Publicación Premium destacada y verificable",
+            "Identificadores técnicos y multas con valores",
             "Desde $1 = 25 tokens",
             "5 tokens de cortesía al registrarte",
           ]}
@@ -187,12 +234,26 @@ function PlanCard({ nombre, precio, unidad, descripcion, beneficios, cta, destac
 function CtaSection() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-      <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">¿Consultas una placa ahora?</h2>
+      <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">
+        ¿Vendes tu auto?
+      </h2>
       <p className="mt-3 text-slate-600">
-        En menos de un minuto te decimos todo lo que sabe el Estado sobre ese vehículo.
+        Publicar es gratis. Mientras más completa la ficha, más confianza genera tu anuncio
+        — y completarla no cuesta tokens.
       </p>
-      <div className="mt-6 mx-auto max-w-md">
-        <ConsultaForm tamanio="compacto" />
+      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Link
+          href="/marketplace/publicar"
+          className="w-full rounded-full bg-brand-gradient px-8 py-3.5 text-center text-sm font-semibold text-white shadow-sm transition hover:opacity-90 sm:w-auto"
+        >
+          Publicar mi auto
+        </Link>
+        <Link
+          href="/marketplace"
+          className="w-full rounded-full border border-slate-300 bg-white px-8 py-3.5 text-center text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto"
+        >
+          Ver autos en venta
+        </Link>
       </div>
     </section>
   );

@@ -69,10 +69,11 @@ export default function MarketplacePage() {
       <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-black text-slate-900">
-            Marketplace <span className="text-brand-gradient">de vehículos</span>
+            Autos <span className="text-brand-gradient">en venta</span>
           </h1>
           <p className="mt-1 text-slate-500">
-            Autos publicados por la comunidad y referencias de portales externos.
+            Cada anuncio muestra la ficha técnica del vendedor y los datos oficiales de su
+            placa. También hay referencias de portales externos, sin verificar.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">

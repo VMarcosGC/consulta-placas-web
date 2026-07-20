@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { ConsultaForm } from "@/components/ConsultaForm";
 
 export const metadata = {
-  title: "Consultar placa | Revisa tu Carro EC",
+  title: "Consulta de placa | Revisa tu Carro EC",
+  description:
+    "Consulta matriculación e infracciones de una placa ecuatoriana en las fuentes públicas disponibles. Herramienta de apoyo del marketplace de autos.",
 };
 
 export default function ConsultarPage() {
@@ -16,6 +19,14 @@ export default function ConsultarPage() {
       <div className="mt-8 mx-auto max-w-xl">
         <ConsultaForm tamanio="hero" />
       </div>
+      {/* La consulta es una herramienta de apoyo: desde aquí se vuelve al market. */}
+      <p className="mt-8 text-sm text-slate-500">
+        ¿Buscas comprar?{" "}
+        <Link href="/marketplace" className="font-semibold text-blue-700 hover:underline">
+          Mira los autos en venta
+        </Link>{" "}
+        — cada anuncio ya trae estos datos oficiales junto a su ficha técnica.
+      </p>
     </div>
   );
 }

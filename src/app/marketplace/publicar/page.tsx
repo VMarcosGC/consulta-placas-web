@@ -16,7 +16,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { crearPublicacion, listarVehiculos } from "@/lib/api";
+import { consultarPlaca, crearPublicacion, listarVehiculos } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import { FichaEditor } from "@/components/FichaEditor";
 import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
@@ -126,16 +126,32 @@ function PasoDatos({ onCreada }: { onCreada: (id: number) => void }) {
       return;
     }
 
+    const placaNormal = placa.trim().toUpperCase();
     setEnviando(true);
     try {
       const pub = await crearPublicacion({
-        placa: placa.trim().toUpperCase(),
+        placa: placaNormal,
         titulo: titulo.trim() || undefined,
         descripcion: descripcion.trim() || undefined,
         precio_usd: precioNum,
         plan,
         vehiculo_id: vehiculoId ?? undefined,
       });
+
+      // Enriquecimiento oficial (M2.6): dispara la consulta pública en segundo plano para
+      // que el pipeline la deje cacheada en `consultas`, y el anuncio pueda mostrar
+      // "Datos oficiales" sin que el vendedor espere nada.
+      //
+      // Fire & forget A PROPÓSITO: sin await, sin spinner, errores tragados. Si una fuente
+      // está caída, el vendedor no se entera y su publicación ya quedó creada.
+      //
+      // El disparo es SOLO del cliente: el CRUD del backend nunca invoca scraping (§10.2).
+      // Se usa `pub.placa` (la que normalizó y validó el backend), no la del formulario:
+      // así la caché queda bajo la misma clave que después lee el detalle del anuncio.
+      void consultarPlaca(pub.placa).catch(() => {
+        // Silencioso por diseño: es un extra, no un requisito para publicar.
+      });
+
       // Corazón del wizard: en vez de mandarlo al feed, lo llevamos a la ficha.
       onCreada(pub.id);
     } catch (err) {

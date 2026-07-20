@@ -15,16 +15,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Revisa tu Carro EC — Conoce el estado real de cualquier vehículo",
+  title: "Revisa tu Carro EC — Compra y vende autos con transparencia",
   description:
-    "Matriculación, citaciones e infracciones del vehículo en una sola consulta. Consultamos las fuentes disponibles y te mostramos enlaces oficiales cuando una validación requiere confirmación externa.",
+    "Marketplace de autos del Ecuador. Cada anuncio muestra la ficha técnica declarada por el vendedor junto a los datos oficiales de la placa: matriculación e infracciones. Publicar es gratis.",
   keywords: [
-    "consultar placa Ecuador",
+    "comprar auto Ecuador",
+    "vender auto Ecuador",
+    "autos usados Ecuador",
+    "marketplace vehículos Ecuador",
     "revisa tu carro",
-    "ANT matriculación",
+    "consultar placa Ecuador",
     "multas AMT",
-    "infracciones tránsito Ecuador",
-    "matrícula vehículo Ecuador",
+    "ANT matriculación",
   ],
 };
 

@@ -24,14 +24,17 @@ export function Footer() {
             Revisa tu Carro <span className="text-slate-400 text-sm font-bold">EC</span>
           </div>
           <p className="mt-3 text-sm text-slate-500">
-            Información oficial de vehículos del Ecuador en una sola consulta.
+            Compra y vende autos en Ecuador con la ficha del vendedor y los datos oficiales
+            de la placa a la vista.
           </p>
         </div>
 
         <div className="text-sm">
           <h4 className="mb-3 font-semibold text-slate-700">Producto</h4>
           <ul className="space-y-2 text-slate-500">
-            <li><Link href="/consultar" className="hover:text-slate-900">Consultar placa</Link></li>
+            <li><Link href="/marketplace" className="hover:text-slate-900">Autos en venta</Link></li>
+            <li><Link href="/marketplace/publicar" className="hover:text-slate-900">Publicar mi auto</Link></li>
+            <li><Link href="/consultar" className="hover:text-slate-900">Consulta de placa</Link></li>
             <li><Link href="/precios" className="hover:text-slate-900">Precios</Link></li>
             <li><Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link></li>
           </ul>
