@@ -1,6 +1,18 @@
 import Link from "next/link";
+import { fuenteInactiva } from "@/lib/fuentes";
+
+// Solo listamos las fuentes que hoy consultamos de verdad. Las que están en stand-by
+// (M2.5: SRI y FGE, ver src/lib/fuentes.ts) se ocultan: anunciarlas prometería un dato
+// que la web no entrega.
+const FUENTES_PIE = [
+  { clave: "ANT", nombre: "Agencia Nacional de Tránsito (ANT)" },
+  { clave: "AMT", nombre: "Agencia Metropolitana de Tránsito (AMT)" },
+  { clave: "SRI", nombre: "Servicio de Rentas Internas (SRI)" },
+  { clave: "FGE", nombre: "Fiscalía General del Estado (FGE)" },
+];
 
 export function Footer() {
+  const fuentes = FUENTES_PIE.filter((f) => !fuenteInactiva(f.clave));
   return (
     <footer className="mt-24 border-t border-slate-200 bg-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-3">
@@ -28,10 +40,9 @@ export function Footer() {
         <div className="text-sm">
           <h4 className="mb-3 font-semibold text-slate-700">Fuentes oficiales</h4>
           <ul className="space-y-2 text-slate-500">
-            <li>Agencia Nacional de Tránsito (ANT)</li>
-            <li>Agencia Metropolitana de Tránsito (AMT)</li>
-            <li>Servicio de Rentas Internas (SRI)</li>
-            <li>Fiscalía General del Estado (FGE)</li>
+            {fuentes.map((f) => (
+              <li key={f.clave}>{f.nombre}</li>
+            ))}
           </ul>
         </div>
       </div>

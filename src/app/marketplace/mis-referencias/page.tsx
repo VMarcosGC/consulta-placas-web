@@ -117,6 +117,11 @@ export default function MisReferenciasPage() {
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${badge.clase}`}>
                     {badge.texto}
                   </span>
+                  {/* Mismo copy exacto que en el feed (M2.5): así el aportante ve tal cual
+                      cómo se presenta su referencia al comprador. */}
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                    Referencia externa · datos no verificados
+                  </span>
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
                     {r.fuente}
                   </span>
@@ -138,7 +143,7 @@ export default function MisReferenciasPage() {
                 </a>
                 {r.estado_moderacion === "rechazada" && (
                   <p className="mt-1 text-xs text-slate-400">
-                    No pasó la revisión. Podés eliminarla y volver a enviar el anuncio corregido.
+                    No pasó la revisión. Puedes eliminarla y volver a enviar el anuncio corregido.
                   </p>
                 )}
               </div>

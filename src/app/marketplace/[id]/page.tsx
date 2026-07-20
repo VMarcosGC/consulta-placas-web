@@ -13,7 +13,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BentoCard, Insignia } from "@/components/BentoCard";
-import { obtenerPublicacionDetalle } from "@/lib/api";
+import { listarMisPublicaciones, obtenerPublicacionDetalle } from "@/lib/api";
+import { tieneSesion } from "@/lib/auth";
 import {
   COMBUSTIBLE_LABEL,
   ESTADO_COMPONENTE_LABEL,
@@ -23,6 +24,8 @@ import {
   TRACCION_LABEL,
   TRANSMISION_LABEL,
   colorCompletitud,
+  fichaIncompleta,
+  fichaPendiente,
   tonoEstadoComponente,
 } from "@/lib/ficha";
 import {
@@ -110,7 +113,12 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
     <section className="mt-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold text-slate-900">Ficha técnica</h2>
-        <BarraCompletitud pct={ficha.completitud} />
+        {/* Bajo el umbral el porcentaje no aporta; se dice claro (M2.5). */}
+        {fichaIncompleta(ficha.completitud) ? (
+          <Insignia tono="alerta">Ficha incompleta</Insignia>
+        ) : (
+          <BarraCompletitud pct={ficha.completitud} />
+        )}
       </div>
 
       {!tieneAlgo && (
@@ -307,6 +315,9 @@ export default function PublicacionDetallePage() {
   const [cargando, setCargando] = useState(true);
   const [noEncontrada, setNoEncontrada] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // ¿El visitante es el dueño de este anuncio? Solo entonces mostramos el CTA de la ficha.
+  // La página es pública, así que se resuelve en el cliente y solo si hay sesión.
+  const [esMia, setEsMia] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -336,6 +347,26 @@ export default function PublicacionDetallePage() {
       activo = false;
     };
   }, [id]);
+
+  // Propiedad del anuncio: se compara contra "mis publicaciones". Si falla o no hay sesión,
+  // simplemente no se muestra el CTA (la vista pública queda igual).
+  useEffect(() => {
+    if (!tieneSesion() || !Number.isInteger(id) || id <= 0) return;
+    let activo = true;
+    (async () => {
+      try {
+        const mias = await listarMisPublicaciones();
+        if (activo) setEsMia(mias.some((p) => p.id === id));
+      } catch {
+        // Silencioso: el CTA del dueño es un extra, no puede romper el detalle público.
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [id]);
+
+  const pctFicha = pub?.ficha?.completitud ?? pub?.completitud_ficha ?? 0;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
@@ -398,6 +429,26 @@ export default function PublicacionDetallePage() {
             )}
           </header>
 
+          {/* CTA persistente del dueño (M2.5): solo lo ve él, y solo mientras falte ficha. */}
+          {esMia && fichaPendiente(pctFicha) && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  Completa tu ficha ({pctFicha} %)
+                </p>
+                <p className="mt-0.5 text-sm text-amber-700">
+                  Es gratis y los anuncios con ficha completa generan más confianza.
+                </p>
+              </div>
+              <Link
+                href="/marketplace/mis-publicaciones"
+                className="shrink-0 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+              >
+                Completar ahora
+              </Link>
+            </div>
+          )}
+
           {/* Galería de fotos (si el vendedor subió alguna) */}
           <GaleriaFotos fotos={pub.fotos} titulo={tituloVehiculo(pub)} />
 
@@ -430,7 +481,10 @@ export default function PublicacionDetallePage() {
             <FichaTecnica ficha={pub.ficha} />
           ) : (
             <section className="mt-8">
-              <h2 className="mb-4 text-xl font-bold text-slate-900">Ficha técnica</h2>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-slate-900">Ficha técnica</h2>
+                <Insignia tono="alerta">Ficha incompleta</Insignia>
+              </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
                 <p className="text-slate-600">
                   El vendedor aún no completó la ficha técnica de este vehículo.

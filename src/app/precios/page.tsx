@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { fuenteInactiva } from "@/lib/fuentes";
 
 export const metadata = {
   title: "Precios | Revisa tu Carro EC",
@@ -16,15 +17,17 @@ const PAQUETES = [
 ];
 
 // Lo que se desbloquea con tokens (datos con costo de proveedor, dificultad o valor comercial).
+// `fuente` marca el producto que depende de una fuente concreta: si esa fuente está en
+// stand-by (M2.5), la fila no se anuncia — no ofrecemos lo que hoy no podemos entregar.
 const DESBLOQUEOS = [
-  { nombre: "Ver identificadores técnicos", tokens: 3, detalle: "VIN, motor y chasis ofuscados a origen" },
-  { nombre: "Validar titular registrado", tokens: 5, detalle: "Validación (coincide / ofuscado), nunca el dato crudo" },
-  { nombre: "Ver alertas legales", tokens: 8, detalle: "Novedades legales asociadas, si hay fuente segura" },
-  { nombre: "Ver multas con valores", tokens: 10, detalle: "Detalle con montos por fuente (ANT / AMT)" },
-  { nombre: "Ver valores de matrícula (SRI)", tokens: 12, detalle: "Cuando exista proveedor confiable" },
-  { nombre: "Generar reporte compra segura", tokens: 40, detalle: "Informe consolidado de todo lo anterior" },
-  { nombre: "Verificación de la plataforma", tokens: 100, detalle: "Sello para tu publicación premium del marketplace" },
-];
+  { nombre: "Ver identificadores técnicos", tokens: 3, detalle: "VIN, motor y chasis ofuscados a origen", fuente: null },
+  { nombre: "Validar titular registrado", tokens: 5, detalle: "Validación (coincide / ofuscado), nunca el dato crudo", fuente: null },
+  { nombre: "Ver alertas legales", tokens: 8, detalle: "Novedades legales asociadas, si hay fuente segura", fuente: "FGE" },
+  { nombre: "Ver multas con valores", tokens: 10, detalle: "Detalle con montos por fuente (ANT / AMT)", fuente: null },
+  { nombre: "Ver valores de matrícula (SRI)", tokens: 12, detalle: "Cuando exista proveedor confiable", fuente: "SRI" },
+  { nombre: "Generar reporte compra segura", tokens: 40, detalle: "Informe consolidado de todo lo anterior", fuente: null },
+  { nombre: "Verificación de la plataforma", tokens: 100, detalle: "Sello para tu publicación premium del marketplace", fuente: null },
+].filter((d) => d.fuente == null || !fuenteInactiva(d.fuente));
 
 // Lo que siempre es gratis: datos públicos disponibles + enlaces oficiales.
 const GRATIS = [
@@ -63,9 +66,9 @@ export default function PreciosPage() {
           ))}
         </ul>
         <p className="mt-5 text-xs text-slate-500">
-          No prometemos datos del SRI ni de Fiscalía de forma automática: consultamos las fuentes
-          disponibles y te mostramos los enlaces oficiales cuando una validación requiere
-          confirmación externa.
+          Solo mostramos las fuentes que hoy podemos consultar de forma confiable. Cuando una
+          validación necesita confirmación externa, te dejamos el enlace al portal oficial en
+          lugar de prometerte un dato automático.
         </p>
       </section>
 

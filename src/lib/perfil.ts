@@ -4,10 +4,16 @@
 // decidir polling, estado por fuente y el update optimista de reintento.
 
 import type { VehiculoConsolidado } from "@/types/api";
+import { fuenteInactiva } from "@/lib/fuentes";
 
-// True si alguna fuente sigue procesándose (worker híbrido AMT/EPMTSD/FGE) → polling.
+// True si alguna fuente VISIBLE sigue procesándose (worker híbrido AMT/EPMTSD) → polling.
+// Las fuentes en stand-by se ignoran: el backend las sigue encolando, pero si la UI no las
+// muestra, quedarse repollando y con el encabezado en "Consultando…" por una fuente que el
+// usuario nunca va a ver sería un spinner eterno sin explicación (M2.5).
 export function hayFuentesEnProceso(perfil: VehiculoConsolidado): boolean {
-  return perfil.estado_fuentes.some((f) => f.estado === "en_proceso");
+  return perfil.estado_fuentes.some(
+    (f) => f.estado === "en_proceso" && !fuenteInactiva(f.clave)
+  );
 }
 
 // Estado consolidado de una fuente puntual (por clave de catálogo) dentro del perfil.

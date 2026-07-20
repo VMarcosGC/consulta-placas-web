@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import { Insignia } from "@/components/BentoCard";
+import { fichaIncompleta } from "@/lib/ficha";
 import type { PublicacionInterna, PublicacionReferenciada } from "@/types/api";
 
 function precioFmt(v: number | null): string {
@@ -69,8 +70,12 @@ export function ListingInternaCard({
           {pub.estado !== "activa" && (
             <Insignia tono="neutro">{pub.estado}</Insignia>
           )}
-          {pub.completitud_ficha != null && (
-            <Insignia tono="info">Ficha {pub.completitud_ficha}% completa</Insignia>
+          {/* Transparencia (M2.5): bajo el umbral, un porcentaje bajo no informa —
+              decimos "Ficha incompleta", que es lo que el comprador necesita saber. */}
+          {fichaIncompleta(pub.completitud_ficha) ? (
+            <Insignia tono="neutro">Ficha incompleta</Insignia>
+          ) : (
+            <Insignia tono="info">Ficha {pub.completitud_ficha ?? 0}% completa</Insignia>
           )}
         </div>
 
@@ -151,8 +156,13 @@ export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada 
         />
       )}
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <Insignia tono="neutro">Referencia · {pub.fuente}</Insignia>
+        {/* Etiqueta obligatoria (M2.5): copy exacto. La referencia la aporta un usuario y
+            NO la raspamos ni la validamos — el comprador debe saberlo antes de hacer clic. */}
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          <Insignia tono="alerta">Referencia externa · datos no verificados</Insignia>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+            {pub.fuente}
+          </span>
         </div>
         <h3 className="text-base font-bold text-slate-900">{tituloVehiculo(pub)}</h3>
         {pub.placa && (

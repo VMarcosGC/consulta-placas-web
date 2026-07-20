@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { actualizarFichaPublicacion, obtenerPublicacionDetalle } from "@/lib/api";
 import {
   OPCIONES_COMBUSTIBLE,
@@ -248,7 +248,15 @@ const PESTANAS: { clave: Exclude<Bloque, "extras">; label: string }[] = [
   { clave: "interiores", label: "Interiores" },
 ];
 
-export function FichaEditor({ publicacionId }: { publicacionId: number }) {
+// `onCompletitud` avisa al contenedor (wizard / mis-publicaciones) cada vez que se conoce
+// un % nuevo — al cargar y tras cada guardado — para que refresque su CTA sin recargar.
+export function FichaEditor({
+  publicacionId,
+  onCompletitud,
+}: {
+  publicacionId: number;
+  onCompletitud?: (pct: number) => void;
+}) {
   const [tab, setTab] = useState<Bloque>("motor_suspension");
   const [motor, setMotor] = useState<FormMotor>(MOTOR_VACIO);
   const [carroceria, setCarroceria] = useState<FormCarroceria>(CARROCERIA_VACIA);
@@ -260,6 +268,14 @@ export function FichaEditor({ publicacionId }: { publicacionId: number }) {
   const [guardando, setGuardando] = useState<Bloque | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<Bloque | null>(null);
+
+  // El callback vive en un ref para NO entrar en las deps del efecto de carga: si el
+  // contenedor pasa una arrow inline, incluirlo relanzaría la carga en cada render.
+  // El ref se actualiza en un efecto (escribirlo durante el render viola react-hooks/refs).
+  const avisar = useRef(onCompletitud);
+  useEffect(() => {
+    avisar.current = onCompletitud;
+  }, [onCompletitud]);
 
   useEffect(() => {
     let activo = true;
@@ -316,6 +332,7 @@ export function FichaEditor({ publicacionId }: { publicacionId: number }) {
       }
       setExtras(f?.extras ?? []);
       setCompletitud(f?.completitud ?? 0);
+      avisar.current?.(f?.completitud ?? 0);
       setCargando(false);
     })();
     return () => {
@@ -375,6 +392,7 @@ export function FichaEditor({ publicacionId }: { publicacionId: number }) {
 
       const ficha = await actualizarFichaPublicacion(publicacionId, payload);
       setCompletitud(ficha.completitud);
+      avisar.current?.(ficha.completitud);
       setOk(bloque);
     } catch (err) {
       if (err instanceof ApiError) {

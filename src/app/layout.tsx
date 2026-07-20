@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "ANT matriculación",
     "multas AMT",
     "infracciones tránsito Ecuador",
-    "fiscalía vehículo",
+    "matrícula vehículo Ecuador",
   ],
 };
 

@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props) {
   const { placa } = await params;
   return {
     title: `Placa ${placa.toUpperCase()} | Revisa tu Carro EC`,
-    description: `Resultado oficial de la consulta para la placa ${placa.toUpperCase()} en ANT, AMT, SRI y Fiscalía del Ecuador.`,
+    description: `Resultado oficial de la consulta para la placa ${placa.toUpperCase()} en ANT y AMT del Ecuador.`,
   };
 }
 

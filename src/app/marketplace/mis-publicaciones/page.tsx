@@ -15,6 +15,7 @@ import {
 import { tieneSesion } from "@/lib/auth";
 import { FichaEditor } from "@/components/FichaEditor";
 import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
+import { fichaPendiente } from "@/lib/ficha";
 import { ApiError, EstadoVerificacion, PublicacionInterna } from "@/types/api";
 
 // Costo referencial (lo cobra el backend; aquí solo para el rótulo del botón).
@@ -36,6 +37,9 @@ export default function MisPublicacionesPage() {
   // Id de la publicación cuya ficha técnica está abierta para editar (null = ninguna).
   const [fichaAbierta, setFichaAbierta] = useState<number | null>(null);
   const [fotosAbierta, setFotosAbierta] = useState<number | null>(null);
+  // % de ficha recién guardado por el editor, por publicación. Pisa al valor que trajo el
+  // listado para que el CTA "Completa tu ficha" baje en vivo sin recargar la página.
+  const [completitudes, setCompletitudes] = useState<Record<number, number>>({});
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -144,6 +148,8 @@ export default function MisPublicacionesPage() {
             (p.estado_verificacion === "no_verificado" || p.estado_verificacion === "rechazado");
           const fichaVisible = fichaAbierta === p.id;
           const fotosVisible = fotosAbierta === p.id;
+          const pct = completitudes[p.id] ?? p.completitud_ficha ?? 0;
+          const faltaFicha = fichaPendiente(pct);
           return (
             <div key={p.id} className="space-y-3">
               <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta sm:flex-row sm:items-center">
@@ -162,14 +168,28 @@ export default function MisPublicacionesPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${badge.clase}`}>
                       {badge.texto}
                     </span>
-                    {p.completitud_ficha != null && (
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                        Ficha {p.completitud_ficha}% completa
+                    {!faltaFicha && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                        ✓ Ficha completa
                       </span>
                     )}
                   </div>
                   <p className="mt-1 text-lg font-bold text-slate-900">{titulo}</p>
                   <p className="text-sm text-slate-600">${p.precio_usd.toLocaleString("es-EC")}</p>
+
+                  {/* CTA persistente (M2.5): mientras la ficha no esté al 100 %, el dueño
+                      ve cuánto le falta y entra a completarla de un clic. No bloquea nada. */}
+                  {faltaFicha && !fichaVisible && (
+                    <button
+                      type="button"
+                      onClick={() => setFichaAbierta(p.id)}
+                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                    >
+                      Completa tu ficha ({pct} %)
+                      <span aria-hidden>→</span>
+                    </button>
+                  )}
+
                   <div className="mt-2 flex flex-wrap gap-3 text-sm">
                     <Link href={`/marketplace/${p.id}`} className="font-medium text-blue-700 hover:underline">
                       Ver anuncio →
@@ -219,7 +239,14 @@ export default function MisPublicacionesPage() {
                   </button>
                 </div>
               </div>
-              {fichaVisible && <FichaEditor publicacionId={p.id} />}
+              {fichaVisible && (
+                <FichaEditor
+                  publicacionId={p.id}
+                  onCompletitud={(v) =>
+                    setCompletitudes((prev) => ({ ...prev, [p.id]: v }))
+                  }
+                />
+              )}
               {fotosVisible && <GaleriaFotosEditor publicacionId={p.id} />}
             </div>
           );

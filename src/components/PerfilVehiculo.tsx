@@ -1,8 +1,9 @@
 // Perfil Consolidado de Vehículo. Prioriza la lectura: encabezado con el veredicto,
 // enseguida los DATOS DEL AUTO (para identificar el vehículo), luego multas, matrícula
-// y la consulta a portales oficiales (que hoy es lo más útil). Las fuentes que todavía
-// no aportan datos accionables (FGE, EPMTSD-municipal) quedan DESACTIVADAS hasta tener
-// una solución. Paleta sobria: color reservado al estado. Español de Ecuador (tuteo).
+// y la consulta a portales oficiales (que hoy es lo más útil). Las fuentes en stand-by
+// (M2.5: SRI y FGE por captcha) se ocultan por completo — tarjetas, enlaces y chips —
+// según `NEXT_PUBLIC_FUENTES_INACTIVAS` (ver src/lib/fuentes.ts).
+// Paleta sobria: color reservado al estado. Español de Ecuador (tuteo).
 // El frontend solo lee y pinta lo que el backend consolidó (GET /consultar/{placa}/perfil).
 
 "use client";
@@ -18,6 +19,7 @@ import {
   hayFuentesEnProceso,
   marcarFuenteEnProceso,
 } from "@/lib/perfil";
+import { fuenteInactiva } from "@/lib/fuentes";
 import {
   type CategoriaMulta,
   type EstadoFuenteItem,
@@ -34,20 +36,15 @@ const CODIGO_BUNDLE = "reporte_compra_segura";
 
 const INTERVALO_POLLING_MS = 4000;
 
-// Fuentes desactivadas temporalmente: aún no aportan datos accionables para el usuario
-// (FGE pasó a consulta externa por captcha; EPMTSD-municipal solo cubre Santo Domingo).
-// Se ocultan del perfil y del tablero hasta tener una solución para traer esos atributos.
-const FUENTES_INACTIVAS = new Set(["FGE", "EPMTSD"]);
-
 interface Props {
   inicial: VehiculoConsolidado;
 }
 
 // ── Helpers de fuentes no oficiales ─────────────────────────────────────────
 
-// Detalle de multas de fuentes ACTIVAS (excluye las desactivadas, p. ej. EPMTSD).
+// Detalle de multas de fuentes ACTIVAS (excluye las que están en stand-by).
 function multasActivas(perfil: VehiculoConsolidado): MultaDetalle[] {
-  return perfil.multas_detalle.filter((d) => !FUENTES_INACTIVAS.has(d.fuente));
+  return perfil.multas_detalle.filter((d) => !fuenteInactiva(d.fuente));
 }
 
 function MarcaFuente({ fuente }: { fuente: string }) {
@@ -169,7 +166,11 @@ interface Veredicto {
 function calcularVeredicto(perfil: VehiculoConsolidado): Veredicto {
   const activas = multasActivas(perfil);
   const totalMultas = activas.reduce((acc, d) => acc + (d.total_a_pagar_usd ?? 0), 0);
-  const totalSri = perfil.valores_tributarios?.total_a_pagar_usd ?? 0;
+  // Con el SRI en stand-by sus valores no se muestran, así que tampoco suman al total
+  // (mostrar un monto cuya fuente está oculta sería inexplicable para el usuario).
+  const totalSri = fuenteInactiva("SRI")
+    ? 0
+    : (perfil.valores_tributarios?.total_a_pagar_usd ?? 0);
   const multasPendientes = activas.reduce((acc, d) => acc + d.pendientes, 0);
   return {
     // Veredicto GRATIS: lo decide el backend (vale aunque el detalle esté bloqueado).
@@ -416,11 +417,12 @@ function CardMatricula({ perfil, className }: { perfil: VehiculoConsolidado; cla
 }
 
 // ── Valores tributarios (SRI): solo si hay valores en línea ─────────────────
-// Si el SRI es consulta externa (no entrega valores), NO se muestra esta tarjeta;
-// el acceso queda en "Consultar oficial" (que tiene más valor hoy).
+// Si el SRI es consulta externa (no entrega valores), NO se muestra esta tarjeta.
+// Con el SRI en stand-by (M2.5) la tarjeta no se pinta en ningún caso.
 
 function CardValores({ perfil, className }: { perfil: VehiculoConsolidado; className?: string }) {
   const v = perfil.valores_tributarios;
+  if (fuenteInactiva("SRI")) return null;
   if (!v || v.url_consulta != null) return null;
   const conValores = (v.total_a_pagar_usd ?? 0) > 0;
   return (
@@ -504,8 +506,9 @@ function urlConsultasEcuador(perfil: VehiculoConsolidado): string | null {
 
 function derivarEnlaces(perfil: VehiculoConsolidado): EnlaceExterno[] {
   const enlaces: EnlaceExterno[] = [];
+  // SRI en stand-by (M2.5): no se muestra ni su tarjeta passthrough ni su enlace oficial.
   const urlSri = perfil.valores_tributarios?.url_consulta;
-  if (urlSri) {
+  if (urlSri && !fuenteInactiva("SRI")) {
     enlaces.push({
       etiqueta: "Valores del SRI",
       descripcion: "Matrícula e impuestos en el portal oficial",
@@ -513,14 +516,16 @@ function derivarEnlaces(perfil: VehiculoConsolidado): EnlaceExterno[] {
       destacado: true,
     });
   }
-  enlaces.push({
-    etiqueta: "Condición del vehículo",
-    descripcion: "Robo, prendas, remarcado, traspasos y RTV (EPMTSD oficial)",
-    url: URL_EPMTSD_CONDICION,
-    destacado: false,
-  });
+  if (!fuenteInactiva("EPMTSD")) {
+    enlaces.push({
+      etiqueta: "Condición del vehículo",
+      descripcion: "Robo, prendas, remarcado, traspasos y RTV (EPMTSD oficial)",
+      url: URL_EPMTSD_CONDICION,
+      destacado: true,
+    });
+  }
   const urlCe = urlConsultasEcuador(perfil);
-  if (urlCe) {
+  if (urlCe && !fuenteInactiva("ConsultasEcuador")) {
     enlaces.push({
       etiqueta: "VIN / chasis",
       descripcion: "ConsultasEcuador (fuente no oficial)",
@@ -576,8 +581,8 @@ function CardConsultaOficial({
   return (
     <BentoCard titulo="Consultar en portales oficiales" className={className}>
       <p className="mb-4 text-sm leading-relaxed text-slate-500">
-        Los valores del SRI y la condición legal del vehículo se consultan directamente en
-        los portales oficiales (no se pueden automatizar por su captcha).
+        Algunas validaciones se hacen directamente en el portal oficial, porque su captcha
+        no permite automatizarlas. Abren en una pestaña nueva.
       </p>
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
         {enlaces.map((e) => (
@@ -632,7 +637,8 @@ function ChipFuente({ fuente }: { fuente: EstadoFuenteItem }) {
 }
 
 function PieFuentes({ perfil }: { perfil: VehiculoConsolidado }) {
-  const fuentes = perfil.estado_fuentes.filter((f) => !FUENTES_INACTIVAS.has(f.clave));
+  const fuentes = perfil.estado_fuentes.filter((f) => !fuenteInactiva(f.clave));
+  if (fuentes.length === 0) return null;
   return (
     <div className="rounded-2xl border border-slate-200/70 bg-white p-5 sm:p-6 sombra-tarjeta">
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -701,8 +707,12 @@ export function PerfilVehiculo({ inicial }: Props) {
   // Tarjetas accesorias: solo se muestran si traen datos (valores SRI en línea,
   // identificadores ofuscados o titular desbloqueado). Si vienen vacías, no pintamos el bloque.
   const id = perfil.identificacion;
+  // Mismo criterio que CardValores: si el SRI está en stand-by, no hay tarjeta que pintar
+  // (si no, `hayAccesorias` abriría el bloque para dejarlo vacío).
   const hayValoresInline =
-    perfil.valores_tributarios != null && perfil.valores_tributarios.url_consulta == null;
+    !fuenteInactiva("SRI") &&
+    perfil.valores_tributarios != null &&
+    perfil.valores_tributarios.url_consulta == null;
   const hayIdentificacion = !!(
     id.vin_ofuscado || id.numero_motor_ofuscado || id.numero_chasis_ofuscado
   );

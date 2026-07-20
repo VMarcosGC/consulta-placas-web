@@ -99,3 +99,25 @@ export function colorCompletitud(pct: number): string {
   if (pct >= 35) return "bg-amber-500";
   return "bg-rose-500";
 }
+
+// ── Umbrales de completitud (M2.5) ──────────────────────────────────────────
+// Publicar es libre: el vendedor puede posponer la ficha. Pero la transparencia se
+// señaliza — al comprador con una etiqueta honesta, al vendedor con un CTA persistente.
+
+// Bajo este %, el feed y el detalle público muestran "Ficha incompleta" en lugar del
+// chip de porcentaje: un 12 % no informa, y decirlo claro vale más que el número.
+export const UMBRAL_FICHA_INCOMPLETA = 30;
+
+// Mientras la ficha no llegue a este %, el dueño ve el CTA "Completa tu ficha (N %)".
+export const FICHA_COMPLETA = 100;
+
+// Vista del comprador: ¿la ficha aporta tan poco que conviene decirlo? `null` = el
+// vendedor ni siquiera la creó, que es el caso más incompleto de todos.
+export function fichaIncompleta(pct: number | null | undefined): boolean {
+  return (pct ?? 0) < UMBRAL_FICHA_INCOMPLETA;
+}
+
+// Vista del dueño: ¿todavía le falta algo por llenar?
+export function fichaPendiente(pct: number | null | undefined): boolean {
+  return (pct ?? 0) < FICHA_COMPLETA;
+}
