@@ -12,10 +12,21 @@
 // - ListingReferenciadaCard: anuncio externo aportado. Desde M2.9 lleva al detalle LOCAL
 //   (/marketplace/referencias/{id}); salir al portal de origen es un botón aparte, allí.
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Insignia } from "@/components/BentoCard";
+import { BotonFavorito } from "@/components/BotonFavorito";
 import { fichaIncompleta } from "@/lib/ficha";
+import type { ControlFavoritos } from "@/lib/favoritos";
 import type { PublicacionInterna, PublicacionReferenciada } from "@/types/api";
+
+// Extras opcionales del carril comprador (MC1). Son opcionales a propósito: donde la
+// tarjeta ya se usaba sin favoritos (home, mis-publicaciones) se omiten y todo sigue
+// igual. `distintivo` es el espacio del badge "↓ Bajó $X" de "Tus favoritos".
+interface ExtrasComprador {
+  favoritos?: ControlFavoritos;
+  distintivo?: ReactNode;
+}
 
 function precioFmt(v: number | null): string {
   if (v == null) return "Consultar";
@@ -56,7 +67,11 @@ function Portada({ url, alt }: { url?: string | null; alt: string }) {
 
 // ── Publicación interna (Premium / Light) ───────────────────────────────────
 
-export function ListingInternaCard({ pub }: { pub: PublicacionInterna }) {
+export function ListingInternaCard({
+  pub,
+  favoritos,
+  distintivo,
+}: { pub: PublicacionInterna } & ExtrasComprador) {
   const premium = pub.plan === "premium";
   const titulo = tituloVehiculo(pub);
 
@@ -67,13 +82,23 @@ export function ListingInternaCard({ pub }: { pub: PublicacionInterna }) {
         premium ? "ring-2 ring-blue-400/60 shadow-md" : "border border-slate-200"
       }`}
     >
-      <Portada url={pub.foto_portada} alt={titulo} />
+      <div className="relative">
+        <Portada url={pub.foto_portada} alt={titulo} />
+        {favoritos && (
+          <BotonFavorito
+            placa={pub.placa}
+            precioActual={pub.precio_usd}
+            control={favoritos}
+          />
+        )}
+      </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         {/* Precio primero: es lo que decide el clic. */}
         <p className="text-2xl font-black leading-none text-slate-900">
           {precioFmt(pub.precio_usd)}
         </p>
+        {distintivo}
 
         {/* Título en una sola línea + placa discreta. */}
         <div className="min-w-0">
@@ -102,7 +127,11 @@ export function ListingInternaCard({ pub }: { pub: PublicacionInterna }) {
 
 // ── Publicación referenciada (externa) ──────────────────────────────────────
 
-export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada }) {
+export function ListingReferenciadaCard({
+  pub,
+  favoritos,
+  distintivo,
+}: { pub: PublicacionReferenciada } & ExtrasComprador) {
   const titulo = tituloVehiculo(pub);
   // Portada: la primera foto subida por el aportante (M2.8) o, si no, el enlace de imagen.
   const portada = pub.fotos?.[0] ?? pub.imagen_url;
@@ -121,6 +150,15 @@ export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada 
     >
       <div className="relative">
         <Portada url={portada} alt={titulo} />
+        {/* El favorito es por PLACA: una referencia externa sin placa no puede guardarse,
+            así que el ♡ ni se dibuja (mejor ausente que roto). */}
+        {favoritos && pub.placa && (
+          <BotonFavorito
+            placa={pub.placa}
+            precioActual={pub.precio_usd}
+            control={favoritos}
+          />
+        )}
         {/* Cuántas fotos trae, para que se note que hay más al abrir el anuncio. */}
         {(pub.fotos?.length ?? 0) > 1 && (
           <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">
@@ -133,6 +171,7 @@ export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada 
         <p className="text-2xl font-black leading-none text-slate-900">
           {precioFmt(pub.precio_usd)}
         </p>
+        {distintivo}
 
         <div className="min-w-0">
           <h3 className="truncate text-sm font-bold text-slate-900">{titulo}</h3>

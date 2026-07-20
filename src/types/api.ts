@@ -166,6 +166,28 @@ export interface VehiculoCrear {
   ciudad_registro?: string;
 }
 
+// ── Favoritos del usuario ────────────────────────────────────────────────────
+// Mirror de src/modules/vehiculos/schemas/favorito.py del backend.
+// OJO: el favorito es por PLACA (String, no FK), no por publicación. Una placa puede
+// no tener anuncio en nuestro feed y aun así estar en favoritos.
+
+export interface Favorito {
+  id: number;
+  placa: string;
+  nota: string | null;
+  // Precio del anuncio en el momento de guardarlo (Numeric en el backend). Es lo que
+  // habilita el badge de baja de precio: se compara contra el precio actual del feed.
+  // null = se guardó sin referencia de precio → sin badge, silencioso.
+  precio_al_guardar: number | null;
+  creado_en: string;
+}
+
+export interface FavoritoCrear {
+  placa: string;
+  nota?: string;
+  precio_al_guardar?: number;
+}
+
 export class ApiError extends Error {
   constructor(public status: number, message: string, public body?: unknown) {
     super(message);

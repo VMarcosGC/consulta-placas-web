@@ -5,6 +5,8 @@ import {
   ApiError,
   CloudinaryError,
   ConsultaPlacaRespuesta,
+  Favorito,
+  FavoritoCrear,
   FeedMarketplace,
   FichaActualizar,
   FichaSalida,
@@ -162,6 +164,28 @@ export function crearVehiculo(datos: VehiculoCrear) {
 
 export function eliminarVehiculo(id: number) {
   return fetchAPI<void>(`/vehiculos/${id}`, { method: "DELETE" }, true);
+}
+
+// ─── Favoritos (auth) ─────────────────────────────────────
+// El favorito es por PLACA, no por publicación (tabla desacoplada, ver AGENTS §10.4).
+
+export function listarFavoritos() {
+  return fetchAPI<Favorito[]>("/favoritos", {}, true);
+}
+
+// Guarda una placa. `precio_al_guardar` es la foto del precio de hoy: sin él no se
+// puede avisar después de una baja. 409 si la placa ya estaba guardada (idempotente
+// desde la vista del usuario: ya es favorita, que es lo que pidió).
+export function agregarFavorito(datos: FavoritoCrear) {
+  return fetchAPI<Favorito>(
+    "/favoritos",
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function eliminarFavorito(favoritoId: number) {
+  return fetchAPI<void>(`/favoritos/${favoritoId}`, { method: "DELETE" }, true);
 }
 
 // ─── Marketplace ──────────────────────────────────────────

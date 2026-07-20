@@ -1,0 +1,92 @@
+// ♡ favorito con un toque, sobre la foto de portada de cualquier tarjeta (MC1).
+//
+// Dos detalles que lo hacen correcto:
+//   1) La tarjeta entera es un <Link>. Sin preventDefault/stopPropagation, tocar el ♡
+//      navegaría al detalle en vez de guardar. Es un <button> real (no un div) para que
+//      funcione con teclado y lectores de pantalla.
+//   2) El favorito es por PLACA. Una tarjeta sin placa (referencia externa que no la
+//      trae) no puede tener favorito: allí este botón no se renderiza (ver ListingCard).
+
+"use client";
+
+import type { ControlFavoritos } from "@/lib/favoritos";
+
+export function BotonFavorito({
+  placa,
+  precioActual,
+  control,
+}: {
+  placa: string;
+  precioActual: number | null;
+  control: ControlFavoritos;
+}) {
+  const guardado = control.esFavorito(placa);
+  const ocupado = control.ocupado(placa);
+
+  return (
+    <button
+      type="button"
+      aria-label={guardado ? `Quitar ${placa} de tus favoritos` : `Guardar ${placa} en tus favoritos`}
+      aria-pressed={guardado}
+      disabled={ocupado}
+      onClick={(e) => {
+        // La tarjeta es un Link: el toque en el ♡ no debe navegar.
+        e.preventDefault();
+        e.stopPropagation();
+        control.alternar(placa, precioActual);
+      }}
+      className={`absolute right-2 top-2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-lg leading-none shadow-sm ring-1 backdrop-blur transition disabled:opacity-60 ${
+        guardado
+          ? "bg-rose-600 text-white ring-rose-600"
+          : "bg-white/90 text-slate-500 ring-slate-200 hover:text-rose-600"
+      }`}
+    >
+      <span aria-hidden>{guardado ? "♥" : "♡"}</span>
+    </button>
+  );
+}
+
+// Invitación para el visitante anónimo que tocó un ♡. No es un 401 crudo ni una
+// redirección de golpe: se le explica para qué sirve y él decide.
+export function InvitacionFavorito({ onCerrar }: { onCerrar: () => void }) {
+  return (
+    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta">
+      <div className="flex items-start gap-3">
+        <span className="text-2xl leading-none" aria-hidden>
+          ♡
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-slate-900">
+            Guarda este auto para verlo después
+          </p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Crea tu cuenta gratis y arma tu lista. Te avisamos aquí mismo si alguno baja
+            de precio.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href="/registro"
+              className="inline-flex rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white"
+            >
+              Crear cuenta gratis
+            </a>
+            <a
+              href="/login"
+              className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+            >
+              Ya tengo cuenta
+            </a>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onCerrar}
+          aria-label="Cerrar aviso"
+          className="rounded-full px-2 py-1 text-slate-400 hover:text-slate-700"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
