@@ -43,12 +43,22 @@ export function DestacadosMarket() {
             Publicaciones con ficha técnica declarada y datos oficiales de la placa.
           </p>
         </div>
-        <Link
-          href="/marketplace"
-          className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Ver todos →
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {/* Entrada a la vía 3 (referencias) también desde la home: el flujo existe pero
+              nadie lo encontraba si solo vivía dentro de /marketplace (M2.7). */}
+          <Link
+            href="/marketplace/referenciar"
+            className="rounded-full px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900"
+          >
+            🔗 Referenciar anuncio externo
+          </Link>
+          <Link
+            href="/marketplace"
+            className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            Ver todos →
+          </Link>
+        </div>
       </div>
 
       {cargando && <p className="text-slate-500">Cargando publicaciones…</p>}

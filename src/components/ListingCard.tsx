@@ -1,7 +1,15 @@
-// Tarjetas del Marketplace. Reusa la estética vibrante del Perfil (Insignia + sombras).
-// - ListingInternaCard: publicación de un usuario. Premium destaca con anillo de marca,
-//   etiqueta "Verificado por la plataforma" y argumentos extra (mantenimientos).
-// - ListingReferenciadaCard: anuncio raspado de un portal externo (referencia).
+// Tarjetas del Marketplace — rediseño mobile-first (M2.7).
+//
+// Feedback de la prueba: las tarjetas se estiraban con texto secundario y la foto perdía
+// protagonismo. Ahora la jerarquía es: FOTO → PRECIO → título → chips. Nada más.
+//   - Foto de portada con ratio FIJO (4:3) para que la grilla no baile; placeholder si no hay.
+//   - Precio grande, es el dato que decide el clic.
+//   - Título en UNA línea (marca/modelo/año), truncado.
+//   - UNA fila de chips (premium / verificado / ficha) y se acabó.
+//   - Toda la tarjeta es clickeable.
+//
+// - ListingInternaCard: publicación de un usuario (link interno al detalle).
+// - ListingReferenciadaCard: anuncio externo aportado (link vivo al portal de origen).
 
 import Link from "next/link";
 import { Insignia } from "@/components/BentoCard";
@@ -21,123 +29,81 @@ function tituloVehiculo(
   return partes.length ? partes.join(" ") : "Vehículo en venta";
 }
 
-// ── Publicación interna (Premium / Light) ───────────────────────────────────
-
-export function ListingInternaCard({
-  pub,
-  onEliminar,
-}: {
-  pub: PublicacionInterna;
-  onEliminar?: (id: number) => void;
-}) {
-  const premium = pub.plan === "premium";
-  const m = pub.mantenimientos;
-
+// Portada con ratio fijo: con foto o con placeholder, la tarjeta mide siempre igual.
+function Portada({ url, alt }: { url?: string | null; alt: string }) {
   return (
-    <article
-      className={`relative flex flex-col overflow-hidden rounded-2xl bg-white sombra-tarjeta animate-fade-in-up ${
-        premium
-          ? "ring-2 ring-blue-400/60 shadow-md"
-          : "border border-slate-200"
-      }`}
-    >
-      {premium && (
-        <span className="block h-1.5 w-full bg-brand-gradient" aria-hidden />
-      )}
-      {/* Portada: la primera foto de la publicación (M2), si el vendedor subió alguna. */}
-      {pub.foto_portada && (
+    <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+      {url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={pub.foto_portada}
-          alt={tituloVehiculo(pub)}
-          className="h-44 w-full object-cover"
+          src={url}
+          alt={alt}
           loading="lazy"
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
         />
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-slate-300">
+          <span className="text-3xl" aria-hidden>
+            🚗
+          </span>
+          <span className="text-[11px] font-medium">Sin fotos</span>
+        </div>
       )}
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+    </div>
+  );
+}
+
+// ── Publicación interna (Premium / Light) ───────────────────────────────────
+
+export function ListingInternaCard({ pub }: { pub: PublicacionInterna }) {
+  const premium = pub.plan === "premium";
+  const titulo = tituloVehiculo(pub);
+
+  return (
+    <Link
+      href={`/marketplace/${pub.id}`}
+      className={`group flex flex-col overflow-hidden rounded-2xl bg-white sombra-tarjeta animate-fade-in-up transition hover:-translate-y-0.5 ${
+        premium ? "ring-2 ring-blue-400/60 shadow-md" : "border border-slate-200"
+      }`}
+    >
+      <Portada url={pub.foto_portada} alt={titulo} />
+
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        {/* Precio primero: es lo que decide el clic. */}
+        <p className="text-2xl font-black leading-none text-slate-900">
+          {precioFmt(pub.precio_usd)}
+        </p>
+
+        {/* Título en una sola línea + placa discreta. */}
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-bold text-slate-900">{titulo}</h3>
+          <p className="font-mono text-xs tracking-widest text-slate-400">{pub.placa}</p>
+        </div>
+
+        {/* Una fila de chips y nada más. */}
+        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
           {premium && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-brand-gradient px-2.5 py-0.5 text-xs font-black text-white">
+            <span className="inline-flex items-center rounded-full bg-brand-gradient px-2 py-0.5 text-[11px] font-black text-white">
               ★ Premium
             </span>
           )}
-          {pub.verificado && (
-            <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>
-          )}
-          {pub.estado_verificacion === "pendiente" && (
-            <Insignia tono="info">Verificación pendiente</Insignia>
-          )}
-          {pub.estado !== "activa" && (
-            <Insignia tono="neutro">{pub.estado}</Insignia>
-          )}
-          {/* Transparencia (M2.5): bajo el umbral, un porcentaje bajo no informa —
-              decimos "Ficha incompleta", que es lo que el comprador necesita saber. */}
+          {pub.verificado && <Insignia tono="ok">✓ Verificado</Insignia>}
           {fichaIncompleta(pub.completitud_ficha) ? (
             <Insignia tono="neutro">Ficha incompleta</Insignia>
           ) : (
-            <Insignia tono="info">Ficha {pub.completitud_ficha ?? 0}% completa</Insignia>
-          )}
-        </div>
-
-        <h3 className="text-lg font-bold text-slate-900">{tituloVehiculo(pub)}</h3>
-        <p className="font-mono text-sm tracking-widest text-slate-400">{pub.placa}</p>
-
-        {pub.descripcion && (
-          <p className="mt-2 line-clamp-2 text-sm text-slate-500">{pub.descripcion}</p>
-        )}
-
-        {/* Argumentos premium: historial de mantenimientos del garage */}
-        {premium && m && m.total > 0 && (
-          <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              Historial documentado
-            </p>
-            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
-              <span>
-                <span className="font-bold text-slate-900">{m.total}</span> mantenimiento
-                {m.total === 1 ? "" : "s"}
-              </span>
-              {m.ultimo_kilometraje != null && (
-                <span>
-                  Último: <span className="font-bold text-slate-900">
-                    {m.ultimo_kilometraje.toLocaleString("es-EC")} km
-                  </span>
-                </span>
-              )}
-              {m.ultima_fecha && <span>· {m.ultima_fecha}</span>}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-auto flex items-end justify-between gap-2 pt-4">
-          <p className="text-2xl font-black text-slate-900">{precioFmt(pub.precio_usd)}</p>
-          {onEliminar ? (
-            <button
-              type="button"
-              onClick={() => onEliminar(pub.id)}
-              className="rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
-            >
-              Eliminar
-            </button>
-          ) : (
-            <Link
-              href={`/marketplace/${pub.id}`}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-blue-400 hover:text-blue-700"
-            >
-              Ver detalle →
-            </Link>
+            <Insignia tono="info">Ficha {pub.completitud_ficha ?? 0}%</Insignia>
           )}
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
 // ── Publicación referenciada (externa) ──────────────────────────────────────
 
 export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada }) {
-  // Toda la tarjeta es un enlace vivo al anuncio original (Facebook/OLX/…): al
-  // hacer clic abre la publicación de origen en una pestaña nueva.
+  const titulo = tituloVehiculo(pub);
+  // Toda la tarjeta es un enlace vivo al anuncio original (Facebook/OLX/…).
   return (
     <a
       href={pub.url_externa}
@@ -145,32 +111,25 @@ export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada 
       rel="noopener noreferrer"
       className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sombra-tarjeta animate-fade-in-up transition hover:-translate-y-0.5 hover:border-blue-300"
     >
-      {/* Foto del anuncio si el aportante la pegó. */}
-      {pub.imagen_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={pub.imagen_url}
-          alt={tituloVehiculo(pub)}
-          className="h-44 w-full object-cover"
-          loading="lazy"
-        />
-      )}
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        {/* Etiqueta obligatoria (M2.5): copy exacto. La referencia la aporta un usuario y
-            NO la raspamos ni la validamos — el comprador debe saberlo antes de hacer clic. */}
-        <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          <Insignia tono="alerta">Referencia externa · datos no verificados</Insignia>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-            {pub.fuente}
-          </span>
+      <Portada url={pub.imagen_url} alt={titulo} />
+
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <p className="text-2xl font-black leading-none text-slate-900">
+          {precioFmt(pub.precio_usd)}
+        </p>
+
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-bold text-slate-900">{titulo}</h3>
+          {pub.placa && (
+            <p className="font-mono text-xs tracking-widest text-slate-400">{pub.placa}</p>
+          )}
         </div>
-        <h3 className="text-base font-bold text-slate-900">{tituloVehiculo(pub)}</h3>
-        {pub.placa && (
-          <p className="font-mono text-sm tracking-widest text-slate-400">{pub.placa}</p>
-        )}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-4">
-          <p className="text-xl font-black text-slate-900">{precioFmt(pub.precio_usd)}</p>
-          <span className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition group-hover:border-blue-400 group-hover:text-blue-700">
+
+        {/* Etiqueta obligatoria (M2.5), copy exacto: la referencia la aporta un usuario y
+            NO la raspamos ni la validamos. */}
+        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
+          <Insignia tono="alerta">Referencia externa · datos no verificados</Insignia>
+          <span className="text-[11px] font-semibold text-slate-500 group-hover:text-blue-700">
             Ver en {pub.fuente} ↗
           </span>
         </div>

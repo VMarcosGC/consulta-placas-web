@@ -190,24 +190,38 @@ export default function MisPublicacionesPage() {
                     </button>
                   )}
 
-                  <div className="mt-2 flex flex-wrap gap-3 text-sm">
-                    <Link href={`/marketplace/${p.id}`} className="font-medium text-blue-700 hover:underline">
-                      Ver anuncio →
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => setFichaAbierta(fichaVisible ? null : p.id)}
-                      className="font-medium text-slate-600 hover:text-slate-900"
-                    >
-                      {fichaVisible ? "Cerrar ficha técnica" : "Editar ficha técnica"}
-                    </button>
+                  {/* Acciones VISIBLES (M2.7): antes eran enlaces de texto y el vendedor no
+                      encontraba cómo subir fotos sin rehacer el wizard. Ahora son botones
+                      con el mismo peso que las demás acciones de la tarjeta. */}
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setFotosAbierta(fotosVisible ? null : p.id)}
-                      className="font-medium text-slate-600 hover:text-slate-900"
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                        fotosVisible
+                          ? "border-blue-400 bg-blue-50 text-blue-800"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
                     >
-                      {fotosVisible ? "Cerrar fotos" : "Gestionar fotos"}
+                      📷 {fotosVisible ? "Cerrar fotos" : "Fotos"}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setFichaAbierta(fichaVisible ? null : p.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                        fichaVisible
+                          ? "border-blue-400 bg-blue-50 text-blue-800"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      📋 {fichaVisible ? "Cerrar ficha" : "Ficha técnica"}
+                    </button>
+                    <Link
+                      href={`/marketplace/${p.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Ver anuncio →
+                    </Link>
                   </div>
                 </div>
                 <div className="flex flex-row gap-2 sm:flex-col">

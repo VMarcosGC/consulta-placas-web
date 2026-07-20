@@ -1,11 +1,14 @@
-// Detalle público de una publicación del marketplace: el anuncio (título, precio,
-// marca/modelo/año, sello "Verificado", resumen de mantenimientos) + la ficha técnica
-// por bloques (Motor y suspensión / Carrocería / Interiores / Extras) con barra de
-// completitud. Anónimo (sin sesión). 404 si no existe o no está activa.
+// Detalle público de una publicación — rediseño mobile-first (M2.7).
 //
-// Regla del proyecto: el frontend NO transforma datos; solo lee y pinta lo que el
-// backend consolida. Los estados/booleanos declarativos llevan "declarado por el
-// vendedor" porque la plataforma no los verifica.
+// Jerarquía de lectura: FOTO → PRECIO/título/CTA → ficha técnica → datos oficiales → extras.
+//   - Galería arriba, con swipe horizontal en móvil (scroll-snap, sin librerías).
+//   - Bloque de precio + título + acciones visible sin scroll en un celular.
+//   - Ficha técnica en tarjetas por bloque, cada una con su ícono.
+//   - "Datos oficiales" va en versión MINI (3-4 líneas) con enlace a la consulta completa.
+//
+// Regla del proyecto: el frontend NO transforma datos; solo lee y pinta lo que el backend
+// consolida. Los estados/booleanos declarativos llevan "declarado por el vendedor" porque
+// la plataforma no los verifica.
 
 "use client";
 
@@ -13,13 +16,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BentoCard, Insignia } from "@/components/BentoCard";
-import {
-  consultarPerfil,
-  listarMisPublicaciones,
-  obtenerPublicacionDetalle,
-} from "@/lib/api";
+import { DatosOficialesMini } from "@/components/DatosOficialesMini";
+import { listarMisPublicaciones, obtenerPublicacionDetalle } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
-import { fuenteInactiva } from "@/lib/fuentes";
 import {
   COMBUSTIBLE_LABEL,
   ESTADO_COMPONENTE_LABEL,
@@ -39,7 +38,6 @@ import {
   FichaSalida,
   FotoSalida,
   PublicacionDetalle,
-  VehiculoConsolidado,
 } from "@/types/api";
 
 function precioFmt(v: number | null): string {
@@ -88,38 +86,122 @@ function ValorBool({ valor }: { valor: boolean }) {
   return <span>{valor ? "Sí" : "No"}</span>;
 }
 
-// Un bloque de la ficha; si no tiene ningún dato, no se renderiza.
+// Un bloque de la ficha, con su ícono. Si no tiene ningún dato, no se renderiza.
 function BloqueFicha({
   titulo,
+  icono,
   vacio,
   children,
 }: {
   titulo: string;
+  icono: string;
   vacio: boolean;
   children: React.ReactNode;
 }) {
   if (vacio) return null;
   return (
-    <BentoCard titulo={titulo}>
+    <BentoCard
+      titulo={titulo}
+      badge={
+        <span className="text-lg" aria-hidden>
+          {icono}
+        </span>
+      }
+    >
       <dl>{children}</dl>
     </BentoCard>
   );
 }
 
-// ── Sección de ficha completa ───────────────────────────────────────────────
+// ── Galería (arriba del todo; swipe horizontal en móvil) ────────────────────
+
+function Galeria({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
+  const [activa, setActiva] = useState(0);
+
+  if (fotos.length === 0) {
+    return (
+      <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 text-slate-300 sm:aspect-[16/8]">
+        <span className="text-5xl" aria-hidden>
+          🚗
+        </span>
+        <span className="text-xs font-medium">El vendedor aún no subió fotos</span>
+      </div>
+    );
+  }
+
+  const principal = fotos[Math.min(activa, fotos.length - 1)];
+  return (
+    <div>
+      {/* Móvil: carrusel con scroll-snap (swipe nativo, sin librerías).
+          Desde sm: una foto principal grande y las miniaturas debajo. */}
+      {/* tabIndex + role: el contenedor con scroll debe poder recorrerse con teclado. */}
+      <div
+        tabIndex={0}
+        role="group"
+        aria-label={`Fotos de ${titulo}: desliza para verlas`}
+        className="-mx-6 flex snap-x snap-mandatory gap-2 overflow-x-auto px-6 pb-2 sm:hidden"
+      >
+        {fotos.map((f, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={f.id}
+            src={f.url}
+            alt={`Foto ${i + 1} de ${titulo}`}
+            className="aspect-[4/3] w-[85%] shrink-0 snap-center rounded-2xl object-cover"
+          />
+        ))}
+      </div>
+
+      <div className="hidden sm:block">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 sombra-tarjeta">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={principal.url}
+            alt={`Foto de ${titulo}`}
+            className="aspect-[16/9] w-full object-cover"
+          />
+        </div>
+        {fotos.length > 1 && (
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {fotos.map((f, i) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setActiva(i)}
+                className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                  i === activa ? "border-blue-500" : "border-transparent hover:border-slate-300"
+                }`}
+                aria-label={`Ver foto ${i + 1} de ${fotos.length}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f.url} alt={`Miniatura ${i + 1}`} className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {fotos.length > 1 && (
+        <p className="mt-2 text-center text-[11px] text-slate-400 sm:hidden">
+          Desliza para ver las {fotos.length} fotos
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Ficha técnica ───────────────────────────────────────────────────────────
 
 function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
   const ms = ficha.motor_suspension;
   const ca = ficha.carroceria;
   const it = ficha.interiores;
-  const tieneAlgo =
-    ms != null || ca != null || it != null || ficha.extras.length > 0;
+  const tieneAlgo = ms != null || ca != null || it != null || ficha.extras.length > 0;
 
   return (
     <section className="mt-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold text-slate-900">Ficha técnica</h2>
-        {/* Bajo el umbral el porcentaje no aporta; se dice claro (M2.5). */}
         {fichaIncompleta(ficha.completitud) ? (
           <Insignia tono="alerta">Ficha incompleta</Insignia>
         ) : (
@@ -127,22 +209,20 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
         )}
       </div>
 
-      {!tieneAlgo && (
+      {!tieneAlgo ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
           <p className="text-slate-600">
             El vendedor aún no completó la ficha técnica de este vehículo.
           </p>
         </div>
-      )}
-
-      {tieneAlgo && (
+      ) : (
         <>
           <p className="mb-4 text-xs text-slate-400">
-            Los datos de estado y condición son declarados por el vendedor; la plataforma
-            no los verifica.
+            Los datos de estado y condición son declarados por el vendedor; la plataforma no
+            los verifica.
           </p>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <BloqueFicha titulo="Motor y suspensión" vacio={ms == null}>
+            <BloqueFicha titulo="Motor y suspensión" icono="⚙️" vacio={ms == null}>
               {ms?.combustible && (
                 <Fila etiqueta="Combustible">{COMBUSTIBLE_LABEL[ms.combustible]}</Fila>
               )}
@@ -171,16 +251,12 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
               {ms?.cambios_recientes && (
                 <Fila etiqueta="Cambios recientes">{ms.cambios_recientes}</Fila>
               )}
-              {ms?.observaciones && (
-                <Fila etiqueta="Observaciones">{ms.observaciones}</Fila>
-              )}
+              {ms?.observaciones && <Fila etiqueta="Observaciones">{ms.observaciones}</Fila>}
             </BloqueFicha>
 
-            <BloqueFicha titulo="Carrocería" vacio={ca == null}>
+            <BloqueFicha titulo="Carrocería" icono="🚙" vacio={ca == null}>
               {ca?.tipo && <Fila etiqueta="Tipo">{TIPO_CARROCERIA_LABEL[ca.tipo]}</Fila>}
-              {ca?.numero_puertas != null && (
-                <Fila etiqueta="Puertas">{ca.numero_puertas}</Fila>
-              )}
+              {ca?.numero_puertas != null && <Fila etiqueta="Puertas">{ca.numero_puertas}</Fila>}
               {ca?.color && <Fila etiqueta="Color">{ca.color}</Fila>}
               {ca?.estado_pintura && (
                 <Fila etiqueta="Estado de la pintura" sensible>
@@ -202,12 +278,10 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
                   <ValorEstado estado={ca.estado_general} />
                 </Fila>
               )}
-              {ca?.observaciones && (
-                <Fila etiqueta="Observaciones">{ca.observaciones}</Fila>
-              )}
+              {ca?.observaciones && <Fila etiqueta="Observaciones">{ca.observaciones}</Fila>}
             </BloqueFicha>
 
-            <BloqueFicha titulo="Interiores" vacio={it == null}>
+            <BloqueFicha titulo="Interiores" icono="🪑" vacio={it == null}>
               {it?.material_asientos && (
                 <Fila etiqueta="Material de asientos">
                   {MATERIAL_ASIENTOS_LABEL[it.material_asientos]}
@@ -223,21 +297,24 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
                   <ValorBool valor={it.aire_acondicionado} />
                 </Fila>
               )}
-              {it?.sistema_audio && (
-                <Fila etiqueta="Sistema de audio">{it.sistema_audio}</Fila>
-              )}
+              {it?.sistema_audio && <Fila etiqueta="Sistema de audio">{it.sistema_audio}</Fila>}
               {it?.estado_tablero && (
                 <Fila etiqueta="Estado del tablero" sensible>
                   <ValorEstado estado={it.estado_tablero} />
                 </Fila>
               )}
-              {it?.observaciones && (
-                <Fila etiqueta="Observaciones">{it.observaciones}</Fila>
-              )}
+              {it?.observaciones && <Fila etiqueta="Observaciones">{it.observaciones}</Fila>}
             </BloqueFicha>
 
             {ficha.extras.length > 0 && (
-              <BentoCard titulo="Extras">
+              <BentoCard
+                titulo="Extras"
+                badge={
+                  <span className="text-lg" aria-hidden>
+                    ✨
+                  </span>
+                }
+              >
                 <ul className="space-y-2">
                   {ficha.extras.map((e, i) => (
                     <li key={i} className="rounded-xl bg-slate-50 px-3 py-2">
@@ -273,208 +350,6 @@ function BarraCompletitud({ pct }: { pct: number }) {
   );
 }
 
-// ── Galería de fotos (solo lectura, vista pública) ──────────────────────────
-
-function GaleriaFotos({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
-  const [activa, setActiva] = useState(0);
-  if (fotos.length === 0) return null;
-  const principal = fotos[Math.min(activa, fotos.length - 1)];
-  return (
-    <section className="mt-6">
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 sombra-tarjeta">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={principal.url}
-          alt={`Foto del ${titulo}`}
-          className="max-h-[28rem] w-full object-contain"
-        />
-      </div>
-      {fotos.length > 1 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {fotos.map((f, i) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setActiva(i)}
-              className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                i === activa ? "border-blue-500" : "border-transparent hover:border-slate-300"
-              }`}
-              aria-label={`Ver foto ${i + 1} de ${fotos.length}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={f.url} alt={`Miniatura ${i + 1}`} className="h-full w-full object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-// ── Datos oficiales (M2.6) ──────────────────────────────────────────────────
-// Contracara de la ficha: esto NO lo declara el vendedor, sale de las fuentes públicas.
-// Se consume el perfil consolidado de la placa del anuncio y se muestran SOLO las fuentes
-// activas (las que están en stand-by por captcha se ocultan, igual que en la consulta).
-// El detalle de multas con montos es un microdesbloqueo de pago: aquí solo se muestra el
-// veredicto gratis (sí/no) para no regalar lo que se cobra en /consultar.
-
-// Fecha legible es-EC a partir del ISO que manda el backend ("consultado el …").
-function fechaLegible(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("es-EC", { day: "2-digit", month: "long", year: "numeric" });
-}
-
-function SelloConsulta({ iso }: { iso: string | null | undefined }) {
-  const fecha = fechaLegible(iso);
-  if (!fecha) return null;
-  return <p className="mt-2 text-[11px] text-slate-400">Consultado el {fecha}</p>;
-}
-
-function DatosOficiales({ placa }: { placa: string }) {
-  const [perfil, setPerfil] = useState<VehiculoConsolidado | null>(null);
-  const [cargando, setCargando] = useState(true);
-
-  useEffect(() => {
-    let activo = true;
-    (async () => {
-      try {
-        const p = await consultarPerfil(placa);
-        if (activo) setPerfil(p);
-      } catch {
-        // Silencioso: la sección degrada a "en proceso". Nunca rompe el anuncio.
-      } finally {
-        if (activo) setCargando(false);
-      }
-    })();
-    return () => {
-      activo = false;
-    };
-  }, [placa]);
-
-  // Estado por fuente, ya filtrado por el stand-by (SRI/FGE fuera).
-  const fuentes = (perfil?.estado_fuentes ?? []).filter((f) => !fuenteInactiva(f.clave));
-  const ant = fuentes.find((f) => f.clave === "ANT");
-  const amt = fuentes.find((f) => f.clave === "AMT");
-  const b = perfil?.datos_basicos;
-
-  const hayMatricula = !!(b?.fecha_matricula || b?.fecha_caducidad);
-  const multas = (perfil?.multas_detalle ?? []).filter((d) => !fuenteInactiva(d.fuente));
-  const antResuelta = ant?.estado === "completada" || ant?.estado === "sin_resultados";
-
-  // Las infracciones municipales llegan por el worker y pueden seguir en camino. Mientras
-  // tanto NO se puede afirmar "Al día": el veredicto estaría incompleto y, en un anuncio de
-  // venta, ese falso negativo favorece al vendedor. Se muestra un estado neutro.
-  const municipalesEnProceso = ["AMT", "EPMTSD"].some(
-    (clave) => fuentes.find((f) => f.clave === clave)?.estado === "en_proceso"
-  );
-
-  // "En proceso": todavía no hay NADA que mostrar. Basta con que la ANT haya resuelto (o
-  // que haya matrícula/multas) para pintar la sección, aunque el municipio siga cargando.
-  const enProceso =
-    cargando || (!antResuelta && !hayMatricula && multas.length === 0);
-
-  return (
-    <section className="mt-8">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-bold text-slate-900">Datos oficiales</h2>
-        <Insignia tono="info">Fuentes públicas</Insignia>
-      </div>
-      <p className="mb-4 text-xs text-slate-500">
-        Esto no lo declara el vendedor: viene de las fuentes públicas del Estado (ANT y las
-        agencias municipales de tránsito).
-      </p>
-
-      {enProceso ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
-          <p className="font-semibold text-slate-700">Datos oficiales en proceso</p>
-          <p className="mt-1 text-sm text-slate-500">
-            Estamos consultando las fuentes públicas para esta placa. Vuelve en un momento.
-          </p>
-          <Link
-            href={`/consultar/${encodeURIComponent(placa)}`}
-            className="mt-4 inline-flex text-sm font-semibold text-blue-700 hover:underline"
-          >
-            Consultar la placa por mi cuenta →
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {/* Matriculación (ANT) */}
-          {hayMatricula && (
-            <BentoCard
-              titulo="Matrícula (ANT)"
-              badge={
-                b?.matricula_vigente == null ? undefined : b.matricula_vigente ? (
-                  <Insignia tono="ok">Vigente</Insignia>
-                ) : (
-                  <Insignia tono="peligro">Vencida</Insignia>
-                )
-              }
-            >
-              <dl>
-                {b?.fecha_matricula && (
-                  <Fila etiqueta="Matriculado">{b.fecha_matricula}</Fila>
-                )}
-                {b?.fecha_caducidad && <Fila etiqueta="Vence">{b.fecha_caducidad}</Fila>}
-              </dl>
-              <SelloConsulta iso={ant?.consultado_en} />
-            </BentoCard>
-          )}
-
-          {/* Multas e infracciones (ANT + AMT). El detalle con montos es de pago: si viene
-              bloqueado mostramos solo el veredicto y enviamos a la consulta. */}
-          <BentoCard
-            titulo="Multas e infracciones"
-            cargando={municipalesEnProceso}
-            badge={
-              // Con el municipio aún consultando solo se afirma lo que ya se sabe: si hay
-              // pendientes, se dice; si no, se calla hasta tener la foto completa.
-              perfil?.tiene_pendientes ? (
-                <Insignia tono="alerta">Con pendientes</Insignia>
-              ) : municipalesEnProceso ? (
-                <Insignia tono="neutro">Consultando…</Insignia>
-              ) : (
-                <Insignia tono="ok">Al día</Insignia>
-              )
-            }
-          >
-            {perfil?.multas_bloqueado || multas.length === 0 ? (
-              <p className="text-sm text-slate-600">
-                {perfil?.tiene_pendientes
-                  ? "Este vehículo tiene multas o infracciones registradas."
-                  : municipalesEnProceso
-                    ? "Ya tenemos las citaciones de la ANT. Seguimos consultando las infracciones municipales."
-                    : "Sin multas ni infracciones pendientes."}
-              </p>
-            ) : (
-              <dl>
-                {multas.map((d) => (
-                  <Fila key={d.fuente} etiqueta={`${d.ambito} (${d.fuente})`}>
-                    {d.pendientes > 0 ? `${d.pendientes} pendientes` : "Sin registros"}
-                  </Fila>
-                ))}
-              </dl>
-            )}
-            {/* Sin el municipio resuelto no se estampa fecha: sellar con la hora de la ANT
-                daría una sensación de completitud que todavía no existe. */}
-            <SelloConsulta
-              iso={municipalesEnProceso ? null : (amt?.consultado_en ?? ant?.consultado_en)}
-            />
-            <Link
-              href={`/consultar/${encodeURIComponent(placa)}`}
-              className="mt-3 inline-flex text-sm font-semibold text-blue-700 hover:underline"
-            >
-              Ver el detalle completo de la placa →
-            </Link>
-          </BentoCard>
-        </div>
-      )}
-    </section>
-  );
-}
-
 // ── Página ──────────────────────────────────────────────────────────────────
 
 export default function PublicacionDetallePage() {
@@ -485,8 +360,8 @@ export default function PublicacionDetallePage() {
   const [cargando, setCargando] = useState(true);
   const [noEncontrada, setNoEncontrada] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // ¿El visitante es el dueño de este anuncio? Solo entonces mostramos el CTA de la ficha.
-  // La página es pública, así que se resuelve en el cliente y solo si hay sesión.
+  // ¿El visitante es el dueño? Solo entonces se muestra el CTA de la ficha.
+  // La página es pública: se resuelve en el cliente y solo si hay sesión.
   const [esMia, setEsMia] = useState(false);
 
   useEffect(() => {
@@ -518,8 +393,6 @@ export default function PublicacionDetallePage() {
     };
   }, [id]);
 
-  // Propiedad del anuncio: se compara contra "mis publicaciones". Si falla o no hay sesión,
-  // simplemente no se muestra el CTA (la vista pública queda igual).
   useEffect(() => {
     if (!tieneSesion() || !Number.isInteger(id) || id <= 0) return;
     let activo = true;
@@ -539,7 +412,7 @@ export default function PublicacionDetallePage() {
   const pctFicha = pub?.ficha?.completitud ?? pub?.completitud_ficha ?? 0;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-5xl px-6 py-6 sm:py-10">
       <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
         ← Volver al marketplace
       </Link>
@@ -548,12 +421,8 @@ export default function PublicacionDetallePage() {
 
       {noEncontrada && !cargando && (
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-          <p className="text-lg font-semibold text-slate-700">
-            No encontramos esta publicación.
-          </p>
-          <p className="mt-1 text-slate-500">
-            Puede que ya no esté disponible o se haya pausado.
-          </p>
+          <p className="text-lg font-semibold text-slate-700">No encontramos esta publicación.</p>
+          <p className="mt-1 text-slate-500">Puede que ya no esté disponible o se haya pausado.</p>
           <Link
             href="/marketplace"
             className="mt-4 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
@@ -571,27 +440,54 @@ export default function PublicacionDetallePage() {
 
       {pub && !cargando && (
         <>
-          <header className="mt-4">
+          {/* 1. FOTO: lo primero que se ve. */}
+          <div className="mt-4">
+            <Galeria fotos={pub.fotos} titulo={tituloVehiculo(pub)} />
+          </div>
+
+          {/* 2. PRECIO + título + acciones: entra sin scroll en un celular. */}
+          <header className="mt-5">
             <div className="flex flex-wrap items-center gap-1.5">
               {pub.plan === "premium" && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-brand-gradient px-2.5 py-0.5 text-xs font-black text-white">
+                <span className="inline-flex items-center rounded-full bg-brand-gradient px-2.5 py-0.5 text-xs font-black text-white">
                   ★ Premium
                 </span>
               )}
-              {pub.verificado && (
-                <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>
-              )}
+              {pub.verificado && <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>}
+              {fichaIncompleta(pctFicha) && <Insignia tono="alerta">Ficha incompleta</Insignia>}
             </div>
-            <h1 className="mt-3 text-3xl font-black text-slate-900">{tituloVehiculo(pub)}</h1>
-            <p className="mt-1 font-mono text-sm tracking-widest text-slate-400">{pub.placa}</p>
 
-            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-              <p className="text-4xl font-black text-slate-900">{precioFmt(pub.precio_usd)}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
-                {pub.marca && <span>Marca: <b className="text-slate-700">{pub.marca}</b></span>}
-                {pub.modelo && <span>Modelo: <b className="text-slate-700">{pub.modelo}</b></span>}
-                {pub.anio != null && <span>Año: <b className="text-slate-700">{pub.anio}</b></span>}
-              </div>
+            <p className="mt-3 text-4xl font-black leading-none text-slate-900 sm:text-5xl">
+              {precioFmt(pub.precio_usd)}
+            </p>
+            <h1 className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">
+              {tituloVehiculo(pub)}
+            </h1>
+            <p className="mt-0.5 font-mono text-sm tracking-widest text-slate-400">{pub.placa}</p>
+
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+              {pub.marca && <span>Marca: <b className="text-slate-700">{pub.marca}</b></span>}
+              {pub.modelo && <span>Modelo: <b className="text-slate-700">{pub.modelo}</b></span>}
+              {pub.anio != null && <span>Año: <b className="text-slate-700">{pub.anio}</b></span>}
+            </div>
+
+            {/* CTA principal. El contacto con el vendedor llega en M5; por ahora la acción
+                de más valor para el comprador es verificar la placa en las fuentes. */}
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Link
+                href={`/consultar/${encodeURIComponent(pub.placa)}`}
+                className="rounded-full bg-brand-gradient px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              >
+                Verificar esta placa
+              </Link>
+              {esMia && (
+                <Link
+                  href="/marketplace/mis-publicaciones"
+                  className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Editar mi anuncio
+                </Link>
+              )}
             </div>
 
             {pub.descripcion && (
@@ -599,9 +495,9 @@ export default function PublicacionDetallePage() {
             )}
           </header>
 
-          {/* CTA persistente del dueño (M2.5): solo lo ve él, y solo mientras falte ficha. */}
+          {/* CTA persistente del dueño (M2.5): solo lo ve él, y solo si falta ficha. */}
           {esMia && fichaPendiente(pctFicha) && (
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <div>
                 <p className="text-sm font-semibold text-amber-800">
                   Completa tu ficha ({pctFicha} %)
@@ -619,10 +515,29 @@ export default function PublicacionDetallePage() {
             </div>
           )}
 
-          {/* Galería de fotos (si el vendedor subió alguna) */}
-          <GaleriaFotos fotos={pub.fotos} titulo={tituloVehiculo(pub)} />
+          {/* 3. FICHA TÉCNICA: lo que declara el vendedor. */}
+          {pub.ficha ? (
+            <FichaTecnica ficha={pub.ficha} />
+          ) : (
+            <section className="mt-8">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-slate-900">Ficha técnica</h2>
+                <Insignia tono="alerta">Ficha incompleta</Insignia>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
+                <p className="text-slate-600">
+                  El vendedor aún no completó la ficha técnica de este vehículo.
+                </p>
+              </div>
+            </section>
+          )}
 
-          {/* Resumen de mantenimientos documentados (argumento premium) */}
+          {/* 4. DATOS OFICIALES (mini): la contracara, con enlace al detalle completo. */}
+          <div className="mt-8">
+            <DatosOficialesMini placa={pub.placa} />
+          </div>
+
+          {/* 5. EXTRAS: historial documentado (argumento premium). */}
           {pub.mantenimientos && pub.mantenimientos.total > 0 && (
             <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -645,25 +560,6 @@ export default function PublicacionDetallePage() {
                 {pub.mantenimientos.ultima_fecha && <span>· {pub.mantenimientos.ultima_fecha}</span>}
               </div>
             </div>
-          )}
-
-          {/* Datos oficiales: la contracara de lo declarado por el vendedor. */}
-          <DatosOficiales placa={pub.placa} />
-
-          {pub.ficha ? (
-            <FichaTecnica ficha={pub.ficha} />
-          ) : (
-            <section className="mt-8">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-bold text-slate-900">Ficha técnica</h2>
-                <Insignia tono="alerta">Ficha incompleta</Insignia>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
-                <p className="text-slate-600">
-                  El vendedor aún no completó la ficha técnica de este vehículo.
-                </p>
-              </div>
-            </section>
           )}
         </>
       )}

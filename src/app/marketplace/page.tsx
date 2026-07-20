@@ -76,18 +76,15 @@ export default function MarketplacePage() {
             placa. También hay referencias de portales externos, sin verificar.
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        {/* Dos formas de aportar un auto (M2.7: el flujo de referencias existía pero no
+            se descubría). Publicar es la acción principal; referenciar va al lado, con su
+            propia explicación, no escondido entre botones iguales. */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Link
             href="/marketplace/mis-publicaciones"
             className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           >
             Mis publicaciones
-          </Link>
-          <Link
-            href="/marketplace/referenciar"
-            className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-          >
-            🔗 Referenciar anuncio
           </Link>
           <Link
             href="/marketplace/publicar"
@@ -97,6 +94,33 @@ export default function MarketplacePage() {
           </Link>
         </div>
       </header>
+
+      {/* Entrada explícita a la vía 3 de publicación: referenciar un anuncio externo. */}
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-800">
+            🔗 ¿Viste un auto en Facebook u OLX?
+          </p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Pega el link y lo sumamos al feed como referencia externa. No hace falta que sea
+            tuyo y es gratis.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/marketplace/mis-referencias"
+            className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+          >
+            Mis referencias
+          </Link>
+          <Link
+            href="/marketplace/referenciar"
+            className="inline-flex shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            Referenciar anuncio externo
+          </Link>
+        </div>
+      </div>
 
       {cargando && <p className="text-slate-500">Cargando publicaciones…</p>}
       {error && (

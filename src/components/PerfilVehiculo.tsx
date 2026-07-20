@@ -1,9 +1,13 @@
-// Perfil Consolidado de Vehículo. Prioriza la lectura: encabezado con el veredicto,
-// enseguida los DATOS DEL AUTO (para identificar el vehículo), luego multas, matrícula
-// y la consulta a portales oficiales (que hoy es lo más útil). Las fuentes en stand-by
-// (M2.5: SRI y FGE por captcha) se ocultan por completo — tarjetas, enlaces y chips —
-// según `NEXT_PUBLIC_FUENTES_INACTIVAS` (ver src/lib/fuentes.ts).
-// Paleta sobria: color reservado al estado. Español de Ecuador (tuteo).
+// Perfil Consolidado de Vehículo — vista COMPACTA (M2.7).
+//
+// Feedback de la prueba: la consulta era demasiado extensa y abrumaba. Ahora:
+//   1. Arriba, una sola tarjeta-resumen "de un vistazo" (ResumenPlaca): máximo 6 datos.
+//   2. Todo el detalle (desglose por fuente, citación por citación, matriculación,
+//      identificadores, tablero de fuentes) vive en ACORDEONES CERRADOS por default.
+//   3. La sección de desbloqueos con tokens queda visible: es una acción, no un párrafo.
+//
+// Las fuentes en stand-by (SRI/FGE por captcha) se ocultan por completo según
+// `NEXT_PUBLIC_FUENTES_INACTIVAS` (ver src/lib/fuentes.ts).
 // El frontend solo lee y pinta lo que el backend consolidó (GET /consultar/{placa}/perfil).
 
 "use client";
@@ -11,7 +15,9 @@
 import { useEffect, useState } from "react";
 import { consultarPerfil, reintentarFuente } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
-import { BentoCard, Insignia, type TonoInsignia } from "@/components/BentoCard";
+import { Insignia, type TonoInsignia } from "@/components/BentoCard";
+import { Acordeon } from "@/components/Acordeon";
+import { ResumenPlaca, derivarResumen } from "@/components/ResumenPlaca";
 import { ProductoConsultaCard } from "@/components/ProductoConsultaCard";
 import { ReporteCompraSeguraCard } from "@/components/ReporteCompraSeguraCard";
 import {
@@ -40,7 +46,7 @@ interface Props {
   inicial: VehiculoConsolidado;
 }
 
-// ── Helpers de fuentes no oficiales ─────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 // Detalle de multas de fuentes ACTIVAS (excluye las que están en stand-by).
 function multasActivas(perfil: VehiculoConsolidado): MultaDetalle[] {
@@ -77,55 +83,6 @@ function BotonReintentar({
   );
 }
 
-// "Completa tu revisión del vehículo": lista las tarjetas de desbloqueo disponibles y aún no
-// pagadas. Cada tarjeta cobra tokens y revela su sección sin recargar la página. Una vez
-// desbloqueado, el dato se muestra en su tarjeta dedicada (Identificación, Titular, Multas) y
-// el producto sale de esta sección. Copy en es-EC, sin lenguaje agresivo.
-function CompletaTuRevision({
-  perfil,
-  onUnlocked,
-}: {
-  perfil: VehiculoConsolidado;
-  onUnlocked: AlDesbloquear;
-}) {
-  const porCodigo = (codigo: string) => perfil.productos?.find((p) => p.codigo === codigo);
-  // Solo bloques disponibles y todavía no desbloqueados.
-  const pendientes = PRODUCTOS_REVISION.map(porCodigo).filter(
-    (p): p is NonNullable<typeof p> => !!p && p.disponible && !p.desbloqueado
-  );
-  const bundle = porCodigo(CODIGO_BUNDLE);
-  const mostrarBundle = !!bundle && bundle.disponible && !bundle.desbloqueado;
-
-  if (pendientes.length === 0 && !mostrarBundle) return null;
-
-  return (
-    <section className="rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 sombra-tarjeta">
-      <div className="mb-1 flex items-center gap-2">
-        <h2 className="text-lg font-bold text-slate-900">Completa tu revisión del vehículo</h2>
-      </div>
-      <p className="mb-5 text-sm text-slate-500">
-        Desbloquea solo lo que necesitas. Pagas con tokens — los datos públicos de arriba son gratis.
-      </p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {pendientes.map((p) => (
-          <ProductoConsultaCard
-            key={p.codigo}
-            placa={perfil.placa}
-            producto={p}
-            perfil={perfil}
-            onUnlocked={onUnlocked}
-          />
-        ))}
-      </div>
-      {mostrarBundle && (
-        <div className="mt-4">
-          <ReporteCompraSeguraCard placa={perfil.placa} producto={bundle} onUnlocked={onUnlocked} />
-        </div>
-      )}
-    </section>
-  );
-}
-
 function SkeletonLista({ filas = 2 }: { filas?: number }) {
   return (
     <div className="animate-pulse space-y-2" aria-busy="true" aria-live="polite">
@@ -154,125 +111,51 @@ function Dato({
   );
 }
 
-// ── Veredicto global (solo fuentes activas) ─────────────────────────────────
+// ── Desbloqueos con tokens (visible: es acción, no detalle) ──────────────────
 
-interface Veredicto {
-  tienePendientes: boolean;
-  totalAPagar: number;
-  multasPendientes: number;
-  detalleDisponible: boolean;
-}
-
-function calcularVeredicto(perfil: VehiculoConsolidado): Veredicto {
-  const activas = multasActivas(perfil);
-  const totalMultas = activas.reduce((acc, d) => acc + (d.total_a_pagar_usd ?? 0), 0);
-  // Con el SRI en stand-by sus valores no se muestran, así que tampoco suman al total
-  // (mostrar un monto cuya fuente está oculta sería inexplicable para el usuario).
-  const totalSri = fuenteInactiva("SRI")
-    ? 0
-    : (perfil.valores_tributarios?.total_a_pagar_usd ?? 0);
-  const multasPendientes = activas.reduce((acc, d) => acc + d.pendientes, 0);
-  return {
-    // Veredicto GRATIS: lo decide el backend (vale aunque el detalle esté bloqueado).
-    tienePendientes: perfil.tiene_pendientes,
-    totalAPagar: totalMultas + totalSri,
-    multasPendientes,
-    // Los montos/conteos solo se conocen si el detalle de multas está desbloqueado.
-    detalleDisponible: !perfil.multas_bloqueado,
-  };
-}
-
-function Metrica({ label, valor, alerta }: { label: string; valor: string; alerta?: boolean }) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-wide text-slate-400">{label}</p>
-      <p className={`mt-0.5 text-2xl font-bold tabular-nums ${alerta ? "text-amber-600" : "text-slate-900"}`}>
-        {valor}
-      </p>
-    </div>
-  );
-}
-
-// ── Encabezado (nombre legible en móvil + veredicto) ────────────────────────
-
-function Encabezado({ perfil, cargando }: { perfil: VehiculoConsolidado; cargando: boolean }) {
-  const b = perfil.datos_basicos;
-  const titulo = [b.marca, b.modelo].filter(Boolean).join(" ") || "Vehículo";
-  const v = calcularVeredicto(perfil);
-
-  const pill = cargando
-    ? { clase: "bg-slate-100 text-slate-500", texto: "Consultando…", icono: null }
-    : v.tienePendientes
-      ? { clase: "bg-amber-500 text-white", texto: "Con pendientes", icono: "⚠" }
-      : { clase: "bg-emerald-500 text-white", texto: "Limpio", icono: "✓" };
-
-  // Métricas con cifras solo si el detalle de multas está desbloqueado; si no, el
-  // veredicto (pill) ya comunica "con pendientes / limpio" sin revelar montos.
-  const hayMetricas =
-    !cargando && v.detalleDisponible && (v.totalAPagar > 0 || v.multasPendientes > 0);
-
-  return (
-    <div className="rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 sombra-tarjeta">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Perfil del vehículo
-          </p>
-          {/* break-words + sin truncate: el nombre se lee completo en móvil. */}
-          <h1 className="mt-1.5 text-2xl font-extrabold leading-tight tracking-tight text-slate-900 break-words sm:text-4xl">
-            {titulo}
-          </h1>
-          <p className="mt-1.5 font-mono text-sm tracking-[0.3em] text-slate-400">{perfil.placa}</p>
-        </div>
-        <span
-          className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full px-5 py-2.5 text-sm font-bold ${pill.clase}`}
-        >
-          {cargando && <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />}
-          {pill.icono && <span className="text-base leading-none">{pill.icono}</span>}
-          {pill.texto}
-        </span>
-      </div>
-
-      {hayMetricas && (
-        <div className="mt-6 grid max-w-xs grid-cols-2 gap-4 border-t border-slate-100 pt-5">
-          <Metrica
-            label="A pagar"
-            valor={v.totalAPagar > 0 ? `$${v.totalAPagar.toFixed(0)}` : "—"}
-            alerta={v.totalAPagar > 0}
-          />
-          <Metrica label="Multas" valor={String(v.multasPendientes)} alerta={v.multasPendientes > 0} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Datos del auto (enseguida del nombre, para identificar el vehículo) ──────
-
-function CardDatos({
+function CompletaTuRevision({
   perfil,
-  className,
+  onUnlocked,
 }: {
   perfil: VehiculoConsolidado;
-  className?: string;
+  onUnlocked: AlDesbloquear;
 }) {
-  const b = perfil.datos_basicos;
-  // Datos públicos GRATIS (Fase 2.5): marca/modelo/año/color/clase/servicio vienen de la
-  // fuente pública (ANT) y no se cobran. La vigencia de matrícula también es gratis.
+  const porCodigo = (codigo: string) => perfil.productos?.find((p) => p.codigo === codigo);
+  const pendientes = PRODUCTOS_REVISION.map(porCodigo).filter(
+    (p): p is NonNullable<typeof p> => !!p && p.disponible && !p.desbloqueado
+  );
+  const bundle = porCodigo(CODIGO_BUNDLE);
+  const mostrarBundle = !!bundle && bundle.disponible && !bundle.desbloqueado;
+
+  if (pendientes.length === 0 && !mostrarBundle) return null;
+
   return (
-    <BentoCard titulo="Datos del auto" className={className}>
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
-        <Dato label="Año" valor={b.anio} />
-        <Dato label="Color" valor={b.color} />
-        <Dato label="Clase" valor={b.clase} />
-        <Dato label="Servicio" valor={b.servicio} />
-        {b.pais_origen && <Dato label="Origen" valor={b.pais_origen} />}
-      </dl>
-    </BentoCard>
+    <section className="rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 sombra-tarjeta">
+      <h2 className="text-lg font-bold text-slate-900">Completa tu revisión del vehículo</h2>
+      <p className="mb-5 mt-1 text-sm text-slate-500">
+        Desbloquea solo lo que necesitas. Pagas con tokens — los datos de arriba son gratis.
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {pendientes.map((p) => (
+          <ProductoConsultaCard
+            key={p.codigo}
+            placa={perfil.placa}
+            producto={p}
+            perfil={perfil}
+            onUnlocked={onUnlocked}
+          />
+        ))}
+      </div>
+      {mostrarBundle && (
+        <div className="mt-4">
+          <ReporteCompraSeguraCard placa={perfil.placa} producto={bundle} onUnlocked={onUnlocked} />
+        </div>
+      )}
+    </section>
   );
 }
 
-// ── Multas e infracciones (fuentes activas: ANT, AMT) ───────────────────────
+// ── Cuerpos del detalle (van DENTRO de los acordeones) ───────────────────────
 
 function PildoraCategoria({ cat }: { cat: CategoriaMulta }) {
   const esPendiente = cat.etiqueta.toLowerCase().startsWith("pendiente");
@@ -315,57 +198,34 @@ function BloqueMulta({ d }: { d: MultaDetalle }) {
   );
 }
 
-function CardMultas({
+function CuerpoMultas({
   perfil,
   cargandoAmt,
   amtErrorFuente,
   onReintentar,
   reintentando,
-  className,
 }: {
   perfil: VehiculoConsolidado;
   cargandoAmt: boolean;
   amtErrorFuente: boolean;
   onReintentar: () => void;
   reintentando: boolean;
-  className?: string;
 }) {
-  // Bloqueado: el teaser solo dice si hay pendientes (gratis); el detalle con montos
-  // se desbloquea en "Completa tu revisión del vehículo" (producto `multas_con_montos`).
+  // Bloqueado: el teaser solo dice si hay pendientes (gratis); el detalle con montos se
+  // desbloquea en "Completa tu revisión del vehículo" (producto `multas_con_montos`).
   if (perfil.multas_bloqueado) {
     return (
-      <BentoCard
-        titulo="Multas e infracciones"
-        cargando={cargandoAmt}
-        badge={
-          perfil.tiene_pendientes ? (
-            <Insignia tono="alerta">Con pendientes</Insignia>
-          ) : (
-            <Insignia tono="ok">Al día</Insignia>
-          )
-        }
-        className={className}
-      >
-        <p className="text-sm text-slate-600">
-          {perfil.tiene_pendientes
-            ? "Este vehículo tiene multas o infracciones registradas. Desbloquea el detalle con montos por fuente más abajo."
-            : "Sin multas ni infracciones pendientes. Desbloquea el detalle completo si quieres confirmarlo."}
-        </p>
-      </BentoCard>
+      <p className="text-sm text-slate-600">
+        {perfil.tiene_pendientes
+          ? "Este vehículo tiene multas o infracciones registradas. Desbloquea el detalle con montos por fuente más arriba."
+          : "Sin multas ni infracciones pendientes. Desbloquea el detalle completo si quieres confirmarlo."}
+      </p>
     );
   }
 
   const detalle = multasActivas(perfil);
-  const totalPend = detalle.reduce((acc, d) => acc + d.pendientes, 0);
-  const badge =
-    detalle.length === 0 && cargandoAmt ? undefined : totalPend > 0 ? (
-      <Insignia tono="alerta">{totalPend} pendientes</Insignia>
-    ) : (
-      <Insignia tono="ok">Al día</Insignia>
-    );
-
   return (
-    <BentoCard titulo="Multas e infracciones" cargando={cargandoAmt} badge={badge} className={className}>
+    <>
       {amtErrorFuente && (
         <div className="mb-3 rounded-xl border border-rose-100 bg-rose-50/70 p-3">
           <p className="text-xs text-rose-600">
@@ -390,105 +250,91 @@ function CardMultas({
           {cargandoAmt && <SkeletonLista filas={1} />}
         </div>
       )}
-    </BentoCard>
+    </>
   );
 }
 
-// ── Matrícula ───────────────────────────────────────────────────────────────
-
-function CardMatricula({ perfil, className }: { perfil: VehiculoConsolidado; className?: string }) {
+function CuerpoMatriculacion({ perfil }: { perfil: VehiculoConsolidado }) {
   const b = perfil.datos_basicos;
-  let tono: TonoInsignia = "neutro";
-  let etiqueta = "—";
-  if (b.fecha_caducidad) {
-    const vence = new Date(b.fecha_caducidad);
-    const vencida = !Number.isNaN(vence.getTime()) && vence < new Date();
-    tono = vencida ? "peligro" : "ok";
-    etiqueta = vencida ? "Vencida" : "Vigente";
-  }
   return (
-    <BentoCard titulo="Matrícula" className={className} badge={<Insignia tono={tono}>{etiqueta}</Insignia>}>
-      <dl className="space-y-4">
-        <Dato label="Matriculado" valor={b.fecha_matricula} />
-        <Dato label="Vence" valor={b.fecha_caducidad} />
-      </dl>
-    </BentoCard>
+    <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+      <Dato label="Matriculado" valor={b.fecha_matricula} />
+      <Dato label="Vence" valor={b.fecha_caducidad} />
+      <Dato label="Clase" valor={b.clase} />
+      <Dato label="Servicio" valor={b.servicio} />
+      <Dato label="Año" valor={b.anio} />
+      <Dato label="Color" valor={b.color} />
+      {b.pais_origen && <Dato label="Origen" valor={b.pais_origen} />}
+    </dl>
   );
 }
 
-// ── Valores tributarios (SRI): solo si hay valores en línea ─────────────────
-// Si el SRI es consulta externa (no entrega valores), NO se muestra esta tarjeta.
-// Con el SRI en stand-by (M2.5) la tarjeta no se pinta en ningún caso.
-
-function CardValores({ perfil, className }: { perfil: VehiculoConsolidado; className?: string }) {
-  const v = perfil.valores_tributarios;
-  if (fuenteInactiva("SRI")) return null;
-  if (!v || v.url_consulta != null) return null;
-  const conValores = (v.total_a_pagar_usd ?? 0) > 0;
-  return (
-    <BentoCard
-      titulo="Valores SRI"
-      className={className}
-      badge={<Insignia tono={conValores ? "alerta" : "ok"}>{conValores ? "Con valores" : "Al día"}</Insignia>}
-    >
-      <dl className="space-y-4">
-        <Dato label="Matrícula" valor={v.matricula_usd != null ? `$${v.matricula_usd.toFixed(2)}` : null} />
-        <Dato label="Total a pagar" valor={v.total_a_pagar_usd != null ? `$${v.total_a_pagar_usd.toFixed(2)}` : null} />
-      </dl>
-    </BentoCard>
-  );
-}
-
-// ── Identificación (VIN/motor/chasis ofuscados): solo si hay datos ──────────
-
-function CardIdentificacion({
-  perfil,
-  className,
-}: {
-  perfil: VehiculoConsolidado;
-  className?: string;
-}) {
+// Identificadores + titular + valores en línea. Solo se llama si hay algo que mostrar.
+function CuerpoIdentificacion({ perfil }: { perfil: VehiculoConsolidado }) {
   const id = perfil.identificacion;
-  const hayDatos =
-    !!id.vin_ofuscado || !!id.numero_motor_ofuscado || !!id.numero_chasis_ofuscado;
-  if (!hayDatos) return null;
-  return (
-    <BentoCard
-      titulo="Identificación"
-      className={className}
-      badge={id.bloqueado ? <Insignia tono="neutro">🔒 ofuscado</Insignia> : <Insignia tono="ok">visible</Insignia>}
-    >
-      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Dato label="VIN" valor={id.vin ?? id.vin_ofuscado} />
-        <Dato label="N° motor" valor={id.numero_motor ?? id.numero_motor_ofuscado} />
-        <Dato label="N° chasis" valor={id.numero_chasis ?? id.numero_chasis_ofuscado} />
-      </dl>
-    </BentoCard>
-  );
-}
-
-// Titular: solo se muestra cuando está desbloqueado (validado/ofuscado, nunca el nombre
-// completo). Si está bloqueado, su CTA vive en "Completa tu revisión".
-function CardTitular({ perfil, className }: { perfil: VehiculoConsolidado; className?: string }) {
   const t = perfil.titular;
-  if (t.bloqueado || !t.disponible) return null;
+  const v = perfil.valores_tributarios;
+  const hayIdent = !!(id.vin_ofuscado || id.numero_motor_ofuscado || id.numero_chasis_ofuscado);
+  const hayTitular = !t.bloqueado && t.disponible;
+  const hayValores = !fuenteInactiva("SRI") && v != null && v.url_consulta == null;
+
   return (
-    <BentoCard
-      titulo="Titular"
-      className={className}
-      badge={t.validado ? <Insignia tono="ok">validado</Insignia> : <Insignia tono="neutro">sin validar</Insignia>}
-    >
-      <dl className="space-y-3">
-        <Dato label="Titular registrado" valor={t.nombre_ofuscado ?? "—"} />
-      </dl>
-      <p className="mt-2 text-xs text-slate-400">
-        {t.mensaje ?? "Mostramos solo una validación; nunca el dato personal completo."}
-      </p>
-    </BentoCard>
+    <div className="space-y-5">
+      {hayIdent && (
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Identificación</p>
+            {id.bloqueado ? (
+              <Insignia tono="neutro">🔒 ofuscado</Insignia>
+            ) : (
+              <Insignia tono="ok">visible</Insignia>
+            )}
+          </div>
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Dato label="VIN" valor={id.vin ?? id.vin_ofuscado} />
+            <Dato label="N° motor" valor={id.numero_motor ?? id.numero_motor_ofuscado} />
+            <Dato label="N° chasis" valor={id.numero_chasis ?? id.numero_chasis_ofuscado} />
+          </dl>
+        </div>
+      )}
+
+      {hayTitular && (
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">Titular</p>
+            {t.validado ? (
+              <Insignia tono="ok">validado</Insignia>
+            ) : (
+              <Insignia tono="neutro">sin validar</Insignia>
+            )}
+          </div>
+          <Dato label="Titular registrado" valor={t.nombre_ofuscado ?? "—"} />
+          <p className="mt-2 text-xs text-slate-400">
+            {t.mensaje ?? "Mostramos solo una validación; nunca el dato personal completo."}
+          </p>
+        </div>
+      )}
+
+      {hayValores && (
+        <div>
+          <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-400">Valores SRI</p>
+          <dl className="grid grid-cols-2 gap-4">
+            <Dato
+              label="Matrícula"
+              valor={v!.matricula_usd != null ? `$${v!.matricula_usd.toFixed(2)}` : null}
+            />
+            <Dato
+              label="Total a pagar"
+              valor={v!.total_a_pagar_usd != null ? `$${v!.total_a_pagar_usd.toFixed(2)}` : null}
+            />
+          </dl>
+        </div>
+      )}
+    </div>
   );
 }
 
-// ── Consulta a portales oficiales (subida: hoy es lo más útil) ──────────────
+// ── Enlaces a portales oficiales ────────────────────────────────────────────
 
 interface EnlaceExterno {
   etiqueta: string;
@@ -537,13 +383,15 @@ function derivarEnlaces(perfil: VehiculoConsolidado): EnlaceExterno[] {
 }
 
 function BotonEnlace({ e }: { e: EnlaceExterno }) {
+  const base =
+    "group flex items-center justify-between gap-2 rounded-xl px-4 py-3 transition";
   if (e.destacado) {
     return (
       <a
         href={e.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-between gap-2 rounded-xl bg-brand-gradient px-4 py-3 text-white shadow-sm transition hover:opacity-90"
+        className={`${base} bg-brand-gradient text-white shadow-sm hover:opacity-90`}
       >
         <span className="min-w-0">
           <span className="block text-sm font-bold">{e.etiqueta} ↗</span>
@@ -557,7 +405,7 @@ function BotonEnlace({ e }: { e: EnlaceExterno }) {
       href={e.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300 hover:bg-slate-50"
+      className={`${base} border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50`}
     >
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-slate-900">
@@ -570,30 +418,7 @@ function BotonEnlace({ e }: { e: EnlaceExterno }) {
   );
 }
 
-function CardConsultaOficial({
-  enlaces,
-  className,
-}: {
-  enlaces: EnlaceExterno[];
-  className?: string;
-}) {
-  if (enlaces.length === 0) return null;
-  return (
-    <BentoCard titulo="Consultar en portales oficiales" className={className}>
-      <p className="mb-4 text-sm leading-relaxed text-slate-500">
-        Algunas validaciones se hacen directamente en el portal oficial, porque su captcha
-        no permite automatizarlas. Abren en una pestaña nueva.
-      </p>
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-        {enlaces.map((e) => (
-          <BotonEnlace key={e.url} e={e} />
-        ))}
-      </div>
-    </BentoCard>
-  );
-}
-
-// ── Pie: tablero de fuentes (solo activas) ──────────────────────────────────
+// ── Tablero de fuentes ──────────────────────────────────────────────────────
 
 const ETIQUETA_ESTADO: Record<string, string> = {
   completada: "lista",
@@ -633,23 +458,6 @@ function ChipFuente({ fuente }: { fuente: EstadoFuenteItem }) {
         </span>
       )}
     </span>
-  );
-}
-
-function PieFuentes({ perfil }: { perfil: VehiculoConsolidado }) {
-  const fuentes = perfil.estado_fuentes.filter((f) => !fuenteInactiva(f.clave));
-  if (fuentes.length === 0) return null;
-  return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white p-5 sm:p-6 sombra-tarjeta">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
-        Fuentes consultadas
-      </h3>
-      <div className="flex flex-wrap gap-2">
-        {fuentes.map((f) => (
-          <ChipFuente key={f.clave} fuente={f} />
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -702,59 +510,97 @@ export function PerfilVehiculo({ inicial }: Props) {
     setReintentando(false);
   }
 
+  const r = derivarResumen(perfil);
   const enlaces = derivarEnlaces(perfil);
+  const fuentes = perfil.estado_fuentes.filter((f) => !fuenteInactiva(f.clave));
 
-  // Tarjetas accesorias: solo se muestran si traen datos (valores SRI en línea,
-  // identificadores ofuscados o titular desbloqueado). Si vienen vacías, no pintamos el bloque.
   const id = perfil.identificacion;
-  // Mismo criterio que CardValores: si el SRI está en stand-by, no hay tarjeta que pintar
-  // (si no, `hayAccesorias` abriría el bloque para dejarlo vacío).
-  const hayValoresInline =
-    !fuenteInactiva("SRI") &&
-    perfil.valores_tributarios != null &&
-    perfil.valores_tributarios.url_consulta == null;
-  const hayIdentificacion = !!(
+  const hayIdent = !!(
     id.vin_ofuscado || id.numero_motor_ofuscado || id.numero_chasis_ofuscado
   );
   const hayTitular = !perfil.titular.bloqueado && perfil.titular.disponible;
-  const hayAccesorias = hayValoresInline || hayIdentificacion || hayTitular;
+  const hayValores =
+    !fuenteInactiva("SRI") &&
+    perfil.valores_tributarios != null &&
+    perfil.valores_tributarios.url_consulta == null;
+  const hayAccesorias = hayIdent || hayTitular || hayValores;
+
+  const amtErrorFuente = estadoDeFuente(perfil, "AMT") === "error_fuente";
+
+  // Pista en el encabezado del acordeón de multas, para no obligar a abrirlo.
+  // Orden importante: primero los casos donde NO se puede afirmar el veredicto (fuente en
+  // camino o caída). Decir "al día" con el municipio caído sería un falso negativo.
+  const resumenMultas: { texto: string; tono: TonoInsignia } = r.municipalesEnProceso
+    ? { texto: "consultando…", tono: "neutro" }
+    : r.municipalesCaidas
+      ? { texto: "sin dato municipal", tono: "alerta" }
+      : r.detalleBloqueado
+        ? { texto: r.tienePendientes ? "con pendientes" : "al día", tono: r.tienePendientes ? "alerta" : "ok" }
+        : (r.multasPendientes ?? 0) > 0
+          ? { texto: `${r.multasPendientes} pendientes`, tono: "alerta" }
+          : { texto: "al día", tono: "ok" };
 
   return (
-    <div className="space-y-5">
-      <Encabezado perfil={perfil} cargando={cargando} />
+    <div className="space-y-4">
+      {/* 1. De un vistazo: casi siempre, esto es todo lo que el usuario necesita leer. */}
+      <ResumenPlaca placa={perfil.placa} perfil={perfil} cargando={cargando} />
 
-      {/* Datos del auto enseguida del nombre, para identificar el vehículo. */}
-      <CardDatos perfil={perfil} />
-
-      {/* Multas e infracciones (izquierda) + Matrícula (derecha) en un mismo bloque. */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <CardMultas
-          perfil={perfil}
-          cargandoAmt={estadoDeFuente(perfil, "AMT") === "en_proceso"}
-          amtErrorFuente={estadoDeFuente(perfil, "AMT") === "error_fuente"}
-          onReintentar={reintentarAmt}
-          reintentando={reintentando}
-          className="md:col-span-2"
-        />
-        <CardMatricula perfil={perfil} />
-      </div>
-
-      {/* Completa tu revisión: tarjetas de desbloqueo con tokens (preview gratis arriba). */}
+      {/* 2. Acción (desbloqueos con tokens): visible, no es "detalle". */}
       <CompletaTuRevision perfil={perfil} onUnlocked={setPerfil} />
 
-      {/* Consulta oficial: subida porque hoy es lo más útil. */}
-      <CardConsultaOficial enlaces={enlaces} />
+      {/* 3. Detalle: TODO plegado y cerrado por default. */}
+      <Acordeon
+        titulo="Ver detalle de multas"
+        resumen={<Insignia tono={resumenMultas.tono}>{resumenMultas.texto}</Insignia>}
+        // Con la fuente caída, el botón de reintentar vive dentro: se abre solo para que
+        // no quede escondido tras un acordeón cerrado.
+        abiertoPorDefecto={amtErrorFuente}
+      >
+        <CuerpoMultas
+          perfil={perfil}
+          cargandoAmt={estadoDeFuente(perfil, "AMT") === "en_proceso"}
+          amtErrorFuente={amtErrorFuente}
+          onReintentar={reintentarAmt}
+          reintentando={reintentando}
+        />
+      </Acordeon>
 
-      {/* Accesorias, solo si traen datos (ya desbloqueados o con preview ofuscado). */}
+      <Acordeon
+        titulo="Ver datos de matriculación"
+        resumen={<Insignia tono={r.matriculaTono}>{r.matriculaEtiqueta}</Insignia>}
+      >
+        <CuerpoMatriculacion perfil={perfil} />
+      </Acordeon>
+
       {hayAccesorias && (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <CardValores perfil={perfil} />
-          <CardIdentificacion perfil={perfil} className="lg:col-span-2" />
-          <CardTitular perfil={perfil} className="lg:col-span-3" />
-        </div>
+        <Acordeon titulo="Ver identificación y titular">
+          <CuerpoIdentificacion perfil={perfil} />
+        </Acordeon>
       )}
 
-      <PieFuentes perfil={perfil} />
+      {enlaces.length > 0 && (
+        <Acordeon titulo="Consultar en portales oficiales">
+          <p className="mb-4 text-sm leading-relaxed text-slate-500">
+            Algunas validaciones se hacen directamente en el portal oficial, porque su
+            captcha no permite automatizarlas. Abren en una pestaña nueva.
+          </p>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            {enlaces.map((e) => (
+              <BotonEnlace key={e.url} e={e} />
+            ))}
+          </div>
+        </Acordeon>
+      )}
+
+      {fuentes.length > 0 && (
+        <Acordeon titulo="Ver fuentes consultadas">
+          <div className="flex flex-wrap gap-2">
+            {fuentes.map((f) => (
+              <ChipFuente key={f.clave} fuente={f} />
+            ))}
+          </div>
+        </Acordeon>
+      )}
     </div>
   );
 }
