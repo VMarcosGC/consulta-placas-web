@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   eliminarFoto,
   firmarSubidaFoto,
-  obtenerPublicacionDetalle,
+  obtenerMiPublicacionDetalle,
   registrarFoto,
   reordenarFotos,
   subirACloudinary,
@@ -42,13 +42,14 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
     let activo = true;
     (async () => {
       try {
-        const detalle = await obtenerPublicacionDetalle(publicacionId);
+        // Endpoint de DUEÑO: permite gestionar fotos de un borrador o de una publicación
+        // pausada, no solo de las activas (M2.8).
+        const detalle = await obtenerMiPublicacionDetalle(publicacionId);
         if (activo) setFotos(detalle.fotos);
       } catch (err) {
         if (!activo) return;
-        // 404 si la publicación no está activa (mismo límite que el editor de ficha).
         if (err instanceof ApiError && err.status === 404) {
-          setAviso("Para gestionar las fotos, la publicación debe estar activa.");
+          setAviso("No encontramos esta publicación o no es tuya.");
         } else {
           setError("No pudimos cargar las fotos. Intenta recargar.");
         }

@@ -310,7 +310,9 @@ export interface VehiculoConsolidado {
 // Refleja src/modules/marketplace/schemas.py del backend.
 
 export type PlanPublicacion = "light" | "premium";
-export type EstadoPublicacion = "activa" | "pausada" | "vendida";
+// `borrador` (M2.8) es el estado inicial: solo lo ve su dueño, nunca el feed ni la URL
+// pública. Pasa a `activa` cuando la ficha llega al umbral de publicación.
+export type EstadoPublicacion = "borrador" | "activa" | "pausada" | "vendida";
 export type EstadoVerificacion = "no_verificado" | "pendiente" | "verificado" | "rechazado";
 
 export interface ResumenMantenimientos {
@@ -354,6 +356,12 @@ export interface PublicacionReferenciada {
   fuente: string;
   url_externa: string;
   imagen_url: string | null;
+  // Referencias ricas (M2.8): el aportante copia el detalle del anuncio original.
+  // Siguen siendo datos NO verificados por la plataforma.
+  descripcion?: string | null;
+  ciudad?: string | null;
+  kilometraje?: number | null;
+  fotos?: string[];
   // El feed público solo trae aprobadas; "mias" puede traer cualquier estado.
   estado_moderacion: EstadoModeracion;
   activa: boolean;
@@ -371,7 +379,15 @@ export interface ReferenciaCrear {
   precio_usd?: number;
   imagen_url?: string;
   placa?: string;
+  // Campos ricos (M2.8), todos opcionales. `fotos`: máx. 5 (el backend valida).
+  descripcion?: string;
+  ciudad?: string;
+  kilometraje?: number;
+  fotos?: string[];
 }
+
+// Tope de fotos por referencia externa. Espejo de MAX_FOTOS_REFERENCIA del backend.
+export const MAX_FOTOS_REFERENCIA = 5;
 
 export interface FeedMarketplace {
   premium: PublicacionInterna[];

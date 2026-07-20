@@ -13,14 +13,23 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { consultarPlaca, crearPublicacion, listarVehiculos } from "@/lib/api";
+import {
+  consultarPlaca,
+  crearPublicacion,
+  listarVehiculos,
+  publicarBorrador,
+} from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import { FichaEditor } from "@/components/FichaEditor";
 import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
-import { colorCompletitud } from "@/lib/ficha";
+import {
+  UMBRAL_FICHA_PUBLICACION,
+  colorCompletitud,
+  puedePublicar,
+} from "@/lib/ficha";
 import { ApiError, PlanPublicacion, Vehiculo } from "@/types/api";
 
 type Paso = 1 | 2 | 3;
@@ -80,16 +89,25 @@ function Stepper({ paso }: { paso: Paso }) {
 
 // ── Paso 1: datos básicos ───────────────────────────────────────────────────
 
-function PasoDatos({ onCreada }: { onCreada: (id: number) => void }) {
+function PasoDatos({
+  onCreada,
+}: {
+  onCreada: (id: number, plan: PlanPublicacion) => void;
+}) {
   const router = useRouter();
+  const params = useSearchParams();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
 
-  const [placa, setPlaca] = useState("");
+  // Prellenado desde "Publicar este auto" del garage (M2.8): ?placa=...&vehiculo=...
+  const placaInicial = (params.get("placa") ?? "").toUpperCase();
+  const vehiculoInicial = Number(params.get("vehiculo")) || null;
+
+  const [placa, setPlaca] = useState(placaInicial);
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [precio, setPrecio] = useState("");
   const [plan, setPlan] = useState<PlanPublicacion>("light");
-  const [vehiculoId, setVehiculoId] = useState<number | null>(null);
+  const [vehiculoId, setVehiculoId] = useState<number | null>(vehiculoInicial);
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,7 +171,7 @@ function PasoDatos({ onCreada }: { onCreada: (id: number) => void }) {
       });
 
       // Corazón del wizard: en vez de mandarlo al feed, lo llevamos a la ficha.
-      onCreada(pub.id);
+      onCreada(pub.id, plan);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401) {
@@ -307,10 +325,10 @@ function PasoDatos({ onCreada }: { onCreada: (id: number) => void }) {
         disabled={enviando}
         className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {enviando ? "Publicando…" : "Continuar a la ficha técnica →"}
+        {enviando ? "Guardando…" : "Continuar a la ficha técnica →"}
       </button>
       <p className="text-center text-xs text-slate-400">
-        Creamos tu publicación y sigues con la ficha. Puedes completarla después.
+        Guardamos tu anuncio como borrador. Nadie lo ve hasta que tú lo publiques.
       </p>
     </form>
   );
@@ -323,10 +341,84 @@ export default function PublicarPage() {
   const [paso, setPaso] = useState<Paso>(1);
   const [publicacionId, setPublicacionId] = useState<number | null>(null);
   const [completitud, setCompletitud] = useState(0);
+  // Plan elegido en el paso 1, para avisar del cobro antes de pulsar "Publicar".
+  const [plan, setPlan] = useState<PlanPublicacion>("light");
+  const [publicando, setPublicando] = useState(false);
+  const [errorPublicar, setErrorPublicar] = useState<string | null>(null);
 
   useEffect(() => {
     if (!tieneSesion()) router.push("/login?next=/marketplace/publicar");
   }, [router]);
+
+  // Publica el borrador (borrador → activa). El backend revalida el umbral y, si el plan
+  // es premium, cobra los tokens AQUÍ (no al crear el borrador).
+  async function publicar() {
+    if (publicacionId == null) return;
+    setPublicando(true);
+    setErrorPublicar(null);
+    try {
+      await publicarBorrador(publicacionId);
+      router.push(`/marketplace/${publicacionId}`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 402) {
+          setErrorPublicar(
+            `${err.message}. Puedes pasar el anuncio a plan Light o recargar tokens.`
+          );
+        } else {
+          // El 422 del umbral ya trae copy es-EC accionable desde el backend.
+          setErrorPublicar(err.message || "No pudimos publicar el anuncio.");
+        }
+      } else {
+        setErrorPublicar("No pudimos publicar el anuncio.");
+      }
+    } finally {
+      setPublicando(false);
+    }
+  }
+
+  const listoParaPublicar = puedePublicar(completitud);
+  const faltaParaPublicar = Math.max(0, UMBRAL_FICHA_PUBLICACION - completitud);
+
+  // Bloque de publicación reutilizado en los pasos 2 y 3.
+  const bloquePublicar = (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-800">
+            {listoParaPublicar
+              ? "Tu anuncio ya puede publicarse"
+              : `Te falta ${faltaParaPublicar} % de ficha para publicar`}
+          </p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {listoParaPublicar
+              ? "Al publicarlo aparecerá en el feed y cualquiera podrá verlo."
+              : `Necesitas al menos ${UMBRAL_FICHA_PUBLICACION} % para que el anuncio le sirva a un comprador.`}
+          </p>
+          {/* El premium se cobra AL PUBLICAR (no al crear el borrador): hay que decirlo
+              antes de pulsar, no dejar que se entere con un 402. */}
+          {plan === "premium" && (
+            <p className="mt-1 text-xs font-medium text-blue-700">
+              Al publicar se descuentan los tokens del plan Premium de tu billetera.
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={publicar}
+          disabled={!listoParaPublicar || publicando}
+          className="shrink-0 rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {publicando ? "Publicando…" : "Publicar anuncio"}
+        </button>
+      </div>
+      {errorPublicar && (
+        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          {errorPublicar}
+        </p>
+      )}
+    </div>
+  );
 
   // "Completar después": la publicación YA existe, así que lo dejamos en Mis publicaciones,
   // donde el CTA "Completa tu ficha" le sigue recordando lo que le falta.
@@ -347,24 +439,33 @@ export default function PublicarPage() {
 
       <Stepper paso={paso} />
 
+      {/* PasoDatos lee query params (?placa=&vehiculo= del garage) con useSearchParams,
+          que en Next 16 exige un límite de Suspense para no romper el prerender. */}
       {paso === 1 && (
-        <PasoDatos
-          onCreada={(id) => {
-            setPublicacionId(id);
-            setPaso(2);
-          }}
-        />
+        <Suspense
+          fallback={<p className="mt-8 text-sm text-slate-500">Cargando formulario…</p>}
+        >
+          <PasoDatos
+            onCreada={(id, planElegido) => {
+              setPublicacionId(id);
+              setPlan(planElegido);
+              setPaso(2);
+            }}
+          />
+        </Suspense>
       )}
 
       {paso === 2 && publicacionId != null && (
         <section className="mt-8">
-          <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-            <p className="text-sm font-semibold text-emerald-800">
-              ✓ Tu anuncio ya está publicado.
+          {/* M2.8: el anuncio NACE como borrador. Decir "ya está publicado" era falso y
+              hacía que el vendedor abandonara creyendo que había terminado. */}
+          <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-800">
+              Guardado como borrador — aún no publicado
             </p>
-            <p className="mt-0.5 text-sm text-emerald-700">
-              Ahora completa la ficha técnica: es gratis y es lo que más preguntan los
-              compradores.
+            <p className="mt-0.5 text-sm text-slate-600">
+              Nadie lo ve todavía. Completa la ficha técnica (es gratis) y cuando llegues al{" "}
+              {UMBRAL_FICHA_PUBLICACION} % podrás publicarlo.
             </p>
           </div>
 
@@ -389,6 +490,8 @@ export default function PublicarPage() {
               Ficha al {completitud} %. Guarda cada bloque antes de avanzar.
             </p>
           </div>
+
+          {bloquePublicar}
         </section>
       )}
 
@@ -423,20 +526,15 @@ export default function PublicarPage() {
             </div>
           )}
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row-reverse">
-            <button
-              type="button"
-              onClick={() => router.push(`/marketplace/${publicacionId}`)}
-              className="rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
-            >
-              Ver mi anuncio publicado
-            </button>
+          {bloquePublicar}
+
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row-reverse">
             <button
               type="button"
               onClick={completarDespues}
               className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             >
-              Ir a mis publicaciones
+              Seguir después en mis publicaciones
             </button>
           </div>
         </section>

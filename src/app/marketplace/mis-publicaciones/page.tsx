@@ -10,12 +10,17 @@ import Link from "next/link";
 import {
   eliminarPublicacion,
   listarMisPublicaciones,
+  publicarBorrador,
   solicitarVerificacion,
 } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import { FichaEditor } from "@/components/FichaEditor";
 import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
-import { fichaPendiente } from "@/lib/ficha";
+import {
+  UMBRAL_FICHA_PUBLICACION,
+  fichaPendiente,
+  puedePublicar,
+} from "@/lib/ficha";
 import { ApiError, EstadoVerificacion, PublicacionInterna } from "@/types/api";
 
 // Costo referencial (lo cobra el backend; aquí solo para el rótulo del botón).
@@ -86,6 +91,31 @@ export default function MisPublicacionesPage() {
     }
   }
 
+  // Publica un borrador. El backend revalida el umbral (422 con copy accionable) y, si
+  // el plan es premium, cobra los tokens aquí — no al crear el borrador.
+  async function publicar(id: number) {
+    setProcesando(id);
+    setError(null);
+    try {
+      const actualizada = await publicarBorrador(id);
+      setPubs((prev) => prev.map((p) => (p.id === id ? actualizada : p)));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 402) {
+          setError(
+            `${err.message}. Puedes pasar el anuncio a plan Light o recargar tokens.`
+          );
+        } else {
+          setError(err.message || "No pudimos publicar el anuncio.");
+        }
+      } else {
+        setError("No pudimos publicar el anuncio.");
+      }
+    } finally {
+      setProcesando(null);
+    }
+  }
+
   async function borrar(id: number) {
     if (!confirm("¿Eliminar esta publicación?")) return;
     setProcesando(id);
@@ -150,6 +180,8 @@ export default function MisPublicacionesPage() {
           const fotosVisible = fotosAbierta === p.id;
           const pct = completitudes[p.id] ?? p.completitud_ficha ?? 0;
           const faltaFicha = fichaPendiente(pct);
+          const esBorrador = p.estado === "borrador";
+          const listoParaPublicar = puedePublicar(pct);
           return (
             <div key={p.id} className="space-y-3">
               <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta sm:flex-row sm:items-center">
@@ -165,6 +197,12 @@ export default function MisPublicacionesPage() {
                       </span>
                     )}
                     <span className="font-mono text-xs tracking-widest text-slate-500">{p.placa}</span>
+                    {/* Borrador: el vendedor debe saber de un vistazo que NADIE lo ve. */}
+                    {esBorrador && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+                        Borrador · no publicado
+                      </span>
+                    )}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${badge.clase}`}>
                       {badge.texto}
                     </span>
@@ -225,6 +263,26 @@ export default function MisPublicacionesPage() {
                   </div>
                 </div>
                 <div className="flex flex-row gap-2 sm:flex-col">
+                  {/* Publicar el borrador: deshabilitado bajo el umbral, diciendo cuánto
+                      falta (M2.8). El backend revalida igual. */}
+                  {esBorrador && (
+                    <button
+                      onClick={() => publicar(p.id)}
+                      disabled={ocupado || !listoParaPublicar}
+                      title={
+                        listoParaPublicar
+                          ? "Publicar este anuncio en el feed"
+                          : `Te falta ${UMBRAL_FICHA_PUBLICACION - pct} % de ficha para publicar`
+                      }
+                      className="flex-1 rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {ocupado
+                        ? "…"
+                        : listoParaPublicar
+                          ? "Publicar anuncio"
+                          : `Falta ${UMBRAL_FICHA_PUBLICACION - pct} % de ficha`}
+                    </button>
+                  )}
                   {puedeSolicitar && (
                     <button
                       onClick={() => verificar(p.id)}

@@ -6,19 +6,30 @@ import Link from "next/link";
 import {
   crearVehiculo,
   eliminarVehiculo,
+  listarMisPublicaciones,
   listarVehiculos,
   obtenerPerfil,
 } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
-import { ApiError, Usuario, Vehiculo } from "@/types/api";
+import { ApiError, PublicacionInterna, Usuario, Vehiculo } from "@/types/api";
 import { CampoTexto } from "@/components/CampoTexto";
+import { fichaPendiente } from "@/lib/ficha";
 
 export default function MiGaragePage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
+  const [publicaciones, setPublicaciones] = useState<PublicacionInterna[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Estado de venta de un vehículo del garage (M2.8): se cruza con MIS publicaciones
+  // por **placa**. Se usa la placa y no `vehiculo_id` porque el anuncio puede haberse
+  // creado sin vincular el garage, y porque exponer `vehiculo_id` obligaría a sacar un
+  // id interno del garage en el feed público, que también sirve `PublicacionInternaSalida`.
+  function publicacionDe(v: Vehiculo): PublicacionInterna | undefined {
+    return publicaciones.find((p) => p.placa === v.placa);
+  }
 
   // Carga inicial. El fetch va en un IIFE async dentro del effect: todos los
   // setState ocurren tras el await (no sincrónicamente), lo que satisface
@@ -31,10 +42,17 @@ export default function MiGaragePage() {
     let activo = true;
     (async () => {
       try {
-        const [perfil, lista] = await Promise.all([obtenerPerfil(), listarVehiculos()]);
+        // Las publicaciones son un extra para el CTA de venta: si fallan, el garage
+        // igual carga (por eso el catch propio, no un Promise.all que tumbe todo).
+        const [perfil, lista, pubs] = await Promise.all([
+          obtenerPerfil(),
+          listarVehiculos(),
+          listarMisPublicaciones().catch(() => [] as PublicacionInterna[]),
+        ]);
         if (!activo) return;
         setUsuario(perfil);
         setVehiculos(lista);
+        setPublicaciones(pubs);
         setError(null);
       } catch (err) {
         if (!activo) return;
@@ -93,7 +111,10 @@ export default function MiGaragePage() {
             Todavía no agregas ningún vehículo. Usa el formulario de arriba.
           </p>
         ) : (
-          vehiculos.map((v) => (
+          vehiculos.map((v) => {
+            const pub = publicacionDe(v);
+            const pct = pub?.completitud_ficha ?? 0;
+            return (
             <article
               key={v.id}
               className="sombra-tarjeta flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-300"
@@ -114,7 +135,43 @@ export default function MiGaragePage() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Estado de venta (M2.8): el garage es el lugar natural para decidir
+                    vender, así que el CTA vive acá y no solo en el marketplace. */}
+                {pub ? (
+                  // Un borrador con la ficha llena NO es "listo": sigue sin publicarse, y
+                  // ese es justamente el punto de M2.8. Se dice explícito.
+                  pub.estado === "borrador" ? (
+                    <Link
+                      href="/marketplace/mis-publicaciones"
+                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                    >
+                      Borrador sin publicar ({pct} %)
+                    </Link>
+                  ) : fichaPendiente(pct) ? (
+                    <Link
+                      href="/marketplace/mis-publicaciones"
+                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                    >
+                      Completa tu ficha ({pct} %)
+                    </Link>
+                  ) : pub.estado === "vendida" ? (
+                    <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                      Vendido
+                    </span>
+                  ) : (
+                    <span className="rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                      ✓ Ficha completa
+                    </span>
+                  )
+                ) : (
+                  <Link
+                    href={`/marketplace/publicar?placa=${encodeURIComponent(v.placa)}&vehiculo=${v.id}`}
+                    className="rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+                  >
+                    Publicar este auto
+                  </Link>
+                )}
                 <Link
                   href={`/consultar/${v.placa}`}
                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
@@ -129,7 +186,8 @@ export default function MiGaragePage() {
                 </button>
               </div>
             </article>
-          ))
+            );
+          })
         )}
       </section>
     </div>

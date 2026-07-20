@@ -190,6 +190,28 @@ export function obtenerPublicacionDetalle(id: number) {
   return fetchAPI<PublicacionDetalle>(`/marketplace/publicaciones/${id}`);
 }
 
+// Detalle de MI publicación en cualquier estado, incluido `borrador` (M2.8).
+// Lo usan los editores de ficha y de fotos para prellenar: el endpoint público solo
+// sirve publicaciones `activa`, así que sin esto un borrador (o una pausada) no se
+// podría terminar de completar. 404 si no es tuya.
+export function obtenerMiPublicacionDetalle(id: number) {
+  return fetchAPI<PublicacionDetalle>(
+    `/marketplace/publicaciones/${id}/mia`,
+    {},
+    true
+  );
+}
+
+// Publica un borrador (borrador → activa). El backend valida el umbral de ficha
+// (422 con copy es-EC si no llega) y es donde se cobra el plan premium.
+export function publicarBorrador(id: number) {
+  return fetchAPI<PublicacionInterna>(
+    `/marketplace/publicaciones/${id}`,
+    { method: "PATCH", body: JSON.stringify({ estado: "activa" }) },
+    true
+  );
+}
+
 // Actualiza la ficha técnica (solo el dueño). Guardado parcial: se envía SOLO el
 // bloque editado; los demás se omiten para no tocarlos. Es gratis (no cobra tokens).
 // 404 si la publicación no es tuya.
@@ -294,6 +316,17 @@ export function solicitarVerificacion(id: number) {
 }
 
 // ─── Referencias externas aportadas por el usuario ────────
+
+// Firma para subir una foto de referencia a Cloudinary (M2.8). Mismo flujo que las
+// fotos de publicación: firma → subida directa → la URL viaja en el alta/edición.
+// Carpeta propia por usuario (la referencia aún no tiene id). 503 sin Cloudinary.
+export function firmarSubidaFotoReferencia() {
+  return fetchAPI<FirmaSubida>(
+    "/marketplace/referencias/firma-foto",
+    { method: "POST" },
+    true
+  );
+}
 
 // Aporta una referencia (link externo + datos). Es gratis. Entra en moderación
 // "pendiente": no aparece en el feed hasta que un admin la apruebe.

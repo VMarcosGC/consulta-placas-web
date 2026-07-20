@@ -9,7 +9,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { actualizarFichaPublicacion, obtenerPublicacionDetalle } from "@/lib/api";
+import { actualizarFichaPublicacion, obtenerMiPublicacionDetalle } from "@/lib/api";
 import {
   OPCIONES_COMBUSTIBLE,
   OPCIONES_ESTADO_COMPONENTE,
@@ -282,7 +282,10 @@ export function FichaEditor({
     (async () => {
       let detalle;
       try {
-        detalle = await obtenerPublicacionDetalle(publicacionId);
+        // Endpoint de DUEÑO: sirve la publicación en cualquier estado. El público solo
+        // devuelve `activa`, así que con él un borrador (o una pausada) no se podía
+        // completar — ese era el bug de "el plan light no deja llenar la ficha" (M2.8).
+        detalle = await obtenerMiPublicacionDetalle(publicacionId);
       } catch {
         if (activo) {
           setError("No pudimos cargar la ficha. Intenta recargar.");

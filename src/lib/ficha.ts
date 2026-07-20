@@ -121,3 +121,16 @@ export function fichaIncompleta(pct: number | null | undefined): boolean {
 export function fichaPendiente(pct: number | null | undefined): boolean {
   return (pct ?? 0) < FICHA_COMPLETA;
 }
+
+// Completitud mínima para PUBLICAR un borrador (M2.8). Espejo de
+// `UMBRAL_FICHA_PUBLICACION` del backend, que es la autoridad real: aquí solo sirve para
+// deshabilitar el botón y decir cuánto falta. Si los dos valores se desalinean, el
+// backend responde 422 y el frontend muestra ese mensaje — nunca se publica de más.
+export const UMBRAL_FICHA_PUBLICACION = Number(
+  process.env.NEXT_PUBLIC_UMBRAL_FICHA_PUBLICACION ?? 30
+);
+
+// ¿Se puede publicar ya este borrador?
+export function puedePublicar(pct: number | null | undefined): boolean {
+  return (pct ?? 0) >= UMBRAL_FICHA_PUBLICACION;
+}
