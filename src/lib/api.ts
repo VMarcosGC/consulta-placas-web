@@ -338,6 +338,13 @@ export function crearReferencia(datos: ReferenciaCrear) {
   );
 }
 
+// Detalle público de una referencia externa (M2.9). Alimenta la página LOCAL
+// /marketplace/referencias/{id}: el visitante ve fotos y detalle antes de decidir salir
+// al portal de origen. Solo sirve aprobadas y activas; si no, 404.
+export function obtenerReferenciaDetalle(id: number) {
+  return fetchAPI<PublicacionReferenciada>(`/marketplace/referencias/${id}`);
+}
+
 export function listarMisReferencias() {
   return fetchAPI<PublicacionReferenciada[]>(
     "/marketplace/referencias/mias",

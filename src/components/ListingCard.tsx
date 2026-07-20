@@ -9,7 +9,8 @@
 //   - Toda la tarjeta es clickeable.
 //
 // - ListingInternaCard: publicación de un usuario (link interno al detalle).
-// - ListingReferenciadaCard: anuncio externo aportado (link vivo al portal de origen).
+// - ListingReferenciadaCard: anuncio externo aportado. Desde M2.9 lleva al detalle LOCAL
+//   (/marketplace/referencias/{id}); salir al portal de origen es un botón aparte, allí.
 
 import Link from "next/link";
 import { Insignia } from "@/components/BentoCard";
@@ -110,12 +111,12 @@ export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada 
     pub.kilometraje != null ? `${pub.kilometraje.toLocaleString("es-EC")} km` : null,
   ].filter(Boolean);
 
-  // Toda la tarjeta es un enlace vivo al anuncio original (Facebook/OLX/…).
+  // M2.9: la tarjeta ya NO salta al portal externo. Lleva a una página LOCAL de detalle,
+  // donde el visitante ve fotos y datos y decide salir con un botón explícito. Antes el
+  // clic te expulsaba del sitio sin previo aviso y sin haber visto nada.
   return (
-    <a
-      href={pub.url_externa}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={`/marketplace/referencias/${pub.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white sombra-tarjeta animate-fade-in-up transition hover:-translate-y-0.5 hover:border-blue-300"
     >
       <div className="relative">
@@ -153,11 +154,12 @@ export function ListingReferenciadaCard({ pub }: { pub: PublicacionReferenciada 
             NO la raspamos ni la validamos. */}
         <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
           <Insignia tono="alerta">Referencia externa · datos no verificados</Insignia>
+          {/* Sin "↗": este clic NO sale del sitio, abre el detalle local. */}
           <span className="text-[11px] font-semibold text-slate-500 group-hover:text-blue-700">
-            Ver en {pub.fuente} ↗
+            Ver detalle · {pub.fuente}
           </span>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
