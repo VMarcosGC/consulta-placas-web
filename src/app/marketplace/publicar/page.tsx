@@ -98,16 +98,33 @@ function PasoDatos({
   const params = useSearchParams();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
 
-  // Prellenado desde "Publicar este auto" del garage (M2.8): ?placa=...&vehiculo=...
+  // Prellenado desde "Publicar este auto" del garage (M2.10):
+  //   ?placa=...&vehiculo=...&marca=...&modelo=...&anio=...
+  // marca/modelo/año NO son campos de la publicación interna (viven en el vehículo del
+  // garage / en la ficha): se usan SOLO para dar contexto de confirmación al vendedor y
+  // proponer un título por defecto. No se envían en el POST.
   const placaInicial = (params.get("placa") ?? "").toUpperCase();
   const vehiculoInicial = Number(params.get("vehiculo")) || null;
+  const marcaInicial = (params.get("marca") ?? "").trim();
+  const modeloInicial = (params.get("modelo") ?? "").trim();
+  const anioInicial = (params.get("anio") ?? "").trim();
+
+  // "Vengo del garage" = el wizard trae un vehículo vinculado. En ese caso no volvemos a
+  // pedir en frío los datos de identidad del auto: los confirmamos.
+  const desdeGarage = vehiculoInicial != null;
+  const contextoVehiculo = [marcaInicial, modeloInicial, anioInicial].filter(Boolean).join(" ");
+  const tituloPropuesto = contextoVehiculo;
 
   const [placa, setPlaca] = useState(placaInicial);
-  const [titulo, setTitulo] = useState("");
+  // Título por defecto solo cuando venimos del garage con datos; siempre editable.
+  const [titulo, setTitulo] = useState(desdeGarage ? tituloPropuesto : "");
   const [descripcion, setDescripcion] = useState("");
   const [precio, setPrecio] = useState("");
   const [plan, setPlan] = useState<PlanPublicacion>("light");
   const [vehiculoId, setVehiculoId] = useState<number | null>(vehiculoInicial);
+  // Permite "ajustar" (volver al modo manual con select + placa) si el vendedor prellenado
+  // desde el garage quiere publicar otra placa.
+  const [ajustando, setAjustando] = useState(false);
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +162,10 @@ function PasoDatos({
     }
 
     const placaNormal = placa.trim().toUpperCase();
+    if (!placaNormal) {
+      setError("Ingresa la placa del vehículo.");
+      return;
+    }
     setEnviando(true);
     try {
       const pub = await crearPublicacion({
@@ -197,39 +218,65 @@ function PasoDatos({
 
   return (
     <form onSubmit={enviar} className="mt-8 space-y-5">
-      {vehiculos.length > 0 && (
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">
-            Vincular un vehículo de tu garage (opcional)
-          </label>
-          <select
-            className={inputCls}
-            value={vehiculoId ?? ""}
-            onChange={(e) => elegirVehiculo(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">— Publicar solo por placa —</option>
-            {vehiculos.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.placa} {[v.marca, v.modelo].filter(Boolean).join(" ")}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-slate-400">
-            Vincularlo habilita los argumentos Premium (historial de mantenimientos).
+      {desdeGarage && !ajustando ? (
+        // Prellenado desde el garage (M2.10): confirmamos el vehículo en vez de recapturar.
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+            Publicando desde tu garage
           </p>
+          <p className="mt-1 text-lg font-bold text-slate-900">
+            {contextoVehiculo || "Tu vehículo"}
+          </p>
+          <p className="mt-0.5 font-mono text-sm tracking-widest text-slate-500">{placa}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Queda vinculado a tu garage. Abajo defines precio y plan; los datos del auto ya
+            los tomamos de tu garage.
+          </p>
+          <button
+            type="button"
+            onClick={() => setAjustando(true)}
+            className="mt-2 text-xs font-semibold text-blue-700 underline"
+          >
+            Ajustar o publicar otra placa
+          </button>
         </div>
-      )}
+      ) : (
+        <>
+          {vehiculos.length > 0 && (
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">
+                Vincular un vehículo de tu garage (opcional)
+              </label>
+              <select
+                className={inputCls}
+                value={vehiculoId ?? ""}
+                onChange={(e) => elegirVehiculo(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">— Publicar solo por placa —</option>
+                {vehiculos.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.placa} {[v.marca, v.modelo].filter(Boolean).join(" ")}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-400">
+                Vincularlo habilita los argumentos Premium (historial de mantenimientos).
+              </p>
+            </div>
+          )}
 
-      <div>
-        <label className="mb-1 block text-sm font-semibold text-slate-700">Placa</label>
-        <input
-          className={`${inputCls} font-mono tracking-widest`}
-          value={placa}
-          onChange={(e) => setPlaca(e.target.value)}
-          placeholder="ABC1234"
-          required
-        />
-      </div>
+          <div>
+            <label className="mb-1 block text-sm font-semibold text-slate-700">Placa</label>
+            <input
+              className={`${inputCls} font-mono tracking-widest`}
+              value={placa}
+              onChange={(e) => setPlaca(e.target.value)}
+              placeholder="ABC1234"
+              required
+            />
+          </div>
+        </>
+      )}
 
       <div>
         <label className="mb-1 block text-sm font-semibold text-slate-700">Título (opcional)</label>

@@ -18,6 +18,7 @@ import {
   PublicacionDetalle,
   PublicacionInterna,
   PublicacionReferenciada,
+  ReferenciaActualizar,
   ReferenciaCrear,
   Token,
   Usuario,
@@ -367,6 +368,18 @@ export function crearReferencia(datos: ReferenciaCrear) {
 // al portal de origen. Solo sirve aprobadas y activas; si no, 404.
 export function obtenerReferenciaDetalle(id: number) {
   return fetchAPI<PublicacionReferenciada>(`/marketplace/referencias/${id}`);
+}
+
+// Edita una referencia propia (M2.10). Envía SOLO los campos presentes (edición
+// parcial). Cambiar contenido (marca, fotos, descripción…) la devuelve a moderación
+// `pendiente` en el backend. 401 sin sesión; 404 si no es tuya; 422 si algún dato no
+// valida. Devuelve la referencia ya actualizada, con su nuevo estado de moderación.
+export function actualizarReferencia(id: number, datos: ReferenciaActualizar) {
+  return fetchAPI<PublicacionReferenciada>(
+    `/marketplace/referencias/${id}`,
+    { method: "PATCH", body: JSON.stringify(datos) },
+    true
+  );
 }
 
 export function listarMisReferencias() {

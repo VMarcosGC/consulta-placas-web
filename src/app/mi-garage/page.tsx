@@ -31,6 +31,28 @@ export default function MiGaragePage() {
     return publicaciones.find((p) => p.placa === v.placa);
   }
 
+  // URL del wizard prellenada desde el garage (M2.10): además de placa y vínculo,
+  // arrastramos marca/modelo/año para no obligar a re-teclear lo que ya está registrado.
+  // Solo se agregan los campos con valor (encodeURIComponent los deja seguros en la query).
+  function urlPublicar(v: Vehiculo): string {
+    const q = new URLSearchParams();
+    q.set("placa", v.placa);
+    q.set("vehiculo", String(v.id));
+    if (v.marca) q.set("marca", v.marca);
+    if (v.modelo) q.set("modelo", v.modelo);
+    if (v.anio != null) q.set("anio", String(v.anio));
+    return `/marketplace/publicar?${q.toString()}`;
+  }
+
+  // A dónde lleva "Ya publicado": un borrador todavía no tiene página pública, así que va
+  // a Mis publicaciones (donde se termina y se publica); una activa/pausada/vendida ya
+  // tiene su detalle público.
+  function enlacePublicacion(pub: PublicacionInterna): string {
+    return pub.estado === "borrador"
+      ? "/marketplace/mis-publicaciones"
+      : `/marketplace/${pub.id}`;
+  }
+
   // Carga inicial. El fetch va en un IIFE async dentro del effect: todos los
   // setState ocurren tras el await (no sincrónicamente), lo que satisface
   // react-hooks/set-state-in-effect. `activo` evita setState tras desmontar.
@@ -105,7 +127,12 @@ export default function MiGaragePage() {
 
       <FormularioNuevo onCreado={(v) => setVehiculos((vs) => [v, ...vs])} />
 
-      <section className="mt-10 space-y-3">
+      {/* Garage ≠ Publicar (M2.10): son cosas distintas y conviene decirlo sin ruido. */}
+      <p className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500 sombra-tarjeta">
+        Tu garage es privado (tu historial). Publicar crea un anuncio público de venta.
+      </p>
+
+      <section className="mt-6 space-y-3">
         {vehiculos.length === 0 ? (
           <p className="sombra-tarjeta rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
             Todavía no agregas ningún vehículo. Usa el formulario de arriba.
@@ -139,34 +166,44 @@ export default function MiGaragePage() {
                 {/* Estado de venta (M2.8): el garage es el lugar natural para decidir
                     vender, así que el CTA vive acá y no solo en el marketplace. */}
                 {pub ? (
-                  // Un borrador con la ficha llena NO es "listo": sigue sin publicarse, y
-                  // ese es justamente el punto de M2.8. Se dice explícito.
-                  pub.estado === "borrador" ? (
+                  <>
+                    {/* Un borrador con la ficha llena NO es "listo": sigue sin publicarse,
+                        y ese es justamente el punto de M2.8. Se dice explícito. */}
+                    {pub.estado === "borrador" ? (
+                      <Link
+                        href="/marketplace/mis-publicaciones"
+                        className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                      >
+                        Borrador sin publicar ({pct} %)
+                      </Link>
+                    ) : fichaPendiente(pct) ? (
+                      <Link
+                        href="/marketplace/mis-publicaciones"
+                        className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                      >
+                        Completa tu ficha ({pct} %)
+                      </Link>
+                    ) : pub.estado === "vendida" ? (
+                      <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                        Vendido
+                      </span>
+                    ) : (
+                      <span className="rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                        ✓ Ficha completa
+                      </span>
+                    )}
+                    {/* M2.10: enlace directo al anuncio ya creado, para no dejar dudas de
+                        que este auto YA tiene publicación. */}
                     <Link
-                      href="/marketplace/mis-publicaciones"
-                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                      href={enlacePublicacion(pub)}
+                      className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
                     >
-                      Borrador sin publicar ({pct} %)
+                      Ya publicado →
                     </Link>
-                  ) : fichaPendiente(pct) ? (
-                    <Link
-                      href="/marketplace/mis-publicaciones"
-                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
-                    >
-                      Completa tu ficha ({pct} %)
-                    </Link>
-                  ) : pub.estado === "vendida" ? (
-                    <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                      Vendido
-                    </span>
-                  ) : (
-                    <span className="rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800">
-                      ✓ Ficha completa
-                    </span>
-                  )
+                  </>
                 ) : (
                   <Link
-                    href={`/marketplace/publicar?placa=${encodeURIComponent(v.placa)}&vehiculo=${v.id}`}
+                    href={urlPublicar(v)}
                     className="rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
                   >
                     Publicar este auto

@@ -17,7 +17,11 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BentoCard, Insignia } from "@/components/BentoCard";
 import { DatosOficialesMini } from "@/components/DatosOficialesMini";
-import { listarMisPublicaciones, obtenerPublicacionDetalle } from "@/lib/api";
+import {
+  listarMisPublicaciones,
+  listarVehiculos,
+  obtenerPublicacionDetalle,
+} from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import {
   COMBUSTIBLE_LABEL,
@@ -38,6 +42,7 @@ import {
   FichaSalida,
   FotoSalida,
   PublicacionDetalle,
+  Vehiculo,
 } from "@/types/api";
 
 function precioFmt(v: number | null): string {
@@ -363,6 +368,11 @@ export default function PublicacionDetallePage() {
   // ¿El visitante es el dueño? Solo entonces se muestra el CTA de la ficha.
   // La página es pública: se resuelve en el cliente y solo si hay sesión.
   const [esMia, setEsMia] = useState(false);
+  // ¿Este anuncio corresponde a un vehículo del garage del dueño? (M2.10)
+  // OJO PRIVACIDAD: el backend NUNCA envía `vehiculo_id` en la vista pública. El vínculo
+  // se infiere en el cliente cruzando la placa contra MI garage, y solo si soy el dueño;
+  // a un comprador anónimo jamás se le muestra este chip.
+  const [viveEnGarage, setViveEnGarage] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -398,8 +408,17 @@ export default function PublicacionDetallePage() {
     let activo = true;
     (async () => {
       try {
-        const mias = await listarMisPublicaciones();
-        if (activo) setEsMia(mias.some((p) => p.id === id));
+        // El garage solo hace falta para el chip "Vive en tu garage": si falla, el resto
+        // (esMia y sus CTAs) igual funciona, por eso su catch propio.
+        const [mias, vehiculos] = await Promise.all([
+          listarMisPublicaciones(),
+          listarVehiculos().catch(() => [] as Vehiculo[]),
+        ]);
+        if (!activo) return;
+        const mia = mias.find((p) => p.id === id);
+        setEsMia(mia != null);
+        // Solo el dueño; cruce por placa (mismo patrón que mi-garage, sin exponer ids).
+        if (mia) setViveEnGarage(vehiculos.some((v) => v.placa === mia.placa));
       } catch {
         // Silencioso: el CTA del dueño es un extra, no puede romper el detalle público.
       }
@@ -455,6 +474,8 @@ export default function PublicacionDetallePage() {
               )}
               {pub.verificado && <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>}
               {fichaIncompleta(pctFicha) && <Insignia tono="alerta">Ficha incompleta</Insignia>}
+              {/* Solo el dueño ve este chip; nunca un comprador anónimo. */}
+              {esMia && viveEnGarage && <Insignia tono="info">🚗 Vive en tu garage</Insignia>}
             </div>
 
             <p className="mt-3 text-4xl font-black leading-none text-slate-900 sm:text-5xl">

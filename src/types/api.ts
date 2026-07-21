@@ -408,6 +408,24 @@ export interface ReferenciaCrear {
   fotos?: string[];
 }
 
+// Edición parcial de una referencia (M2.10). Mirror de
+// PublicacionReferenciadaActualizar del backend: todos los campos opcionales. Cambiar
+// cualquier campo de CONTENIDO devuelve la referencia a moderación `pendiente` (lo
+// decide el router, anti bait-and-switch); `activa` permite pausarla sin re-moderar.
+export interface ReferenciaActualizar {
+  marca?: string;
+  modelo?: string;
+  anio?: number;
+  precio_usd?: number;
+  imagen_url?: string;
+  placa?: string;
+  descripcion?: string;
+  ciudad?: string;
+  kilometraje?: number;
+  fotos?: string[];
+  activa?: boolean;
+}
+
 // Tope de fotos por referencia externa. Espejo de MAX_FOTOS_REFERENCIA del backend.
 export const MAX_FOTOS_REFERENCIA = 5;
 
