@@ -10,6 +10,7 @@ import {
   FeedMarketplace,
   FichaActualizar,
   FichaSalida,
+  FiltrosBusqueda,
   FirmaSubida,
   FotoRegistrar,
   FotoSalida,
@@ -20,6 +21,7 @@ import {
   PublicacionReferenciada,
   ReferenciaActualizar,
   ReferenciaCrear,
+  ResultadoBusqueda,
   Token,
   Usuario,
   Vehiculo,
@@ -194,6 +196,31 @@ export function eliminarFavorito(favoritoId: number) {
 // Feed público mixto: premium destacados, light, y referenciados externos.
 export function obtenerFeedMarketplace() {
   return fetchAPI<FeedMarketplace>("/marketplace/feed");
+}
+
+// Búsqueda plana del comprador (MC2): lista filtrable + paginada por cursor. Pública.
+// Arma el querystring omitiendo todo param vacío. `cursor` se reenvía tal cual el
+// `siguiente_cursor` de la página previa. Códigos del contrato: 400 cursor corrupto,
+// 422 param inválido; nunca 500. `siguiente_cursor: null` = ya no hay más páginas.
+export function buscarPublicaciones(filtros: FiltrosBusqueda, cursor?: string) {
+  const params = new URLSearchParams();
+  const poner = (clave: string, valor: string | number | undefined | null) => {
+    if (valor === undefined || valor === null) return;
+    const texto = String(valor).trim();
+    if (texto === "") return;
+    params.set(clave, texto);
+  };
+  poner("q", filtros.q);
+  poner("tipo", filtros.tipo);
+  poner("combustible", filtros.combustible);
+  poner("transmision", filtros.transmision);
+  poner("precio_min", filtros.precio_min);
+  poner("precio_max", filtros.precio_max);
+  poner("anio_min", filtros.anio_min);
+  poner("anio_max", filtros.anio_max);
+  poner("cursor", cursor);
+  const qs = params.toString();
+  return fetchAPI<ResultadoBusqueda>(`/marketplace/buscar${qs ? `?${qs}` : ""}`);
 }
 
 // Publica un vehículo. plan="premium" debita tokens (402 si no alcanza el saldo).

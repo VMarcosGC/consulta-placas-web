@@ -27,18 +27,9 @@ export function normalizar(texto: string): string {
     .trim();
 }
 
-// ¿El anuncio calza con lo que el comprador escribió? Se buscan TODAS las palabras
-// (ej. "chevrolet 2018" exige ambas) sobre marca, modelo, título, año y placa.
-export function coincide(anuncio: AnuncioBuscable, consulta: string): boolean {
-  const palabras = normalizar(consulta).split(/\s+/).filter(Boolean);
-  if (palabras.length === 0) return true;
-  const heno = normalizar(
-    [anuncio.titulo, anuncio.marca, anuncio.modelo, anuncio.anio, anuncio.placa]
-      .filter(Boolean)
-      .join(" ")
-  );
-  return palabras.every((p) => heno.includes(p));
-}
+// (El filtro de texto del buscador ya NO se resuelve en cliente: desde MC2 lo hace el
+// backend vía GET /marketplace/buscar. `normalizar` sigue vivo porque `marcasDelStock` lo
+// usa para agrupar marcas equivalentes.)
 
 // ── Bandas de presupuesto (el comprador real compra por bolsillo) ────────────
 

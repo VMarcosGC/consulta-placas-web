@@ -1,35 +1,55 @@
-// Portada del COMPRADOR (MC1). Diseño en docs/producto/experiencia_comprador.md §2.
+// Portada del COMPRADOR. MC1 (bloques curados) + MC2 (búsqueda server-side).
+// Diseño en docs/producto/experiencia_comprador.md §2 y plan_market_autos.md §MC2.
 //
-// Móvil primero, en bloques verticales curados: buscador → tus favoritos → destacados →
-// verificados/transparentes → marcas → recién publicados → presupuesto → referencias.
-// Regla dura: un bloque sin contenido NO se renderiza (nada de secciones vacías).
+// Dos modos, según el querystring de la URL:
+//   • SIN filtros → bloques curados de MC1 (favoritos, destacados, verificados, marcas,
+//     recientes, presupuesto, referencias). Un bloque sin contenido NO se renderiza.
+//   • CON filtros → grilla plana de `GET /marketplace/buscar` (server-side), paginada por
+//     cursor ("Cargar más autos"). Los filtros viven en la URL → la búsqueda es compartible.
 //
-// Datos: UNA sola llamada, `GET /marketplace/feed` (trae todas las activas). Las marcas,
-// los conteos y las bandas se DERIVAN de ese feed en el cliente — no hay endpoints de
-// agregados. La búsqueda de aquí también es en cliente sobre lo ya cargado; la búsqueda
-// real con query params + paginación es MC2.
+// Los datos vienen de DOS llamadas: `GET /marketplace/feed` (bloques curados, se deriva en
+// cliente: marcas, bandas, conteos) y `GET /marketplace/buscar` (la grilla filtrada). El
+// frontend NO transforma: lee y pinta. El ♡ favorito y el badge de baja de precio se
+// conservan en TODAS las tarjetas.
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { obtenerFeedMarketplace } from "@/lib/api";
+import { useRouter, useSearchParams } from "next/navigation";
+import { buscarPublicaciones, obtenerFeedMarketplace } from "@/lib/api";
 import { InvitacionFavorito } from "@/components/BotonFavorito";
 import { ListingInternaCard, ListingReferenciadaCard } from "@/components/ListingCard";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { bajaDePrecio } from "@/lib/favoritos";
 import {
+  COMBUSTIBLE_LABEL,
+  OPCIONES_COMBUSTIBLE,
+  OPCIONES_TIPO_CARROCERIA,
+  OPCIONES_TRANSMISION,
+  TIPO_CARROCERIA_LABEL,
+  TRANSMISION_LABEL,
+} from "@/lib/ficha";
+import {
+  OPCIONES_PRECIO,
+  claveFiltros,
+  conteoAvanzados,
+  hayFiltros,
+  leerFiltros,
+  montoOpcion,
+  opcionesAnio,
+} from "@/lib/busqueda";
+import {
   BANDAS_PRECIO,
-  coincide,
   enBanda,
   esTransparente,
   marcasDelStock,
   porMasReciente,
   todasLasInternas,
   type Banda,
-  type ClaveBanda,
 } from "@/lib/marketplace";
-import type { FeedMarketplace } from "@/types/api";
+import { ApiError } from "@/types/api";
+import type { FeedMarketplace, FiltrosBusqueda, ItemBusqueda } from "@/types/api";
 
 const FEED_VACIO: FeedMarketplace = { premium: [], estandar: [], referenciadas: [] };
 
@@ -44,6 +64,31 @@ const MAX_POR_BLOQUE = 12;
 
 function montoCorto(valor: number): string {
   return `$${Math.round(valor).toLocaleString("es-EC")}`;
+}
+
+// Estado de la grilla de búsqueda (MC2). `clave` ata los resultados al filtro que los
+// produjo: si no coincide con el filtro actual, la grilla se pinta "cargando" en vez de
+// mostrar resultados viejos (evita el parpadeo de stock que no corresponde).
+interface EstadoBusqueda {
+  clave: string;
+  items: ItemBusqueda[];
+  cursor: string | null;
+  error: string | null;
+}
+
+const BUSQUEDA_INICIAL: EstadoBusqueda = { clave: "", items: [], cursor: null, error: null };
+
+function mensajeBusqueda(e: unknown): string {
+  if (e instanceof ApiError) {
+    if (e.status === 422) {
+      return e.message || "Alguno de los filtros no es válido. Ajusta tu búsqueda.";
+    }
+    if (e.status === 400) {
+      return "Reinicia la búsqueda: el enlace de la página dejó de ser válido.";
+    }
+    return e.message || "No pudimos completar la búsqueda. Intenta de nuevo.";
+  }
+  return "No pudimos completar la búsqueda. Intenta de nuevo.";
 }
 
 // ── Piezas de layout ─────────────────────────────────────────────────────────
@@ -103,17 +148,65 @@ function NotaTope({
   );
 }
 
-// ── Página ───────────────────────────────────────────────────────────────────
+// <select> de filtro con etiqueta, estilo "confianza clara".
+function Selector({
+  etiqueta,
+  valor,
+  onChange,
+  children,
+}: {
+  etiqueta: string;
+  valor: string;
+  onChange: (valor: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="font-medium text-slate-600">{etiqueta}</span>
+      <select
+        value={valor}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+      >
+        {children}
+      </select>
+    </label>
+  );
+}
 
-export default function MarketplacePage() {
+// ── Contenido (usa useSearchParams → debe ir bajo un límite de Suspense) ───────
+
+function ContenidoMarketplace() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URL → filtros. Un param inválido se descarta en `leerFiltros` (robustez ante enlaces
+  // manipulados). Nueva identidad solo cuando cambia el querystring.
+  const filtros = useMemo<FiltrosBusqueda>(
+    () => leerFiltros(new URLSearchParams(searchParams.toString())),
+    [searchParams]
+  );
+  const clave = claveFiltros(filtros);
+  const busquedaActiva = hayFiltros(filtros);
+  const nAvanzados = conteoAvanzados(filtros);
+
+  // Buscador de texto: estado local, se confirma a la URL al enviar (no en cada tecla, para
+  // no disparar una llamada por pulsación en una red lenta). Se siembra desde la URL.
+  const [texto, setTexto] = useState(() => filtros.q ?? "");
+  // Panel de filtros avanzados: abierto de entrada si el enlace ya trae filtros avanzados.
+  const [panelAbierto, setPanelAbierto] = useState(() => conteoAvanzados(filtros) > 0);
+
   const [feed, setFeed] = useState<FeedMarketplace>(FEED_VACIO);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [texto, setTexto] = useState("");
-  const [banda, setBanda] = useState<ClaveBanda | null>(null);
+  const [cargandoFeed, setCargandoFeed] = useState(true);
+  const [errorFeed, setErrorFeed] = useState<string | null>(null);
+
+  const [busqueda, setBusqueda] = useState<EstadoBusqueda>(BUSQUEDA_INICIAL);
+  const [cargandoMas, setCargandoMas] = useState(false);
 
   const { control, mapa, haySesion, invitacion, cerrarInvitacion } = useFavoritos();
 
+  // Feed para los bloques curados. Una sola vez. (Patrón lint-safe: el setState cae SIEMPRE
+  // después del await, nunca de forma síncrona dentro del efecto.)
   useEffect(() => {
     let activo = true;
     (async () => {
@@ -121,11 +214,11 @@ export default function MarketplacePage() {
         const data = await obtenerFeedMarketplace();
         if (!activo) return;
         setFeed(data);
-        setError(null);
+        setErrorFeed(null);
       } catch {
-        if (activo) setError("No pudimos cargar el marketplace. Intenta recargar.");
+        if (activo) setErrorFeed("No pudimos cargar el marketplace. Intenta recargar.");
       } finally {
-        if (activo) setCargando(false);
+        if (activo) setCargandoFeed(false);
       }
     })();
     return () => {
@@ -133,16 +226,95 @@ export default function MarketplacePage() {
     };
   }, []);
 
+  // Búsqueda server-side: se relanza la PRIMERA página cada vez que cambian los filtros.
+  // Sin cursor (el cursor no vive en la URL compartible, solo en el estado de paginación),
+  // así que un 400 aquí es inalcanzable. setState siempre tras el await.
+  useEffect(() => {
+    if (!busquedaActiva) return;
+    let vivo = true;
+    (async () => {
+      try {
+        const res = await buscarPublicaciones(filtros);
+        if (!vivo) return;
+        setBusqueda({ clave, items: res.items, cursor: res.siguiente_cursor, error: null });
+      } catch (e) {
+        if (!vivo) return;
+        setBusqueda({ clave, items: [], cursor: null, error: mensajeBusqueda(e) });
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [busquedaActiva, clave, filtros]);
+
+  // Paginación por cursor. Va en un handler (no en un efecto): aquí setState síncrono es
+  // válido. Un 400 = cursor corrupto → reinicia desde la primera página sin romper.
+  async function cargarMas() {
+    if (cargandoMas || !busqueda.cursor) return;
+    setCargandoMas(true);
+    try {
+      const res = await buscarPublicaciones(filtros, busqueda.cursor);
+      setBusqueda((b) => ({
+        ...b,
+        items: [...b.items, ...res.items],
+        cursor: res.siguiente_cursor,
+      }));
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 400) {
+        try {
+          const res = await buscarPublicaciones(filtros);
+          setBusqueda({ clave, items: res.items, cursor: res.siguiente_cursor, error: null });
+        } catch (e2) {
+          setBusqueda((b) => ({ ...b, cursor: null, error: mensajeBusqueda(e2) }));
+        }
+      } else {
+        setBusqueda((b) => ({ ...b, cursor: null, error: mensajeBusqueda(e) }));
+      }
+    } finally {
+      setCargandoMas(false);
+    }
+  }
+
+  // ── Escritura de la URL (single source of truth de la búsqueda) ─────────────
+  function actualizarUrl(cambios: Record<string, string | number | null | undefined>) {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(cambios)) {
+      if (v === null || v === undefined || v === "") params.delete(k);
+      else params.set(k, String(v));
+    }
+    const qs = params.toString();
+    router.replace(qs ? `/marketplace?${qs}` : "/marketplace", { scroll: false });
+  }
+
+  function enviarTexto(e: React.FormEvent) {
+    e.preventDefault();
+    actualizarUrl({ q: texto.trim() || null });
+  }
+
+  function buscarMarca(marca: string) {
+    setTexto(marca);
+    actualizarUrl({ q: marca });
+  }
+
+  function aplicarBanda(b: Banda) {
+    actualizarUrl({ precio_min: b.min ?? null, precio_max: b.max ?? null });
+  }
+
+  function limpiarFiltros() {
+    setTexto("");
+    setPanelAbierto(false);
+    router.replace("/marketplace", { scroll: false });
+  }
+
+  // ── Derivados del feed para los bloques curados ─────────────────────────────
   const internas = useMemo(() => todasLasInternas(feed), [feed]);
   const referenciadas = feed.referenciadas;
 
-  // Marcas con stock real (internas + referencias). Nunca una lista fija.
   const marcas = useMemo(
     () => marcasDelStock([...internas, ...referenciadas]).slice(0, MAX_CHIPS_MARCA),
     [internas, referenciadas]
   );
 
-  // Conteo por banda de presupuesto, para no ofrecer bandas vacías.
   const bandasConStock = useMemo(
     () =>
       BANDAS_PRECIO.map((b) => ({
@@ -154,29 +326,6 @@ export default function MarketplacePage() {
     [internas, referenciadas]
   );
 
-  const consulta = texto.trim();
-  const filtroActivo = consulta.length > 0 || banda !== null;
-  const bandaActiva: Banda | null =
-    BANDAS_PRECIO.find((b) => b.clave === banda) ?? null;
-
-  const internasFiltradas = useMemo(
-    () =>
-      internas.filter(
-        (p) =>
-          coincide(p, consulta) && (bandaActiva ? enBanda(p.precio_usd, bandaActiva) : true)
-      ),
-    [internas, consulta, bandaActiva]
-  );
-  const referenciadasFiltradas = useMemo(
-    () =>
-      referenciadas.filter(
-        (p) =>
-          coincide(p, consulta) && (bandaActiva ? enBanda(p.precio_usd, bandaActiva) : true)
-      ),
-    [referenciadas, consulta, bandaActiva]
-  );
-
-  // "Tus favoritos": los anuncios del feed cuya placa el usuario ya guardó.
   const favoritosInternos = useMemo(
     () => internas.filter((p) => mapa.has(p.placa.toUpperCase())),
     [internas, mapa]
@@ -189,22 +338,44 @@ export default function MarketplacePage() {
   const transparentes = useMemo(() => internas.filter(esTransparente), [internas]);
   const recientes = useMemo(() => porMasReciente(internas), [internas]);
 
-  // El badge "↓ Bajó $X" no es exclusivo de "Tus favoritos": si el comprador guardó un
-  // auto, la buena noticia debe seguirlo por toda la portada (destacados, recientes,
-  // resultados de búsqueda). `distintivo` ya es prop genérica de ListingCard.
+  // El badge "↓ Bajó $X" sigue al auto guardado por toda la portada (destacados, recientes,
+  // resultados de búsqueda), no solo en "Tus favoritos". `distintivo` es prop de ListingCard.
   function distintivoBaja(placa: string | null | undefined, precioActual: number | null) {
     const baja = bajaDePrecio(mapa.get((placa ?? "").toUpperCase()), precioActual);
     return baja != null ? <BadgeBaja monto={baja} /> : null;
   }
 
   const feedVacio =
-    !cargando && internas.length === 0 && referenciadas.length === 0 && !error;
-  const totalResultados = internasFiltradas.length + referenciadasFiltradas.length;
+    !cargandoFeed && internas.length === 0 && referenciadas.length === 0 && !errorFeed;
 
-  function limpiarBusqueda() {
-    setTexto("");
-    setBanda(null);
+  // ── Estado de la grilla de búsqueda ─────────────────────────────────────────
+  const resultadosListos = busqueda.clave === clave;
+  const cargandoBusqueda = busquedaActiva && !resultadosListos;
+  const nResultados = busqueda.items.length;
+
+  // Pills de filtros activos (cada uno se quita con su ×). Reproduce la búsqueda exacta.
+  const pills: { clave: keyof FiltrosBusqueda; texto: string }[] = [];
+  if (filtros.q) pills.push({ clave: "q", texto: `“${filtros.q}”` });
+  if (filtros.tipo) pills.push({ clave: "tipo", texto: TIPO_CARROCERIA_LABEL[filtros.tipo] });
+  if (filtros.combustible)
+    pills.push({ clave: "combustible", texto: COMBUSTIBLE_LABEL[filtros.combustible] });
+  if (filtros.transmision)
+    pills.push({ clave: "transmision", texto: TRANSMISION_LABEL[filtros.transmision] });
+  if (filtros.precio_min != null)
+    pills.push({ clave: "precio_min", texto: `Desde ${montoOpcion(filtros.precio_min)}` });
+  if (filtros.precio_max != null)
+    pills.push({ clave: "precio_max", texto: `Hasta ${montoOpcion(filtros.precio_max)}` });
+  if (filtros.anio_min != null)
+    pills.push({ clave: "anio_min", texto: `Desde ${filtros.anio_min}` });
+  if (filtros.anio_max != null)
+    pills.push({ clave: "anio_max", texto: `Hasta ${filtros.anio_max}` });
+
+  function quitarPill(claveFiltro: keyof FiltrosBusqueda) {
+    if (claveFiltro === "q") setTexto("");
+    actualizarUrl({ [claveFiltro]: null });
   }
+
+  const aniosAnio = opcionesAnio();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
@@ -218,49 +389,184 @@ export default function MarketplacePage() {
         </p>
       </header>
 
-      {/* ── 1. Buscador protagonista ───────────────────────────────────────── */}
+      {/* ── 1. Buscador protagonista + filtros ─────────────────────────────── */}
       <div className="mb-8">
-        <label htmlFor="buscador-autos" className="sr-only">
-          ¿Qué auto buscas?
-        </label>
-        <div className="relative">
-          <span
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"
-            aria-hidden
+        <form onSubmit={enviarTexto}>
+          <label htmlFor="buscador-autos" className="sr-only">
+            ¿Qué auto buscas?
+          </label>
+          <div className="relative">
+            <span
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"
+              aria-hidden
+            >
+              🔍
+            </span>
+            <input
+              id="buscador-autos"
+              type="search"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="¿Qué auto buscas? Marca, modelo o placa"
+              className="w-full rounded-2xl border border-slate-300 bg-white py-4 pl-12 pr-28 text-base text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+            >
+              Buscar
+            </button>
+          </div>
+        </form>
+
+        {/* Chips rápidos de presupuesto (con stock) + botón "Filtros". */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {bandasConStock.map(({ banda: b, total }) => {
+            const activa =
+              (filtros.precio_min ?? null) === (b.min ?? null) &&
+              (filtros.precio_max ?? null) === (b.max ?? null);
+            return (
+              <button
+                key={b.clave}
+                type="button"
+                aria-pressed={activa}
+                onClick={() => (activa ? actualizarUrl({ precio_min: null, precio_max: null }) : aplicarBanda(b))}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+                  activa
+                    ? "bg-brand-gradient text-white"
+                    : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {b.etiqueta} <span className="opacity-70">({total})</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            aria-expanded={panelAbierto}
+            onClick={() => setPanelAbierto((v) => !v)}
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
+              nAvanzados > 0
+                ? "border-sky-400 bg-sky-50 text-sky-700"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
           >
-            🔍
-          </span>
-          <input
-            id="buscador-autos"
-            type="search"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="¿Qué auto buscas? Marca, modelo o placa"
-            className="w-full rounded-2xl border border-slate-300 bg-white py-4 pl-12 pr-4 text-base text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-          />
+            Filtros
+            {nAvanzados > 0 && (
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-gradient text-[11px] font-black text-white">
+                {nAvanzados}
+              </span>
+            )}
+            <span aria-hidden>{panelAbierto ? "▲" : "▼"}</span>
+          </button>
         </div>
 
-        {/* Chips rápidos: bandas de presupuesto con stock. */}
-        {bandasConStock.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {bandasConStock.map(({ banda: b, total }) => {
-              const activa = banda === b.clave;
-              return (
+        {/* Panel de filtros avanzados (colapsable en móvil para no saturar). */}
+        {panelAbierto && (
+          <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta sm:grid-cols-2 lg:grid-cols-3">
+            <Selector
+              etiqueta="Tipo de vehículo"
+              valor={filtros.tipo ?? ""}
+              onChange={(v) => actualizarUrl({ tipo: v || null })}
+            >
+              <option value="">Cualquiera</option>
+              {OPCIONES_TIPO_CARROCERIA.map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.etiqueta}
+                </option>
+              ))}
+            </Selector>
+
+            <Selector
+              etiqueta="Combustible"
+              valor={filtros.combustible ?? ""}
+              onChange={(v) => actualizarUrl({ combustible: v || null })}
+            >
+              <option value="">Cualquiera</option>
+              {OPCIONES_COMBUSTIBLE.map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.etiqueta}
+                </option>
+              ))}
+            </Selector>
+
+            <Selector
+              etiqueta="Transmisión"
+              valor={filtros.transmision ?? ""}
+              onChange={(v) => actualizarUrl({ transmision: v || null })}
+            >
+              <option value="">Cualquiera</option>
+              {OPCIONES_TRANSMISION.map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.etiqueta}
+                </option>
+              ))}
+            </Selector>
+
+            <Selector
+              etiqueta="Precio desde"
+              valor={filtros.precio_min != null ? String(filtros.precio_min) : ""}
+              onChange={(v) => actualizarUrl({ precio_min: v || null })}
+            >
+              <option value="">Sin mínimo</option>
+              {OPCIONES_PRECIO.map((p) => (
+                <option key={p} value={p}>
+                  {montoOpcion(p)}
+                </option>
+              ))}
+            </Selector>
+
+            <Selector
+              etiqueta="Precio hasta"
+              valor={filtros.precio_max != null ? String(filtros.precio_max) : ""}
+              onChange={(v) => actualizarUrl({ precio_max: v || null })}
+            >
+              <option value="">Sin máximo</option>
+              {OPCIONES_PRECIO.map((p) => (
+                <option key={p} value={p}>
+                  {montoOpcion(p)}
+                </option>
+              ))}
+            </Selector>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Selector
+                etiqueta="Año desde"
+                valor={filtros.anio_min != null ? String(filtros.anio_min) : ""}
+                onChange={(v) => actualizarUrl({ anio_min: v || null })}
+              >
+                <option value="">Cualquiera</option>
+                {aniosAnio.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </Selector>
+              <Selector
+                etiqueta="Año hasta"
+                valor={filtros.anio_max != null ? String(filtros.anio_max) : ""}
+                onChange={(v) => actualizarUrl({ anio_max: v || null })}
+              >
+                <option value="">Cualquiera</option>
+                {aniosAnio.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </Selector>
+            </div>
+
+            {busquedaActiva && (
+              <div className="flex items-end sm:col-span-2 lg:col-span-3">
                 <button
-                  key={b.clave}
                   type="button"
-                  aria-pressed={activa}
-                  onClick={() => setBanda(activa ? null : b.clave)}
-                  className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-                    activa
-                      ? "bg-brand-gradient text-white"
-                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
+                  onClick={limpiarFiltros}
+                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  {b.etiqueta} <span className="opacity-70">({total})</span>
+                  Limpia todos los filtros
                 </button>
-              );
-            })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -287,91 +593,134 @@ export default function MarketplacePage() {
         </Link>
       </div>
 
-      {cargando && <p className="text-slate-500">Cargando publicaciones…</p>}
-      {error && (
+      {errorFeed && !busquedaActiva && (
         <p className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
-          {error}
+          {errorFeed}
         </p>
       )}
 
-      {feedVacio && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-          <p className="text-lg font-semibold text-slate-700">
-            Todavía no hay publicaciones.
-          </p>
-          <p className="mt-1 text-slate-500">Sé el primero en publicar tu vehículo.</p>
-          <Link
-            href="/marketplace/publicar"
-            className="mt-4 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
-          >
-            Publicar ahora
-          </Link>
-        </div>
-      )}
-
-      {/* ── Resultados de búsqueda: reemplazan los bloques curados ─────────── */}
-      {filtroActivo && !cargando && (
+      {/* ── Grilla de búsqueda: reemplaza los bloques curados ────────────────── */}
+      {busquedaActiva && (
         <section className="mb-10">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-slate-900">
-                {totalResultados === 1
-                  ? "1 resultado"
-                  : `${totalResultados} resultados`}
+                {cargandoBusqueda
+                  ? "Buscando autos…"
+                  : nResultados === 1
+                    ? "1 auto encontrado"
+                    : `${nResultados} autos encontrados`}
               </h2>
-              <p className="text-sm text-slate-500">
-                {[
-                  consulta ? `Buscaste “${consulta}”` : null,
-                  bandaActiva?.etiqueta ?? null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
+              {pills.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {pills.map((p) => (
+                    <button
+                      key={p.clave}
+                      type="button"
+                      onClick={() => quitarPill(p.clave)}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      {p.texto}
+                      <span className="text-slate-400" aria-hidden>
+                        ×
+                      </span>
+                      <span className="sr-only">Quitar filtro</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="button"
-              onClick={limpiarBusqueda}
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={limpiarFiltros}
+              className="shrink-0 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Limpiar búsqueda
+              Limpiar filtros
             </button>
           </div>
 
-          {totalResultados === 0 ? (
+          {cargandoBusqueda ? (
+            <p className="text-slate-500">Buscando autos…</p>
+          ) : busqueda.error ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
+              <p className="font-semibold text-rose-700">{busqueda.error}</p>
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="mt-3 inline-flex rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+              >
+                Reiniciar búsqueda
+              </button>
+            </div>
+          ) : nResultados === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
               <p className="font-semibold text-slate-700">
-                No encontramos autos con esa búsqueda.
+                No encontramos autos con esos filtros.
               </p>
-              <p className="mt-1 text-sm text-slate-500">
-                Prueba con menos palabras, por ejemplo solo la marca.
-              </p>
+              <p className="mt-1 text-sm text-slate-500">Prueba con menos filtros.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {internasFiltradas.map((p) => (
-                <ListingInternaCard
-                  key={`i-${p.id}`}
-                  pub={p}
-                  favoritos={control}
-                  distintivo={distintivoBaja(p.placa, p.precio_usd)}
-                />
-              ))}
-              {referenciadasFiltradas.map((p) => (
-                <ListingReferenciadaCard
-                  key={`r-${p.id}`}
-                  pub={p}
-                  favoritos={control}
-                  distintivo={distintivoBaja(p.placa, p.precio_usd)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {busqueda.items.map((item) =>
+                  item.tipo_publicacion === "interna" && item.interna ? (
+                    <ListingInternaCard
+                      key={`i-${item.interna.id}`}
+                      pub={item.interna}
+                      favoritos={control}
+                      distintivo={distintivoBaja(item.interna.placa, item.interna.precio_usd)}
+                    />
+                  ) : item.referenciada ? (
+                    <ListingReferenciadaCard
+                      key={`r-${item.referenciada.id}`}
+                      pub={item.referenciada}
+                      favoritos={control}
+                      distintivo={distintivoBaja(
+                        item.referenciada.placa,
+                        item.referenciada.precio_usd
+                      )}
+                    />
+                  ) : null
+                )}
+              </div>
+
+              {busqueda.cursor && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={cargarMas}
+                    disabled={cargandoMas}
+                    className="rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {cargandoMas ? "Cargando…" : "Cargar más autos"}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
       )}
 
-      {/* ── Bloques curados (solo sin filtro activo) ───────────────────────── */}
-      {!filtroActivo && !cargando && (
+      {/* ── Bloques curados (solo sin búsqueda activa) ──────────────────────── */}
+      {!busquedaActiva && (
         <>
+          {cargandoFeed && <p className="text-slate-500">Cargando publicaciones…</p>}
+
+          {feedVacio && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
+              <p className="text-lg font-semibold text-slate-700">
+                Todavía no hay publicaciones.
+              </p>
+              <p className="mt-1 text-slate-500">Sé el primero en publicar tu vehículo.</p>
+              <Link
+                href="/marketplace/publicar"
+                className="mt-4 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                Publicar ahora
+              </Link>
+            </div>
+          )}
+
           {/* 2. Tus favoritos — retención pasiva, va arriba de todo. */}
           {haySesion &&
             favoritosInternos.length + favoritosReferenciados.length > 0 && (
@@ -440,7 +789,7 @@ export default function MarketplacePage() {
             </Bloque>
           )}
 
-          {/* 5. Explora por marca — chips derivados del stock real. */}
+          {/* 5. Explora por marca — chips derivados del stock real, alimentan el buscador. */}
           {marcas.length > 0 && (
             <Bloque titulo="Explora por marca" descripcion="Marcas con autos publicados ahora.">
               <div className="flex flex-wrap gap-2">
@@ -448,7 +797,7 @@ export default function MarketplacePage() {
                   <button
                     key={marca}
                     type="button"
-                    onClick={() => setTexto(marca)}
+                    onClick={() => buscarMarca(marca)}
                     className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-sky-400 hover:text-sky-700"
                   >
                     {marca} <span className="text-slate-400">({total})</span>
@@ -479,7 +828,7 @@ export default function MarketplacePage() {
             </Bloque>
           )}
 
-          {/* 7. Por presupuesto — el comprador real compra por bolsillo. */}
+          {/* 7. Por presupuesto — el comprador real compra por bolsillo. Alimenta el filtro. */}
           {bandasConStock.length > 0 && (
             <Bloque titulo="Por presupuesto" descripcion="Elige tu rango y mira solo lo que te alcanza.">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -487,7 +836,7 @@ export default function MarketplacePage() {
                   <button
                     key={b.clave}
                     type="button"
-                    onClick={() => setBanda(b.clave)}
+                    onClick={() => aplicarBanda(b)}
                     className="rounded-2xl border border-slate-200 bg-white p-5 text-left sombra-tarjeta transition hover:border-sky-400"
                   >
                     <p className="text-base font-bold text-slate-900">{b.etiqueta}</p>
@@ -539,5 +888,22 @@ export default function MarketplacePage() {
       {/* Anónimo que tocó un ♡: invitación amable, nunca un 401 ni una redirección. */}
       {invitacion && <InvitacionFavorito onCerrar={cerrarInvitacion} />}
     </div>
+  );
+}
+
+// ── Página ───────────────────────────────────────────────────────────────────
+// `ContenidoMarketplace` usa useSearchParams (los filtros viven en la URL), que en Next 16
+// exige un límite de Suspense para no romper el prerender de la ruta.
+export default function MarketplacePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+          <p className="text-slate-500">Cargando marketplace…</p>
+        </div>
+      }
+    >
+      <ContenidoMarketplace />
+    </Suspense>
   );
 }

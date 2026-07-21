@@ -561,3 +561,37 @@ export interface PublicacionDetalle extends PublicacionInterna {
   ficha: FichaSalida | null;
   fotos: FotoSalida[];
 }
+
+// ── Búsqueda del comprador (MC2 — lista plana paginada por cursor) ────────────
+// Mirror de ItemBusqueda / ResultadoBusquedaSalida (src/modules/marketplace/schemas.py).
+// A diferencia del feed (3 cubos curados), la búsqueda devuelve una LISTA PLANA filtrable
+// y paginada por cursor keyset. Cada item lleva el discriminador `tipo_publicacion` para
+// elegir la tarjeta; solo uno de `interna`/`referenciada` viene lleno. Se reusan los mismos
+// shapes del feed → misma garantía de privacidad (ni VIN ni nombre del dueño).
+
+export interface ItemBusqueda {
+  tipo_publicacion: "interna" | "referenciada";
+  interna: PublicacionInterna | null;
+  referenciada: PublicacionReferenciada | null;
+}
+
+export interface ResultadoBusqueda {
+  items: ItemBusqueda[];
+  // Token opaco (base64) que se reenvía tal cual para traer la siguiente página.
+  // null cuando ya no hay más resultados.
+  siguiente_cursor: string | null;
+}
+
+// Parámetros de GET /marketplace/buscar. Todos opcionales; los enums reusan los catálogos
+// de la ficha técnica. Si `tipo`/`combustible`/`transmision` está activo, las referencias
+// externas NO aparecen (no tienen ficha) — lo decide el backend.
+export interface FiltrosBusqueda {
+  q?: string; // texto libre sobre título/marca/modelo (máx. 80)
+  tipo?: TipoCarroceria;
+  combustible?: Combustible;
+  transmision?: Transmision;
+  precio_min?: number;
+  precio_max?: number;
+  anio_min?: number;
+  anio_max?: number;
+}
