@@ -97,10 +97,14 @@ export function consultarPlaca(placa: string) {
 // Perfil consolidado orientado a la entidad (secciones temáticas + estado_fuentes).
 // Auth OPCIONAL: si hay token, se envía para que el backend revele los microdesbloqueos
 // que el usuario ya pagó para esta placa. Sin token → teaser (todo gateado).
-export function consultarPerfil(placa: string) {
+export function consultarPerfil(
+  placa: string,
+  opciones: { soloCache?: boolean } = {}
+) {
   const token = obtenerToken();
+  const query = opciones.soloCache ? "?solo_cache=true" : "";
   return fetchAPI<VehiculoConsolidado>(
-    `/consultar/${encodeURIComponent(placa)}/perfil`,
+    `/consultar/${encodeURIComponent(placa)}/perfil${query}`,
     token ? { headers: { Authorization: `Bearer ${token}` } } : {}
   );
 }

@@ -34,7 +34,7 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
     let activo = true;
     (async () => {
       try {
-        const p = await consultarPerfil(placa);
+        const p = await consultarPerfil(placa, { soloCache: true });
         if (activo) setPerfil(p);
       } catch {
         // Silencioso: degrada a "en proceso". Nunca rompe el anuncio.
@@ -49,8 +49,22 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
 
   const r = perfil ? derivarResumen(perfil) : null;
   const fecha = fechaLegible(r?.consultadoEn);
+  const estadosOficiales = perfil?.estado_fuentes.filter((fuente) =>
+    ["ANT", "AMT", "EPMTSD"].includes(fuente.clave)
+  ) ?? [];
+  const sinDatosOficiales =
+    estadosOficiales.length > 0 &&
+    estadosOficiales.every((fuente) => fuente.estado === "no_consultada");
+  const municipalesSinConsultar = estadosOficiales.some(
+    (fuente) =>
+      ["AMT", "EPMTSD"].includes(fuente.clave) &&
+      fuente.estado === "no_consultada"
+  );
   // Sin nada útil todavía: ni matrícula resuelta ni veredicto.
-  const enProceso = cargando || !r || (r.matriculaEtiqueta === "Sin dato" && r.municipalesEnProceso);
+  const enProceso =
+    cargando ||
+    !r ||
+    (!sinDatosOficiales && r.matriculaEtiqueta === "Sin dato" && r.municipalesEnProceso);
 
   return (
     <section className="rounded-2xl border border-slate-200/70 bg-white p-5 sombra-tarjeta sm:p-6">
@@ -62,7 +76,11 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
         Esto no lo declara el vendedor: viene de la ANT y las agencias municipales de tránsito.
       </p>
 
-      {enProceso ? (
+      {sinDatosOficiales ? (
+        <p className="text-sm text-slate-500">
+          Aún no hay datos oficiales disponibles para esta placa. Consulta la placa para actualizarlos.
+        </p>
+      ) : enProceso ? (
         <p className="text-sm text-slate-500">
           Datos oficiales en proceso. Estamos consultando las fuentes públicas de esta placa.
         </p>
@@ -74,6 +92,8 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
           <Linea etiqueta="Multas e infracciones">
             {r!.municipalesEnProceso ? (
               <span className="text-slate-400">Consultando…</span>
+            ) : municipalesSinConsultar ? (
+              <span className="text-slate-400">Aún no consultadas</span>
             ) : r!.tienePendientes ? (
               <span className="text-amber-600">Con pendientes</span>
             ) : r!.municipalesCaidas ? (

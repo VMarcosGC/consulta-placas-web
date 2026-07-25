@@ -210,7 +210,8 @@ export type EstadoFuenteConsolidada =
   | "error_fuente"
   | "error"
   | "consulta_externa"
-  | "no_integrada";
+  | "no_integrada"
+  | "no_consultada";
 
 export interface EstadoFuenteItem {
   clave: string;
@@ -220,7 +221,7 @@ export interface EstadoFuenteItem {
   estado: EstadoFuenteConsolidada;
   detalle?: string | null;
   // ISO-8601 de cuándo se obtuvo el dato (caché o consulta recién hecha). null si la
-  // fuente no entregó datos (en_proceso / error / no_integrada). Lo usa la sección
+  // fuente no entregó datos (en_proceso / error / no_integrada / no_consultada). Lo usa la sección
   // "Datos oficiales" del anuncio para decir "consultado el …".
   consultado_en?: string | null;
 }
