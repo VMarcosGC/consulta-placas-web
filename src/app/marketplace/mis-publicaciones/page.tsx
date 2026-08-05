@@ -14,6 +14,7 @@ import {
   solicitarVerificacion,
 } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
+import { AvisoContactoVendedor } from "@/components/AvisoContactoVendedor";
 import { FichaEditor } from "@/components/FichaEditor";
 import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
 import {
@@ -146,6 +147,10 @@ export default function MisPublicacionesPage() {
           + Publicar
         </Link>
       </header>
+
+      {/* Contacto de vendedor (M5): publicar sin número deja al comprador sin cómo
+          escribir, así que el estado se ve donde el vendedor administra sus anuncios. */}
+      <AvisoContactoVendedor />
 
       {cargando && <p className="text-slate-500">Cargando…</p>}
       {error && (

@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BentoCard, Insignia } from "@/components/BentoCard";
+import { ContactoVendedor } from "@/components/ContactoVendedor";
 import { DatosOficialesMini } from "@/components/DatosOficialesMini";
 import {
   listarMisPublicaciones,
@@ -493,7 +494,12 @@ export default function PublicacionDetallePage() {
             </div>
 
             {/* CTA principal. El contacto con el vendedor llega en M5; por ahora la acción
-                de más valor para el comprador es verificar la placa en las fuentes. */}
+                de más valor para el comprador es verificar la placa en las fuentes.
+
+                NOTA: se evaluó ascender "Ver teléfono" a CTA primario y se REVIRTIÓ a
+                propósito. Cambiar qué acción manda en un anuncio es una decisión de
+                producto y merece discutirse aparte, no colarse dentro de la tarea que
+                agrega el contacto. Queda anotado como candidato en ORDEN-DE-TRABAJO. */}
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
                 href={`/consultar/${encodeURIComponent(pub.placa)}`}
@@ -510,6 +516,10 @@ export default function PublicacionDetallePage() {
                 </Link>
               )}
             </div>
+
+            {/* Contacto con el vendedor (M5), como acción secundaria. El teléfono NO
+                viaja en el detalle: se pide bajo acción explícita (ver ContactoVendedor). */}
+            <ContactoVendedor publicacionId={pub.id} esMia={esMia} />
 
             {pub.descripcion && (
               <p className="mt-4 whitespace-pre-line text-slate-600">{pub.descripcion}</p>

@@ -596,3 +596,48 @@ export interface FiltrosBusqueda {
   anio_min?: number;
   anio_max?: number;
 }
+
+// ── Vendedor y contacto comprador-vendedor (TASK-001 / M5) ───────────────────
+// Mirror de VendedorActualizar / VendedorPerfilSalida / ContactoVendedorSalida
+// (src/modules/marketplace/schemas.py, bloque "Vendedor y contacto").
+//
+// PRIVACIDAD (§9): `telefono` existe en DOS lugares y en ninguno más. (1) el perfil
+// PROPIO del vendedor, detrás de sesión; (2) la respuesta del endpoint de contacto, que
+// solo se llama cuando el comprador pulsa "Ver teléfono". NUNCA en el feed, la búsqueda
+// ni el detalle de la publicación: un número servido en un listado público lo cosechan
+// bots en días, y esa acción explícita es la barrera.
+
+// `patio` está declarado en el backend desde ya, pero en esta etapa todo vendedor es
+// `particular` (el `tipo` no se acepta del cliente).
+export type TipoVendedor = "particular" | "patio";
+
+// Perfil de vendedor PROPIO (GET/PATCH /marketplace/vendedor/mi-perfil).
+// OJO: el GET responde **404 cuando la cuenta todavía no tiene perfil**, porque el perfil
+// nace con el PATCH. Ese 404 es un estado de onboarding, no un fallo (ver src/lib/api.ts).
+export interface VendedorPerfilSalida {
+  id: number;
+  tipo: TipoVendedor;
+  nombre_publico: string | null;
+  telefono: string | null;
+  // Reservado por el backend (verificación por SMS/OTP): hoy siempre false y no se pinta.
+  telefono_verificado: boolean;
+  creado_en: string;
+}
+
+// Edición parcial: omitir un campo lo deja intacto; enviar `null` lo borra.
+// `nombre_publico` y `telefono` viajan JUNTOS: el backend responde 422 si queda un
+// teléfono publicado sin nombre público (opt-in explícito de PII, compuerta M5).
+export interface VendedorActualizar {
+  nombre_publico?: string | null;
+  telefono?: string | null;
+}
+
+// Respuesta de POST /marketplace/publicaciones/{id}/contacto: el único lugar público
+// con el teléfono. `whatsapp_url` viene ARMADA del backend (con el mensaje prellenado);
+// se usa tal cual, jamás se reconstruye en el cliente — la API tiene que ser
+// autosuficiente para un cliente que no sea esta web (AGENTS §1.0.2).
+export interface ContactoVendedorSalida {
+  telefono: string;
+  nombre_publico: string | null;
+  whatsapp_url: string;
+}

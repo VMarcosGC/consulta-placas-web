@@ -5,6 +5,7 @@ import {
   ApiError,
   CloudinaryError,
   ConsultaPlacaRespuesta,
+  ContactoVendedorSalida,
   Favorito,
   FavoritoCrear,
   FeedMarketplace,
@@ -27,6 +28,8 @@ import {
   Vehiculo,
   VehiculoConsolidado,
   VehiculoCrear,
+  VendedorActualizar,
+  VendedorPerfilSalida,
 } from "@/types/api";
 import { obtenerToken } from "./auth";
 
@@ -368,6 +371,46 @@ export function solicitarVerificacion(id: number) {
     `/marketplace/publicaciones/${id}/solicitar-verificacion`,
     { method: "POST" },
     true
+  );
+}
+
+// ─── Vendedor y contacto comprador-vendedor (M5 / TASK-001) ───────────────
+// El teléfono del vendedor vive SOLO en estas tres rutas: el perfil propio (privado) y
+// la revelación bajo acción explícita del comprador. Ni el feed, ni /buscar, ni el
+// detalle de la publicación lo traen — por eso no hay dónde prefetchearlo.
+
+// Perfil de vendedor propio. Requiere sesión.
+//
+// OJO — **404 = estado de onboarding, no fallo**: el perfil se crea con el PATCH, así que
+// una cuenta que todavía no cargó su contacto responde 404. Es la única ruta del proyecto
+// donde 404 no significa "no existe o no es tuyo" (TASK-001 §Endpoints). Quien la consuma
+// debe atrapar `ApiError` con `status === 404` y abrir el formulario vacío. Un fallo real
+// de red NO llega como ApiError (fetch rechaza con TypeError), así que los dos casos se
+// distinguen sin ambigüedad.
+export function obtenerMiPerfilVendedor() {
+  return fetchAPI<VendedorPerfilSalida>("/marketplace/vendedor/mi-perfil", {}, true);
+}
+
+// Crea o actualiza el perfil propio (upsert parcial). Requiere sesión. Es gratis.
+// Solo se tocan los campos ENVIADOS: omitir uno lo deja intacto, `null` lo borra.
+// 422 si el teléfono no es un celular ecuatoriano válido, y también si el estado
+// resultante deja teléfono publicado sin `nombre_publico` (opt-in de PII).
+export function actualizarMiPerfilVendedor(datos: VendedorActualizar) {
+  return fetchAPI<VendedorPerfilSalida>(
+    "/marketplace/vendedor/mi-perfil",
+    { method: "PATCH", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+// Revela el contacto del vendedor de una publicación. **Público, sin sesión y sin cobro**
+// (§1.0.3: contactar es libre). Registra una métrica anónima en el backend, por eso es
+// POST y por eso solo se llama cuando el comprador pulsa "Ver teléfono".
+// 409 = el vendedor todavía no publicó un teléfono; 404 = anuncio inexistente o no público.
+export function revelarContactoVendedor(publicacionId: number) {
+  return fetchAPI<ContactoVendedorSalida>(
+    `/marketplace/publicaciones/${publicacionId}/contacto`,
+    { method: "POST" }
   );
 }
 
