@@ -15,6 +15,32 @@
 
 html { scroll-behavior: smooth; }
 
+/* ── Barra de navegación inferior (solo celular) ───────────────────────────
+   Un único lugar define su alto: lo usa la barra (`BarraNavegacionMovil`) para
+   dimensionar cada entrada y `.espacio-barra-movil` para reservar el hueco al
+   final de la página. Si se cambia acá, cambian los dos a la vez. */
+:root {
+  --alto-barra-movil: 4rem; /* 64px: área táctil cómoda, muy por encima de los 44px */
+  /* Alto REAL que la barra ocupa en pantalla, safe area incluida (muesca o barra de
+     gestos). **Todo lo que deba quedar POR ENCIMA de la barra usa esta variable**, no
+     el 4rem pelado: repetir el 64px a mano fue exactamente lo que descuadró el aviso
+     de favoritos, que se elevaba 64+12 mientras la barra ocupaba 64+34. */
+  --alto-barra-movil-total: calc(
+    var(--alto-barra-movil) + env(safe-area-inset-bottom, 0px)
+  );
+}
+
+/* La barra es `fixed`: sin este colchón tapa el final del pie de página y los CTA
+   que queden al fondo. Desde `md` la barra no existe y el colchón desaparece. */
+.espacio-barra-movil {
+  padding-bottom: var(--alto-barra-movil-total);
+}
+@media (min-width: 768px) {
+  .espacio-barra-movil {
+    padding-bottom: 0;
+  }
+}
+
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
   /* Lienzo claro con una sutil tibieza azulada, no blanco plano. */

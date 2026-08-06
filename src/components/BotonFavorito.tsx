@@ -50,7 +50,13 @@ export function BotonFavorito({
 // redirección de golpe: se le explica para qué sirve y él decide.
 export function InvitacionFavorito({ onCerrar }: { onCerrar: () => void }) {
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta">
+    // En celular se levanta por encima de la barra de navegación inferior (fixed):
+    // si no, el aviso la tapa justo cuando el visitante necesita seguir navegando.
+    // Se apoya en `--alto-barra-movil-total`, que ya incluye la safe area. Antes usaba
+    // `--alto-barra-movil` a secas y en un teléfono con muesca el aviso caía DENTRO de
+    // la barra —y con z-50 sobre z-40, encima de ella—. La variable es una sola para
+    // que las dos alturas no puedan volver a desincronizarse.
+    <div className="fixed inset-x-3 bottom-[calc(var(--alto-barra-movil-total)+0.75rem)] z-50 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta md:bottom-3">
       <div className="flex items-start gap-3">
         <span className="text-2xl leading-none" aria-hidden>
           ♡

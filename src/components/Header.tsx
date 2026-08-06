@@ -62,12 +62,20 @@ export function Header() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-6 sm:px-6">
         <Link
           href="/"
+          aria-label="Revisa tu Carro EC — inicio"
           className="flex shrink items-center gap-2 text-base font-semibold text-slate-900 sm:text-lg"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-gradient text-white text-sm font-black shadow-sm">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand-gradient text-white text-sm font-black shadow-sm">
             RC
           </span>
-          <span>
+          {/* Bajo 400px queda solo el monograma. Medido: el nombre completo ocupa ~143px
+              y el conjunto logo + "Entrar" + "Crear cuenta" necesita 393px, así que a
+              320/360/375 no entra (antes se partía en dos líneas). El umbral es 400 y no
+              420 a propósito: el iPhone 12-15 y el Pixel 8 rondan los 390-393px y son el
+              equipo típico del público objetivo (§1) — a 400px conservan el nombre con
+              7px de holgura. El nombre accesible lo lleva el aria-label, así que nadie
+              lo pierde en pantallas más chicas. */}
+          <span className="hidden min-[400px]:inline">
             Revisa tu <span className="text-brand-gradient">Carro</span>
             <span className="ml-1 align-top text-[10px] font-bold text-slate-400">EC</span>
           </span>
@@ -85,6 +93,13 @@ export function Header() {
           {logueado && (
             <Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link>
           )}
+          {/* Accesos de admin DUPLICADOS a propósito: viven acá y también en MenuCuenta.
+              Estaban solo acá, dentro de este bloque `hidden md:flex`, así que un admin
+              en celular no los alcanzaba; por eso se sumaron al menú. Se conservan
+              además en escritorio porque quitarle un clic al admin vale más que el
+              ahorro de mantener una sola lista: son dos entradas estables y el riesgo de
+              que se desincronicen es bajo. Si se agrega una tercera, revisar los dos
+              lugares. */}
           {usuario?.es_admin && (
             <>
               <Link href="/admin/moderacion" className="font-semibold text-blue-600 hover:text-blue-800">
@@ -114,19 +129,34 @@ export function Header() {
               {/* Menú de la cuenta: única entrada a "Mis publicaciones" y "Mi contacto",
                   que no tenían enlace propio en el Header. Visible en todos los anchos
                   (en celular queda solo el círculo con la inicial). */}
-              <MenuCuenta nombre={nombreCorto} alSalir={salir} />
+              <MenuCuenta
+                nombre={nombreCorto}
+                esAdmin={usuario?.es_admin ?? false}
+                alSalir={salir}
+              />
             </>
           ) : (
             <>
+              {/* Se ve en TODOS los anchos. Antes era `hidden sm:inline`: bajo 640px
+                  un usuario con cuenta solo veía "Crear cuenta" y no tenía por dónde
+                  volver a entrar. En celular la etiqueta se acorta a "Entrar" para que
+                  quepa junto al CTA principal. Sin `aria-label`: el nombre accesible
+                  sale del span visible (el oculto es `display:none` y no cuenta), así
+                  que siempre coincide con lo que se lee en pantalla. */}
               <Link
                 href="/login"
-                className="hidden sm:inline rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:text-slate-900"
+                /* `min-h-11` = 44px, el mínimo táctil. Se fija por altura y no por
+                   `py`/tamaño de fuente para no desalinear la fila del header a 320px:
+                   el ancho no cambia, así que el ajuste medido a esos anchos se conserva. */
+                className="inline-flex min-h-11 items-center justify-center rounded-lg px-2 py-1.5 text-sm text-slate-600 hover:text-slate-900 sm:px-3"
               >
-                Iniciar sesión
+                <span className="sm:hidden">Entrar</span>
+                <span className="hidden sm:inline">Iniciar sesión</span>
               </Link>
               <Link
                 href="/registro"
-                className="rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+                /* Mismo mínimo táctil que "Entrar": son vecinos y quedarían dispares. */
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
               >
                 Crear cuenta
               </Link>

@@ -21,12 +21,20 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { cargarPerfilVendedor, suscribirPerfilVendedor } from "@/lib/vendedor";
 
 const RUTA_CONTACTO = "/marketplace/mi-perfil-vendedor";
 
-const OPCIONES = [
+type OpcionMenu = {
+  href: string;
+  etiqueta: string;
+  ayuda: string;
+  /** Marca visual (azul) de las tareas de administración. */
+  admin?: boolean;
+};
+
+const OPCIONES: OpcionMenu[] = [
   { href: "/mi-garage", etiqueta: "Mi garage", ayuda: "Tus autos y su historial" },
   {
     href: "/marketplace/mis-publicaciones",
@@ -38,15 +46,43 @@ const OPCIONES = [
     etiqueta: "Mi contacto",
     ayuda: "Con qué nombre y número te escriben",
   },
-] as const;
+];
 
-// Cantidad de elementos enfocables del menú: las opciones + "Salir".
-const TOTAL_ENFOCABLES = OPCIONES.length + 1;
+// Tareas de administración. Vivían en la barra de arriba del Header, dentro del bloque
+// `hidden md:flex`: un admin en celular no las alcanzaba. Se mudaron acá enteras (no
+// duplicadas) para que exista una sola lista.
+const OPCIONES_ADMIN: OpcionMenu[] = [
+  {
+    href: "/admin/moderacion",
+    etiqueta: "Moderar referencias",
+    ayuda: "Aprueba o rechaza los anuncios externos",
+    admin: true,
+  },
+  {
+    href: "/admin/verificaciones",
+    etiqueta: "Verificar publicaciones",
+    ayuda: "Cola de premium pendientes de sello",
+    admin: true,
+  },
+];
 
 // `sin_dato` cubre el fallo de red y la sesión vencida: no sabemos, así que no avisamos.
 type EstadoContacto = "cargando" | "completo" | "falta" | "sin_dato";
 
-export function MenuCuenta({ nombre, alSalir }: { nombre: string; alSalir: () => void }) {
+export function MenuCuenta({
+  nombre,
+  esAdmin = false,
+  alSalir,
+}: {
+  nombre: string;
+  esAdmin?: boolean;
+  alSalir: () => void;
+}) {
+  // Las de admin se suman al final: son tareas de trabajo, no de la cuenta propia.
+  const opciones = esAdmin ? [...OPCIONES, ...OPCIONES_ADMIN] : OPCIONES;
+  // Elementos enfocables del menú: las opciones + "Salir".
+  const totalEnfocables = opciones.length + 1;
+
   const [abierto, setAbierto] = useState(false);
   // -1 = ninguna opción enfocada (se abrió con el mouse; el foco sigue en el disparador).
   const [indiceActivo, setIndiceActivo] = useState(-1);
@@ -126,16 +162,16 @@ export function MenuCuenta({ nombre, alSalir }: { nombre: string; alSalir: () =>
     if (!abierto) return;
     if (evento.key === "ArrowDown") {
       evento.preventDefault();
-      setIndiceActivo((i) => (i + 1) % TOTAL_ENFOCABLES);
+      setIndiceActivo((i) => (i + 1) % totalEnfocables);
     } else if (evento.key === "ArrowUp") {
       evento.preventDefault();
-      setIndiceActivo((i) => (i <= 0 ? TOTAL_ENFOCABLES - 1 : i - 1));
+      setIndiceActivo((i) => (i <= 0 ? totalEnfocables - 1 : i - 1));
     } else if (evento.key === "Home") {
       evento.preventDefault();
       setIndiceActivo(0);
     } else if (evento.key === "End") {
       evento.preventDefault();
-      setIndiceActivo(TOTAL_ENFOCABLES - 1);
+      setIndiceActivo(totalEnfocables - 1);
     }
   }
 
@@ -146,7 +182,7 @@ export function MenuCuenta({ nombre, alSalir }: { nombre: string; alSalir: () =>
     evento.preventDefault();
     if (abierto) return; // ya abierto: mueve el foco el handler del contenedor.
     setAbierto(true);
-    setIndiceActivo(evento.key === "ArrowDown" ? 0 : TOTAL_ENFOCABLES - 1);
+    setIndiceActivo(evento.key === "ArrowDown" ? 0 : totalEnfocables - 1);
   }
 
   // Cierre por pérdida de foco: si el nuevo elemento enfocado no está dentro del menú
@@ -182,7 +218,10 @@ export function MenuCuenta({ nombre, alSalir }: { nombre: string; alSalir: () =>
         aria-expanded={abierto}
         aria-controls="menu-cuenta"
         aria-label={etiquetaDisparador}
-        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 sm:px-3"
+        /* `min-h-11` = 44px, el mínimo táctil: el círculo interno mide 28px y el `py`
+           dejaba el botón en 40px. Se corrige por altura, no agrandando el círculo ni la
+           fuente, para no mover el resto de la fila del header a 320px. */
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 sm:px-3"
       >
         <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient text-[11px] font-black text-white">
           {inicial}
@@ -209,30 +248,40 @@ export function MenuCuenta({ nombre, alSalir }: { nombre: string; alSalir: () =>
           </p>
 
           <div id="menu-cuenta" role="menu" aria-label="Tu cuenta" className="py-1">
-            {OPCIONES.map((opcion, indice) => (
-              <Link
-                key={opcion.href}
-                href={opcion.href}
-                role="menuitem"
-                tabIndex={-1}
-                ref={(el) => {
-                  refsOpciones.current[indice] = el;
-                }}
-                onClick={() => cerrar(false)}
-                className={claseItem}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 font-semibold text-slate-800">
-                    {opcion.etiqueta}
-                    {opcion.href === RUTA_CONTACTO && faltaContacto && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                        Falta tu número
-                      </span>
-                    )}
+            {opciones.map((opcion, indice) => (
+              <Fragment key={opcion.href}>
+                {/* Línea divisoria antes del primer item de admin: separa "mi cuenta"
+                    de "mi trabajo de moderación". */}
+                {opcion.admin && !opciones[indice - 1]?.admin && (
+                  <div role="separator" className="my-1 h-px bg-slate-100" />
+                )}
+                <Link
+                  href={opcion.href}
+                  role="menuitem"
+                  tabIndex={-1}
+                  ref={(el) => {
+                    refsOpciones.current[indice] = el;
+                  }}
+                  onClick={() => cerrar(false)}
+                  className={claseItem}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`flex items-center gap-2 font-semibold ${
+                        opcion.admin ? "text-blue-600" : "text-slate-800"
+                      }`}
+                    >
+                      {opcion.etiqueta}
+                      {opcion.href === RUTA_CONTACTO && faltaContacto && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                          Falta tu número
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-slate-500">{opcion.ayuda}</span>
                   </span>
-                  <span className="mt-0.5 block text-xs text-slate-500">{opcion.ayuda}</span>
-                </span>
-              </Link>
+                </Link>
+              </Fragment>
             ))}
 
             <div role="separator" className="my-1 h-px bg-slate-100" />
@@ -242,7 +291,7 @@ export function MenuCuenta({ nombre, alSalir }: { nombre: string; alSalir: () =>
               role="menuitem"
               tabIndex={-1}
               ref={(el) => {
-                refsOpciones.current[OPCIONES.length] = el;
+                refsOpciones.current[opciones.length] = el;
               }}
               onClick={() => {
                 cerrar(false);
