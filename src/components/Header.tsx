@@ -6,6 +6,7 @@ import { cerrarSesion, tieneSesion } from "@/lib/auth";
 import { obtenerPerfil } from "@/lib/api";
 import type { Usuario } from "@/types/api";
 import { useRouter } from "next/navigation";
+import { MenuCuenta } from "./MenuCuenta";
 
 // Suscripción al estado de sesión (un store externo: localStorage).
 // "storage" cubre cambios desde otra pestaña; "sesion-cambiada" los del mismo tab.
@@ -56,8 +57,13 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur-xl">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+      {/* Padding y gap más chicos en celular: a 360px el logo, el saldo y el menú de la
+          cuenta tienen que entrar en la misma fila sin encimarse. */}
+      <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-6 sm:px-6">
+        <Link
+          href="/"
+          className="flex shrink items-center gap-2 text-base font-semibold text-slate-900 sm:text-lg"
+        >
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-gradient text-white text-sm font-black shadow-sm">
             RC
           </span>
@@ -91,7 +97,7 @@ export function Header() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {logueado ? (
             <>
               {/* Saldo de tokens: visible para que el usuario sepa con qué cuenta para desbloquear. */}
@@ -105,23 +111,10 @@ export function Header() {
                   {usuario.saldo_tokens}
                 </Link>
               )}
-              {/* Nombre del usuario: confirma visualmente la sesión activa y enlaza al garage. */}
-              <Link
-                href="/mi-garage"
-                className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 sm:inline-flex"
-                title="Ir a mi garage"
-              >
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-gradient text-[11px] font-black text-white">
-                  {nombreCorto.charAt(0).toUpperCase()}
-                </span>
-                <span className="max-w-[10rem] truncate">{nombreCorto}</span>
-              </Link>
-              <button
-                onClick={salir}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:border-slate-400 hover:text-slate-900"
-              >
-                Salir
-              </button>
+              {/* Menú de la cuenta: única entrada a "Mis publicaciones" y "Mi contacto",
+                  que no tenían enlace propio en el Header. Visible en todos los anchos
+                  (en celular queda solo el círculo con la inicial). */}
+              <MenuCuenta nombre={nombreCorto} alSalir={salir} />
             </>
           ) : (
             <>

@@ -26,6 +26,7 @@ import {
   AYUDA_NOMBRE_PUBLICO,
   AYUDA_TELEFONO,
   cargarPerfilVendedor,
+  notificarPerfilVendedorCambiado,
   telefonoLegible,
   telefonoPareceValido,
   type PerfilVendedorCargado,
@@ -140,6 +141,9 @@ export default function MiPerfilVendedorPage() {
       setNombre(actualizado.nombre_publico ?? "");
       setTelefono(actualizado.telefono ?? "");
       setGuardado(true);
+      // El Header sigue montado al navegar: sin este aviso, el punto ámbar del menú de la
+      // cuenta seguiría diciendo "falta tu número" hasta un refresh completo.
+      notificarPerfilVendedorCambiado();
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401) {

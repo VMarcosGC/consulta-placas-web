@@ -73,3 +73,22 @@ export async function cargarPerfilVendedor(): Promise<PerfilVendedorCargado> {
     return { tipo: "fallo" };
   }
 }
+
+// ── Aviso de "el perfil cambió", para los que lo muestran fuera de su página ──────────
+//
+// Mismo patrón que "sesion-cambiada" en `lib/auth.ts`: el Header no se vuelve a montar al
+// navegar entre páginas, así que si el vendedor guarda su número el aviso del menú se
+// quedaría desactualizado hasta un refresh completo. Quien guarda avisa; quien muestra
+// se resuscribe y vuelve a leer.
+
+const EVENTO_PERFIL_VENDEDOR = "perfil-vendedor-cambiado";
+
+export function notificarPerfilVendedorCambiado(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(EVENTO_PERFIL_VENDEDOR));
+}
+
+export function suscribirPerfilVendedor(alCambiar: () => void): () => void {
+  window.addEventListener(EVENTO_PERFIL_VENDEDOR, alCambiar);
+  return () => window.removeEventListener(EVENTO_PERFIL_VENDEDOR, alCambiar);
+}
