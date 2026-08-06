@@ -4,7 +4,6 @@
 import {
   ApiError,
   CloudinaryError,
-  ConsultaPlacaRespuesta,
   ContactoVendedorSalida,
   Favorito,
   FavoritoCrear,
@@ -91,11 +90,12 @@ async function fetchAPI<T>(
 
 // ─── Publicos ─────────────────────────────────────────────
 
-export function consultarPlaca(placa: string) {
-  return fetchAPI<ConsultaPlacaRespuesta>(
-    `/consultar/${encodeURIComponent(placa)}`
-  );
-}
+// NOTA: aquí vivía `consultarPlaca()`, que pegaba a `GET /consultar/{placa}` (la vista
+// por fuente). Se eliminó al quitar el disparo desde el wizard de publicación: ese era su
+// único llamador y ese endpoint **dispara scraping** (Playwright contra ANT + encolado de
+// AMT/EPMTSD). Si algún día hace falta consultar de verdad, se usa `consultarPerfil` sin
+// `soloCache`, que es lo que ya hacen `/consultar/[placa]` y `PerfilVehiculo` — los dos
+// únicos lugares donde el usuario pidió la consulta explícitamente.
 
 // Perfil consolidado orientado a la entidad (secciones temáticas + estado_fuentes).
 // Auth OPCIONAL: si hay token, se envía para que el backend revele los microdesbloqueos
