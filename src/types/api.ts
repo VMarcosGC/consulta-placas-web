@@ -338,6 +338,41 @@ export type PlanPublicacion = "light" | "premium";
 export type EstadoPublicacion = "borrador" | "activa" | "pausada" | "vendida";
 export type EstadoVerificacion = "no_verificado" | "pendiente" | "verificado" | "rechazado";
 
+// Catálogo CERRADO de ciudades donde puede estar un auto en venta (migración 0023).
+// Espejo de `CiudadPublicacion` de src/modules/marketplace/schemas.py, mismo orden.
+// Los valores ya vienen listos para mostrar (no son claves snake_case como los catálogos
+// de la ficha), así que no necesitan tabla de etiquetas: la tarjeta pinta lo que llega.
+export type CiudadPublicacion =
+  | "Quito"
+  | "Guayaquil"
+  | "Cuenca"
+  | "Ambato"
+  | "Manta"
+  | "Loja"
+  | "Machala"
+  | "Santo Domingo"
+  | "Portoviejo"
+  | "Ibarra"
+  | "Riobamba"
+  | "Esmeraldas";
+
+// Opciones del <select> del formulario. Es el catálogo del backend en el mismo orden;
+// escribir una ciudad fuera de esta lista devuelve 422 al crear o editar.
+export const CIUDADES_PUBLICACION: readonly CiudadPublicacion[] = [
+  "Quito",
+  "Guayaquil",
+  "Cuenca",
+  "Ambato",
+  "Manta",
+  "Loja",
+  "Machala",
+  "Santo Domingo",
+  "Portoviejo",
+  "Ibarra",
+  "Riobamba",
+  "Esmeraldas",
+];
+
 export interface ResumenMantenimientos {
   total: number;
   ultima_fecha: string | null;
@@ -349,6 +384,12 @@ export interface PublicacionInterna {
   placa: string;
   titulo: string | null;
   descripcion: string | null;
+  // Ciudad donde está el auto en venta. `string | null` y NO `CiudadPublicacion`: el
+  // catálogo se impone al ESCRIBIR (422 en alta y edición), pero la salida es texto libre
+  // para que una fila vieja siga leyéndose si mañana se retira una ciudad de la lista.
+  // Mismo tipo que `PublicacionReferenciada.ciudad`, así la tarjeta las trata igual —
+  // incluida la opcionalidad: en el OpenAPI el campo es nullable y **no requerido**.
+  ciudad?: string | null;
   precio_usd: number;
   plan: PlanPublicacion;
   estado: EstadoPublicacion;
@@ -440,6 +481,10 @@ export interface PublicacionCrear {
   placa: string;
   titulo?: string;
   descripcion?: string;
+  // Opcional: publicar sin ciudad es válido. Al ENVIAR sí va tipada con el catálogo,
+  // porque el backend valida contra él (una ciudad fuera de lista → 422). Admite `null`
+  // además de omitirse, que es lo que declara el OpenAPI (`anyOf: [enum, null]`).
+  ciudad?: CiudadPublicacion | null;
   precio_usd: number;
   plan: PlanPublicacion;
   vehiculo_id?: number;

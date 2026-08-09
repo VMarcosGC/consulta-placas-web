@@ -491,6 +491,9 @@ export default function PublicacionDetallePage() {
               {pub.marca && <span>Marca: <b className="text-slate-700">{pub.marca}</b></span>}
               {pub.modelo && <span>Modelo: <b className="text-slate-700">{pub.modelo}</b></span>}
               {pub.anio != null && <span>Año: <b className="text-slate-700">{pub.anio}</b></span>}
+              {/* Dónde está el auto en venta. Es opcional: si el vendedor no la eligió,
+                  no se pinta la etiqueta (mejor ausente que "Ciudad: —"). */}
+              {pub.ciudad && <span>Ciudad: <b className="text-slate-700">{pub.ciudad}</b></span>}
             </div>
 
             {/* CTA principal. El contacto con el vendedor llega en M5; por ahora la acción

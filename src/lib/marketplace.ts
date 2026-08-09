@@ -5,7 +5,8 @@
 // real con query params y paginación es MC2 — cuando exista, este filtro en cliente se
 // reemplaza por el del backend y estos helpers se caen solos.
 
-import type { PublicacionInterna } from "@/types/api";
+import { CIUDADES_PUBLICACION } from "@/types/api";
+import type { CiudadPublicacion, PublicacionInterna } from "@/types/api";
 
 // Forma mínima que necesita un anuncio para entrar al buscador y a los bloques
 // derivados. La cumplen tanto las publicaciones internas como las referenciadas.
@@ -30,6 +31,25 @@ export function normalizar(texto: string): string {
 // (El filtro de texto del buscador ya NO se resuelve en cliente: desde MC2 lo hace el
 // backend vía GET /marketplace/buscar. `normalizar` sigue vivo porque `marcasDelStock` lo
 // usa para agrupar marcas equivalentes.)
+
+// ── Ciudad del anuncio ───────────────────────────────────────────────────────
+
+// ¿Este texto libre corresponde a una ciudad del catálogo cerrado del backend?
+//
+// Se usa para PROPONER una ciudad en el formulario de publicar a partir de la
+// `ciudad_registro` del garage, que es texto libre (hoy en la BD hay "QUITO", en
+// mayúsculas). Solo se normalizan mayúsculas, tildes y espacios: la comparación sigue
+// siendo exacta, no hay coincidencias parciales ni "parecidos". "Sto. Domingo",
+// "Santo Domingo de los Tsáchilas" o "Quito Norte" devuelven null, y el selector queda
+// sin elegir: un prellenado que adivina publicaría el auto en una ciudad que el vendedor
+// nunca dijo.
+export function ciudadDelCatalogo(
+  texto: string | null | undefined
+): CiudadPublicacion | null {
+  if (!texto) return null;
+  const buscado = normalizar(texto).replace(/\s+/g, " ");
+  return CIUDADES_PUBLICACION.find((c) => normalizar(c) === buscado) ?? null;
+}
 
 // ── Bandas de presupuesto (el comprador real compra por bolsillo) ────────────
 

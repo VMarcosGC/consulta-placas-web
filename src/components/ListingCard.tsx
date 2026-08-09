@@ -5,6 +5,7 @@
 //   - Foto de portada con ratio FIJO (4:3) para que la grilla no baile; placeholder si no hay.
 //   - Precio grande, es el dato que decide el clic.
 //   - Título en UNA línea (marca/modelo/año), truncado.
+//   - Una línea de extras (ciudad · kilometraje) también truncada, y solo si hay dato.
 //   - UNA fila de chips (premium / verificado / ficha) y se acabó.
 //   - Toda la tarjeta es clickeable.
 //
@@ -39,6 +40,29 @@ function tituloVehiculo(
   if (p.titulo) return p.titulo;
   const partes = [p.marca, p.modelo, p.anio].filter(Boolean);
   return partes.length ? partes.join(" ") : "Vehículo en venta";
+}
+
+// Línea de datos secundarios (ciudad · kilometraje), COMPARTIDA por las dos tarjetas:
+// desde la migración 0023 la publicación interna también trae `ciudad`, con el mismo
+// nombre que la referenciada, así que la línea se escribe una sola vez.
+//
+// Los campos son opcionales a propósito: la salida de la publicación interna NO tiene
+// `kilometraje`, así que el helper no puede asumir el shape de la referenciada. Sin datos
+// no se renderiza nada — un hueco vacío informa menos que la ausencia.
+function LineaExtras({
+  ciudad,
+  kilometraje,
+}: {
+  ciudad?: string | null;
+  kilometraje?: number | null;
+}) {
+  const extras = [
+    ciudad,
+    kilometraje != null ? `${kilometraje.toLocaleString("es-EC")} km` : null,
+  ].filter(Boolean);
+
+  if (extras.length === 0) return null;
+  return <p className="mt-0.5 truncate text-xs text-slate-500">{extras.join(" · ")}</p>;
 }
 
 // Portada con ratio fijo: con foto o con placeholder, la tarjeta mide siempre igual.
@@ -104,6 +128,7 @@ export function ListingInternaCard({
         <div className="min-w-0">
           <h3 className="truncate text-sm font-bold text-slate-900">{titulo}</h3>
           <p className="font-mono text-xs tracking-widest text-slate-400">{pub.placa}</p>
+          <LineaExtras ciudad={pub.ciudad} />
         </div>
 
         {/* Una fila de chips y nada más. */}
@@ -135,10 +160,6 @@ export function ListingReferenciadaCard({
   const titulo = tituloVehiculo(pub);
   // Portada: la primera foto subida por el aportante (M2.8) o, si no, el enlace de imagen.
   const portada = pub.fotos?.[0] ?? pub.imagen_url;
-  const extras = [
-    pub.ciudad,
-    pub.kilometraje != null ? `${pub.kilometraje.toLocaleString("es-EC")} km` : null,
-  ].filter(Boolean);
 
   // M2.9: la tarjeta ya NO salta al portal externo. Lleva a una página LOCAL de detalle,
   // donde el visitante ve fotos y datos y decide salir con un botón explícito. Antes el
@@ -178,9 +199,7 @@ export function ListingReferenciadaCard({
           {pub.placa && (
             <p className="font-mono text-xs tracking-widest text-slate-400">{pub.placa}</p>
           )}
-          {extras.length > 0 && (
-            <p className="mt-0.5 truncate text-xs text-slate-500">{extras.join(" · ")}</p>
-          )}
+          <LineaExtras ciudad={pub.ciudad} kilometraje={pub.kilometraje} />
         </div>
 
         {/* Descripción copiada del anuncio original (M2.8): 2 líneas, para que la tarjeta

@@ -13,7 +13,7 @@
 
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -29,7 +29,14 @@ import {
   colorCompletitud,
   puedePublicar,
 } from "@/lib/ficha";
-import { ApiError, PlanPublicacion, Vehiculo } from "@/types/api";
+import { ciudadDelCatalogo } from "@/lib/marketplace";
+import {
+  ApiError,
+  CIUDADES_PUBLICACION,
+  CiudadPublicacion,
+  PlanPublicacion,
+  Vehiculo,
+} from "@/types/api";
 
 type Paso = 1 | 2 | 3;
 
@@ -119,6 +126,20 @@ function PasoDatos({
   const [titulo, setTitulo] = useState(desdeGarage ? tituloPropuesto : "");
   const [descripcion, setDescripcion] = useState("");
   const [precio, setPrecio] = useState("");
+  // Dónde está el auto en venta. Opcional: publicar sin ciudad sigue siendo válido.
+  const [ciudad, setCiudad] = useState<CiudadPublicacion | "">("");
+  // Ciudad PROPUESTA a partir del garage (`ciudad_registro` del vehículo). Se guarda
+  // aparte del valor elegido para poder avisar de dónde salió; si el vendedor elige otra,
+  // el aviso desaparece solo.
+  const [ciudadSugerida, setCiudadSugerida] = useState<CiudadPublicacion | null>(null);
+  // ¿El vendedor YA tocó el selector de ciudad? Hace falta un flag de INTERACCIÓN y no
+  // basta con mirar el valor: `""` significa a la vez "todavía no eligió" y "eligió
+  // *Sin especificar*". Con `ciudad || sugerida`, quien elegía "Sin especificar" antes de
+  // que resolviera `listarVehiculos()` se encontraba la ciudad del garage impuesta —
+  // justo lo contrario de "se propone, no se hereda".
+  // Va en `ref` y no en estado: solo se consulta, no debe provocar render ni entrar en
+  // las dependencias del efecto.
+  const ciudadTocada = useRef(false);
   const [plan, setPlan] = useState<PlanPublicacion>("light");
   const [vehiculoId, setVehiculoId] = useState<number | null>(vehiculoInicial);
   // Permite "ajustar" (volver al modo manual con select + placa) si el vendedor prellenado
@@ -133,7 +154,21 @@ function PasoDatos({
     (async () => {
       try {
         const lista = await listarVehiculos();
-        if (activo) setVehiculos(lista);
+        if (!activo) return;
+        setVehiculos(lista);
+        // El wizard llega desde el garage con `?vehiculo=<id>`, pero SIN ciudad. En vez de
+        // sumar otro query param con texto libre (que igual habría que validar aquí), la
+        // resolvemos del vehículo ya cargado: la página ya pide el garage y así el
+        // prellenado también funciona cuando el vendedor elige el auto en el <select>.
+        const sugerida = ciudadDelCatalogo(
+          lista.find((v) => v.id === vehiculoInicial)?.ciudad_registro
+        );
+        if (sugerida) {
+          setCiudadSugerida(sugerida);
+          // Se PROPONE, no se hereda: si el vendedor ya tocó el campo mientras esta
+          // llamada estaba en vuelo —incluido dejarlo en "Sin especificar"— no se pisa.
+          if (!ciudadTocada.current) setCiudad(sugerida);
+        }
       } catch {
         // El garage es opcional para publicar; ignoramos el error de carga.
       }
@@ -141,13 +176,18 @@ function PasoDatos({
     return () => {
       activo = false;
     };
-  }, []);
+  }, [vehiculoInicial]);
 
-  // Al elegir un vehículo del garage, prellenar la placa.
+  // Al elegir un vehículo del garage, prellenar la placa y proponer su ciudad.
   function elegirVehiculo(id: number | null) {
     setVehiculoId(id);
     const v = vehiculos.find((x) => x.id === id);
     if (v) setPlaca(v.placa);
+    const sugerida = ciudadDelCatalogo(v?.ciudad_registro);
+    setCiudadSugerida(sugerida);
+    // Misma regla que en la carga: cambiar de vehículo propone su ciudad, pero no
+    // sobrescribe una elección que el vendedor ya hizo a mano.
+    if (sugerida && !ciudadTocada.current) setCiudad(sugerida);
   }
 
   async function enviar(e: React.FormEvent) {
@@ -171,6 +211,8 @@ function PasoDatos({
         placa: placaNormal,
         titulo: titulo.trim() || undefined,
         descripcion: descripcion.trim() || undefined,
+        // Sin ciudad se publica igual: no se manda la clave y el backend la deja en null.
+        ciudad: ciudad || undefined,
         precio_usd: precioNum,
         plan,
         vehiculo_id: vehiculoId ?? undefined,
@@ -298,6 +340,47 @@ function PasoDatos({
           placeholder="12000"
           required
         />
+      </div>
+
+      {/* Ciudad: catálogo cerrado, y NUNCA obligatoria. Si viene propuesta desde el garage,
+          se dice de dónde salió — `ciudad_registro` es dónde se matriculó el auto, no dónde
+          se vende, y esa diferencia la tiene que resolver el vendedor, no nosotros. */}
+      <div>
+        <label
+          htmlFor="ciudad-publicacion"
+          className="mb-1 block text-sm font-semibold text-slate-700"
+        >
+          Ciudad donde está el auto (opcional)
+        </label>
+        <select
+          id="ciudad-publicacion"
+          className={inputCls}
+          value={ciudad}
+          onChange={(e) => {
+            // Marca la interacción ANTES de aplicar el valor: desde acá, ninguna
+            // sugerencia del garage vuelve a pisar lo que el vendedor eligió, ni
+            // siquiera si eligió "Sin especificar".
+            ciudadTocada.current = true;
+            setCiudad(e.target.value as CiudadPublicacion | "");
+          }}
+        >
+          <option value="">— Sin especificar —</option>
+          {CIUDADES_PUBLICACION.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        {ciudadSugerida && ciudad === ciudadSugerida ? (
+          <p className="mt-1 text-xs text-blue-700">
+            Tomamos <b>{ciudadSugerida}</b> de tu garage, que es donde está matriculado el
+            auto. Si lo vendes en otra ciudad, cámbiala aquí.
+          </p>
+        ) : (
+          <p className="mt-1 text-xs text-slate-400">
+            Ayuda a que te encuentren compradores cerca. Puedes dejarla sin especificar.
+          </p>
+        )}
       </div>
 
       {/* Selector de plan */}
