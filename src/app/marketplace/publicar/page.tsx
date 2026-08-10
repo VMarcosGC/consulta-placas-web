@@ -40,6 +40,10 @@ import {
 
 type Paso = 1 | 2 | 3;
 
+// Tope del recorrido declarado. Espejo del `le=2_000_000` de PublicacionInternaCrear
+// (y de PublicacionReferenciadaCrear): pasarse devuelve 422 desde el backend.
+const KILOMETRAJE_MAXIMO = 2_000_000;
+
 const PASOS: { numero: Paso; titulo: string; ayuda: string }[] = [
   { numero: 1, titulo: "Datos básicos", ayuda: "Placa, precio y plan" },
   { numero: 2, titulo: "Ficha técnica", ayuda: "Lo que el comprador quiere saber" },
@@ -126,6 +130,10 @@ function PasoDatos({
   const [titulo, setTitulo] = useState(desdeGarage ? tituloPropuesto : "");
   const [descripcion, setDescripcion] = useState("");
   const [precio, setPrecio] = useState("");
+  // Recorrido declarado por el vendedor. Opcional: publicar sin kilometraje sigue siendo
+  // válido y no bloquea el alta. NO se prellena desde el garage: las lecturas de
+  // kilometraje son privadas y hoy ni siquiera se registran desde la web.
+  const [kilometraje, setKilometraje] = useState("");
   // Dónde está el auto en venta. Opcional: publicar sin ciudad sigue siendo válido.
   const [ciudad, setCiudad] = useState<CiudadPublicacion | "">("");
   // Ciudad PROPUESTA a partir del garage (`ciudad_registro` del vehículo). Se guarda
@@ -205,6 +213,22 @@ function PasoDatos({
       setError("Ingresa la placa del vehículo.");
       return;
     }
+
+    // Kilometraje: opcional. Si lo escribió, se valida aquí con los mismos límites del
+    // backend (0 … 2 000 000) para explicarlo en es-EC en vez de devolver un 422 crudo.
+    const kmTexto = kilometraje.trim();
+    let kmNum: number | undefined;
+    if (kmTexto) {
+      const n = Number(kmTexto);
+      if (!Number.isInteger(n) || n < 0 || n > KILOMETRAJE_MAXIMO) {
+        setError(
+          `Ingresa el kilometraje como un número entero entre 0 y ${KILOMETRAJE_MAXIMO.toLocaleString("es-EC")} km, o déjalo vacío.`
+        );
+        return;
+      }
+      kmNum = n;
+    }
+
     setEnviando(true);
     try {
       const pub = await crearPublicacion({
@@ -213,6 +237,8 @@ function PasoDatos({
         descripcion: descripcion.trim() || undefined,
         // Sin ciudad se publica igual: no se manda la clave y el backend la deja en null.
         ciudad: ciudad || undefined,
+        // Mismo criterio con el kilometraje: si no lo declaró, la clave no viaja.
+        kilometraje: kmNum,
         precio_usd: precioNum,
         plan,
         vehiculo_id: vehiculoId ?? undefined,
@@ -340,6 +366,34 @@ function PasoDatos({
           placeholder="12000"
           required
         />
+      </div>
+
+      {/* Kilometraje: dato declarado por el vendedor y NUNCA obligatorio — nada de lo que
+          se escriba aquí bloquea el alta. No se prellena desde el garage (ver nota del
+          estado): las lecturas de kilometraje son privadas. */}
+      <div>
+        <label
+          htmlFor="kilometraje-publicacion"
+          className="mb-1 block text-sm font-semibold text-slate-700"
+        >
+          Kilometraje (opcional)
+        </label>
+        <input
+          id="kilometraje-publicacion"
+          className={inputCls}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={KILOMETRAJE_MAXIMO}
+          step={1}
+          value={kilometraje}
+          onChange={(e) => setKilometraje(e.target.value)}
+          placeholder="85000"
+        />
+        <p className="mt-1 text-xs text-slate-400">
+          El recorrido que marca el odómetro hoy. Es el primer dato que mira un comprador;
+          si prefieres, puedes dejarlo vacío.
+        </p>
       </div>
 
       {/* Ciudad: catálogo cerrado, y NUNCA obligatoria. Si viene propuesta desde el garage,

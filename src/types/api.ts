@@ -390,6 +390,15 @@ export interface PublicacionInterna {
   // Mismo tipo que `PublicacionReferenciada.ciudad`, así la tarjeta las trata igual —
   // incluida la opcionalidad: en el OpenAPI el campo es nullable y **no requerido**.
   ciudad?: string | null;
+  // Recorrido declarado por el vendedor para ESTE anuncio (migración 0024). Mismo nombre
+  // y mismo tipo que `PublicacionReferenciada.kilometraje`, así la tarjeta del feed pinta
+  // las dos entidades con un solo campo. Opcional además de nullable, igual que `ciudad`:
+  // en el OpenAPI el campo es nullable y **no requerido**.
+  //
+  // No confundir con `mantenimientos.ultimo_kilometraje`: aquel es el odómetro en el
+  // último service (derivado del garage, solo premium); este es lo que el vendedor
+  // declara hoy, en cualquier plan.
+  kilometraje?: number | null;
   precio_usd: number;
   plan: PlanPublicacion;
   estado: EstadoPublicacion;
@@ -485,6 +494,11 @@ export interface PublicacionCrear {
   // porque el backend valida contra él (una ciudad fuera de lista → 422). Admite `null`
   // además de omitirse, que es lo que declara el OpenAPI (`anyOf: [enum, null]`).
   ciudad?: CiudadPublicacion | null;
+  // Recorrido declarado, opcional: publicar sin kilometraje es válido. Al ESCRIBIR el
+  // backend sí impone el rango 0 … 2 000 000 km (fuera de rango → 422), igual que en
+  // `ReferenciaCrear`. Admite `null` además de omitirse, que es lo que declara el
+  // OpenAPI (`anyOf: [integer, null]`).
+  kilometraje?: number | null;
   precio_usd: number;
   plan: PlanPublicacion;
   vehiculo_id?: number;

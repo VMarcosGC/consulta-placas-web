@@ -494,6 +494,17 @@ export default function PublicacionDetallePage() {
               {/* Dónde está el auto en venta. Es opcional: si el vendedor no la eligió,
                   no se pinta la etiqueta (mejor ausente que "Ciudad: —"). */}
               {pub.ciudad && <span>Ciudad: <b className="text-slate-700">{pub.ciudad}</b></span>}
+              {/* Recorrido declarado por el vendedor. Igual que la ciudad, es opcional:
+                  si no lo declaró no se pinta la etiqueta. No es el mismo dato que el
+                  odómetro del último service (bloque "Historial documentado"). */}
+              {pub.kilometraje != null && (
+                <span>
+                  Kilometraje:{" "}
+                  <b className="text-slate-700">
+                    {pub.kilometraje.toLocaleString("es-EC")} km
+                  </b>
+                </span>
+              )}
             </div>
 
             {/* CTA principal. El contacto con el vendedor llega en M5; por ahora la acción

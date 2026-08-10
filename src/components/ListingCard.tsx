@@ -43,12 +43,12 @@ function tituloVehiculo(
 }
 
 // Línea de datos secundarios (ciudad · kilometraje), COMPARTIDA por las dos tarjetas:
-// desde la migración 0023 la publicación interna también trae `ciudad`, con el mismo
-// nombre que la referenciada, así que la línea se escribe una sola vez.
+// desde las migraciones 0023 y 0024 la publicación interna también trae `ciudad` y
+// `kilometraje`, con los mismos nombres que la referenciada, así que la línea se escribe
+// una sola vez y las dos entidades se ven igual en el feed.
 //
-// Los campos son opcionales a propósito: la salida de la publicación interna NO tiene
-// `kilometraje`, así que el helper no puede asumir el shape de la referenciada. Sin datos
-// no se renderiza nada — un hueco vacío informa menos que la ausencia.
+// Los campos siguen siendo opcionales a propósito: ambos son nullable en las dos salidas.
+// Sin datos no se renderiza nada — un hueco vacío informa menos que la ausencia.
 function LineaExtras({
   ciudad,
   kilometraje,
@@ -62,7 +62,14 @@ function LineaExtras({
   ].filter(Boolean);
 
   if (extras.length === 0) return null;
-  return <p className="mt-0.5 truncate text-xs text-slate-500">{extras.join(" · ")}</p>;
+  // `line-clamp-2` y NO `truncate`, a diferencia del título. Con una ciudad larga, el
+  // recorte a una línea partía la cifra a media ("Santo Domingo · 1.25…" donde dice
+  // 1.250.000 km) y un kilometraje mal leído es peor que ocupar un renglón más en un
+  // producto cuya propuesta es la transparencia. La regla de M2.7 —una línea, truncada—
+  // sigue valiendo para el TÍTULO, que se puede cortar sin cambiar de significado.
+  return (
+    <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{extras.join(" · ")}</p>
+  );
 }
 
 // Portada con ratio fijo: con foto o con placeholder, la tarjeta mide siempre igual.
@@ -128,7 +135,7 @@ export function ListingInternaCard({
         <div className="min-w-0">
           <h3 className="truncate text-sm font-bold text-slate-900">{titulo}</h3>
           <p className="font-mono text-xs tracking-widest text-slate-400">{pub.placa}</p>
-          <LineaExtras ciudad={pub.ciudad} />
+          <LineaExtras ciudad={pub.ciudad} kilometraje={pub.kilometraje} />
         </div>
 
         {/* Una fila de chips y nada más. */}
