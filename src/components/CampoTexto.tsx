@@ -8,6 +8,12 @@ interface Props {
   autoComplete?: string;
   requerido?: boolean;
   placeholder?: string;
+  /**
+   * id del <input>, opcional. Existe para poder enfocarlo desde fuera del formulario
+   * (`document.getElementById(...).focus()`): lo usa el login para llevar al usuario al
+   * campo de correo cuando el ingreso con Google devuelve 409. Sin id no cambia nada.
+   */
+  id?: string;
 }
 
 export function CampoTexto({
@@ -18,11 +24,13 @@ export function CampoTexto({
   autoComplete,
   requerido,
   placeholder,
+  id,
 }: Props) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

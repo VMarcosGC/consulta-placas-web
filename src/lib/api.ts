@@ -15,6 +15,7 @@ import {
   FotoRegistrar,
   FotoSalida,
   FuenteRespuesta,
+  GoogleLoginEntrada,
   PublicacionCrear,
   PublicacionDetalle,
   PublicacionInterna,
@@ -156,6 +157,41 @@ export function iniciarSesion(email: string, password: string) {
 
 export function obtenerPerfil() {
   return fetchAPI<Usuario>("/auth/me", {}, true);
+}
+
+// ─── Ingreso con Google (TASK-015) ────────────────────────
+// El `credential` de Google Identity Services se canjea por el JWT propio del proyecto.
+// El frontend NO decodifica ese token: lo reenvía tal cual y el backend lo verifica,
+// lo usa y lo descarta.
+
+// Canjea el ID token de Google por nuestro JWT. Anónimo. La respuesta es el MISMO
+// schema `Token` que `/auth/login`, así que a partir de acá la sesión se maneja igual
+// (guardarToken + redirección): el frontend no distingue de dónde salió el JWT.
+//
+// Códigos del contrato: 401 credencial inválida · 409 el correo ya tiene cuenta local y
+// el dominio no es autoritativo (la salida es entrar con contraseña y vincular desde
+// /mi-cuenta) · 422 claims insuficientes · 503 el backend no tiene GOOGLE_CLIENT_ID.
+export function iniciarSesionConGoogle(idToken: string) {
+  const cuerpo: GoogleLoginEntrada = { id_token: idToken };
+  return fetchAPI<Token>("/auth/google", {
+    method: "POST",
+    body: JSON.stringify(cuerpo),
+  });
+}
+
+// Vincula una cuenta de Google a la sesión YA autenticada. Requiere sesión: autenticarse
+// es justamente la prueba de posesión que el claim de correo no da, y por eso esta ruta
+// es la salida del 409 de arriba.
+//
+// Devuelve `UsuarioSalida` (el mismo shape de GET /auth/me). 409 si la cuenta ya está
+// vinculada a otra cuenta de Google, o si esa cuenta de Google ya es de otro usuario.
+export function vincularGoogle(idToken: string) {
+  const cuerpo: GoogleLoginEntrada = { id_token: idToken };
+  return fetchAPI<Usuario>(
+    "/auth/google/vincular",
+    { method: "POST", body: JSON.stringify(cuerpo) },
+    true
+  );
 }
 
 // ─── Vehiculos (auth) ─────────────────────────────────────

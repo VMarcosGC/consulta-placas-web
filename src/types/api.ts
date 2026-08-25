@@ -139,6 +139,16 @@ export interface Token {
   token_type: string;
 }
 
+// Mirror de `GoogleLoginEntrada` (src/modules/auth/schemas.py). Es **solo** `id_token` y
+// nada más: el backend NO espera un `nonce` ni lo verifica, así que el frontend tampoco
+// inicializa Google Identity Services con uno. El `credential` que entrega GIS viaja tal
+// cual; el frontend nunca lo decodifica (no sabe el correo que trae).
+// Lo consumen `POST /auth/google` (anónimo → Token) y `POST /auth/google/vincular`
+// (con sesión → Usuario, mismo shape que GET /auth/me).
+export interface GoogleLoginEntrada {
+  id_token: string;
+}
+
 export interface Vehiculo {
   id: number;
   placa: string;

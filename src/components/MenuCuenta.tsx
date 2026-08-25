@@ -46,6 +46,14 @@ const OPCIONES: OpcionMenu[] = [
     etiqueta: "Mi contacto",
     ayuda: "Con qué nombre y número te escriben",
   },
+  // "Mi cuenta" ≠ "Mi contacto": acá va CÓMO ENTRAS (correo, vincular Google); allá, con
+  // qué nombre y número te ve un comprador. Sin esta entrada, /mi-cuenta sería una
+  // pantalla inalcanzable y el 409 del ingreso con Google seguiría sin salida (TASK-015).
+  {
+    href: "/mi-cuenta",
+    etiqueta: "Mi cuenta",
+    ayuda: "Cómo entras: tu correo y Google",
+  },
 ];
 
 // Tareas de administración. Vivían en la barra de arriba del Header, dentro del bloque

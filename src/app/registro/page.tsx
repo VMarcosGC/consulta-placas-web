@@ -7,6 +7,7 @@ import { registrarUsuario, iniciarSesion } from "@/lib/api";
 import { guardarToken } from "@/lib/auth";
 import { ApiError } from "@/types/api";
 import { CampoTexto } from "@/components/CampoTexto";
+import { AccesoGoogle } from "@/components/AccesoGoogle";
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -15,6 +16,14 @@ export default function RegistroPage() {
   const [password, setPassword] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sesión iniciada, venga de donde venga: mismo guardado y misma redirección para el
+  // JWT del alta con contraseña y para el de Google.
+  function entrar(accessToken: string) {
+    guardarToken(accessToken);
+    router.push("/mi-garage");
+    router.refresh();
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,9 +37,7 @@ export default function RegistroPage() {
       await registrarUsuario({ email, password, nombre: nombre || undefined });
       // Auto-login: el UX espera quedar adentro tras crear cuenta.
       const r = await iniciarSesion(email, password);
-      guardarToken(r.access_token);
-      router.push("/mi-garage");
-      router.refresh();
+      entrar(r.access_token);
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
       else setError("No pudimos crear la cuenta. Inténtalo de nuevo.");
@@ -47,7 +54,15 @@ export default function RegistroPage() {
         <Link href="/login" className="text-brand-gradient font-medium">Iniciar sesión</Link>
       </p>
 
-      <form onSubmit={submit} className="mt-8 space-y-4">
+      {/* Con Google no hay contraseña que inventar ni que recordar, que es justamente el
+          punto: por eso va ARRIBA del formulario y como alternativa visible, no como un
+          enlace al pie. El separador "o" lo pinta AccesoGoogle.
+          Sin `alPedirContrasena`: acá no hay formulario de contraseña que sirva para un
+          409 (ese correo YA tiene cuenta), así que la salida es el enlace a /login que
+          AccesoGoogle renderiza, apuntando a /mi-cuenta. */}
+      <AccesoGoogle contexto="registro" alObtenerToken={entrar} />
+
+      <form onSubmit={submit} className="mt-6 space-y-4">
         <CampoTexto label="Nombre (opcional)" value={nombre} onChange={setNombre} autoComplete="name" />
         <CampoTexto label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" requerido />
         <CampoTexto label="Contraseña (8+ caracteres)" type="password" value={password} onChange={setPassword} autoComplete="new-password" requerido />
