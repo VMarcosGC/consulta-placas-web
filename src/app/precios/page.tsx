@@ -43,9 +43,9 @@ export default function PreciosPage() {
     <div className="mx-auto max-w-5xl px-6 py-16">
       <div className="text-center">
         <h1 className="text-4xl sm:text-5xl font-bold">
-          Precios <span className="text-brand-gradient">claros</span>
+          Precios <span className="text-marca">claros</span>
         </h1>
-        <p className="mt-3 mx-auto max-w-2xl text-slate-600">
+        <p className="mt-3 mx-auto max-w-2xl text-secundario">
           Los datos públicos son <strong>gratis</strong>. Pagas con tokens solo por los datos que
           tienen costo o valor real. <strong>1 token ≈ USD&nbsp;0.04.</strong>
         </p>
@@ -69,20 +69,20 @@ export default function PreciosPage() {
       </p>
 
       {/* Gratis siempre */}
-      <section className="mt-12 sombra-tarjeta rounded-3xl border border-emerald-200 bg-white p-8">
+      <section className="mt-12 sombra-tarjeta rounded-3xl border border-confirmado bg-superficie p-8">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white">Gratis</span>
-          <h2 className="text-xl font-bold text-slate-900">Lo que ves sin pagar</h2>
+          <span className="rounded-full bg-confirmado px-3 py-1 text-xs font-semibold text-superficie">Gratis</span>
+          <h2 className="text-xl font-bold text-tinta">Lo que ves sin pagar</h2>
         </div>
-        <ul className="mt-5 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+        <ul className="mt-5 grid gap-2 text-sm text-secundario sm:grid-cols-2">
           {GRATIS.map((g) => (
             <li key={g} className="flex items-start gap-2">
-              <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-confirmado" />
               {g}
             </li>
           ))}
         </ul>
-        <p className="mt-5 text-xs text-slate-500">
+        <p className="mt-5 text-xs text-secundario">
           Solo mostramos las fuentes que hoy podemos consultar de forma confiable. Cuando una
           validación necesita confirmación externa, te dejamos el enlace al portal oficial en
           lugar de prometerte un dato automático.
@@ -91,8 +91,8 @@ export default function PreciosPage() {
 
       {/* Paquetes de tokens */}
       <section className="mt-12">
-        <h2 className="text-center text-2xl font-bold text-slate-900">Paquetes de tokens</h2>
-        <p className="mt-2 text-center text-sm text-slate-500">
+        <h2 className="text-center text-2xl font-bold text-tinta">Paquetes de tokens</h2>
+        <p className="mt-2 text-center text-sm text-secundario">
           Cifras referenciales. Los pagos llegan al integrar el gateway local (PlaceToPay / MercadoPago).
         </p>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -100,40 +100,40 @@ export default function PreciosPage() {
             <article
               key={p.precio}
               className={`relative rounded-3xl border p-6 text-center sombra-tarjeta ${
-                p.nota ? "border-blue-300 bg-white ring-2 ring-blue-500/30" : "border-slate-200 bg-white"
+                p.nota ? "border-marca bg-superficie ring-2 ring-marca/30" : "border-borde bg-superficie"
               }`}
             >
               {p.nota && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accion px-3 py-1 text-xs font-semibold text-superficie shadow-sm">
                   {p.nota}
                 </span>
               )}
-              <div className="text-4xl font-black text-slate-900">{p.tokens}</div>
-              <div className="text-xs uppercase tracking-wide text-slate-400">tokens</div>
+              <div className="text-4xl font-black text-tinta">{p.tokens}</div>
+              <div className="text-xs uppercase tracking-wide text-secundario">tokens</div>
               {/* "referencial" pegado al precio y no solo en el aviso de arriba: quien
                   llega scrolleando a esta tarjeta puede no haber leído la cabecera. */}
-              <div className="mt-3 text-lg font-bold text-brand-gradient">{p.precio}</div>
-              <div className="text-[11px] text-slate-400">referencial</div>
+              <div className="mt-3 text-lg font-bold text-marca">{p.precio}</div>
+              <div className="text-[11px] text-secundario">referencial</div>
             </article>
           ))}
         </div>
       </section>
 
       {/* Qué desbloqueas con tokens */}
-      <section className="mt-14 sombra-tarjeta rounded-3xl border border-slate-200 bg-white p-8">
-        <h2 className="text-xl font-bold text-slate-900">Qué desbloqueas con tokens</h2>
-        <p className="mt-2 text-sm text-slate-500">
+      <section className="mt-14 sombra-tarjeta rounded-3xl border border-borde bg-superficie p-8">
+        <h2 className="text-xl font-bold text-tinta">Qué desbloqueas con tokens</h2>
+        <p className="mt-2 text-sm text-secundario">
           Solo se cobra por datos con costo de proveedor, dificultad real o valor comercial. Si la
           fuente no entrega un dato para esa placa, no se cobra.
         </p>
-        <ul className="mt-6 divide-y divide-slate-100">
+        <ul className="mt-6 divide-y divide-borde-suave">
           {DESBLOQUEOS.map((d) => (
             <li key={d.nombre} className="flex items-center justify-between gap-4 py-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900">{d.nombre}</p>
-                <p className="text-xs text-slate-500">{d.detalle}</p>
+                <p className="text-sm font-semibold text-tinta">{d.nombre}</p>
+                <p className="text-xs text-secundario">{d.detalle}</p>
               </div>
-              <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-bold tabular-nums text-slate-700">
+              <span className="shrink-0 rounded-full bg-superficie-tenue px-3 py-1 text-sm font-bold tabular-nums text-secundario">
                 {d.tokens} {d.tokens === 1 ? "token" : "tokens"}
               </span>
             </li>
@@ -142,12 +142,12 @@ export default function PreciosPage() {
       </section>
 
       <section className="mt-12 text-center">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-secundario">
           Cada cuenta nueva nace con <strong>5 tokens de cortesía</strong>.
         </p>
         <Link
           href="/registro"
-          className="mt-5 inline-block rounded-xl bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+          className="mt-5 inline-block rounded-xl bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
         >
           Crear cuenta gratis
         </Link>

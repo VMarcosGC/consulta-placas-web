@@ -68,13 +68,13 @@ export function ConsultaForm({ tamanio = "hero", placaInicial = "" }: Props) {
           maxLength={8}
           disabled={pending}
           aria-label="Placa del vehiculo"
-          className={`focus-glow flex-1 rounded-2xl border border-slate-300 bg-white px-5 font-mono text-center text-slate-900 placeholder-slate-300 shadow-sm disabled:opacity-60 ${inputClases}`}
+          className={`focus-glow flex-1 rounded-2xl border border-borde-fuerte bg-superficie px-5 font-mono text-center text-tinta placeholder:text-secundario shadow-sm disabled:opacity-60 ${inputClases}`}
         />
         <button
           type="submit"
           disabled={pending}
           aria-busy={pending}
-          className={`inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-gradient font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-90 ${botonClases}`}
+          className={`inline-flex items-center justify-center gap-2 rounded-2xl bg-accion font-semibold text-superficie shadow-sm transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-90 ${botonClases}`}
         >
           {pending ? (
             <>
@@ -86,14 +86,14 @@ export function ConsultaForm({ tamanio = "hero", placaInicial = "" }: Props) {
           )}
         </button>
       </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-error">{error}</p>}
       {tamanio === "hero" && !pending && (
-        <p className="mt-3 text-center text-sm text-slate-500">
+        <p className="mt-3 text-center text-sm text-secundario">
           Consulta anónima, sin registro. Resultados en segundos.
         </p>
       )}
       {pending && (
-        <p className="mt-3 text-center text-sm text-slate-500">
+        <p className="mt-3 text-center text-sm text-secundario">
           Consultando fuentes oficiales… puede tardar unos segundos.
         </p>
       )}

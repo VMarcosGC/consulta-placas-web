@@ -38,8 +38,8 @@ export function DestacadosMarket() {
     <section className="mx-auto max-w-6xl px-6 py-16">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Autos en venta</h2>
-          <p className="mt-1 text-slate-600">
+          <h2 className="text-3xl font-bold text-tinta">Autos en venta</h2>
+          <p className="mt-1 text-secundario">
             Publicaciones con ficha técnica declarada y datos oficiales de la placa.
           </p>
         </div>
@@ -48,32 +48,32 @@ export function DestacadosMarket() {
               nadie lo encontraba si solo vivía dentro de /marketplace (M2.7). */}
           <Link
             href="/marketplace/referenciar"
-            className="rounded-full px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900"
+            className="rounded-full px-4 py-2.5 text-sm font-semibold text-secundario hover:text-tinta"
           >
             🔗 Referenciar anuncio externo
           </Link>
           <Link
             href="/marketplace"
-            className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+            className="rounded-full border border-borde-fuerte bg-superficie px-5 py-2.5 text-sm font-semibold text-secundario shadow-sm hover:bg-superficie-tenue"
           >
             Ver todos →
           </Link>
         </div>
       </div>
 
-      {cargando && <p className="text-slate-500">Cargando publicaciones…</p>}
+      {cargando && <p className="text-secundario">Cargando publicaciones…</p>}
 
       {!cargando && autos.length === 0 && (
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-          <p className="text-lg font-semibold text-slate-700">
+        <div className="rounded-3xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
+          <p className="text-lg font-semibold text-secundario">
             Todavía no hay autos publicados.
           </p>
-          <p className="mt-1 text-slate-500">
+          <p className="mt-1 text-secundario">
             Sé el primero: publicar es gratis y toma unos minutos.
           </p>
           <Link
             href="/marketplace/publicar"
-            className="mt-5 inline-flex rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+            className="mt-5 inline-flex rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
           >
             Publicar mi auto
           </Link>

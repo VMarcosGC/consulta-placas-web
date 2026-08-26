@@ -14,35 +14,35 @@ const FUENTES_PIE = [
 export function Footer() {
   const fuentes = FUENTES_PIE.filter((f) => !fuenteInactiva(f.clave));
   return (
-    <footer className="mt-24 border-t border-slate-200 bg-white">
+    <footer className="mt-24 border-t border-borde bg-superficie">
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-3">
         <div>
-          <div className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-gradient text-white text-sm font-black shadow-sm">
+          <div className="flex items-center gap-2 text-lg font-semibold text-tinta">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-gradient text-superficie text-sm font-black shadow-sm">
               RC
             </span>
-            Revisa tu Carro <span className="text-slate-400 text-sm font-bold">EC</span>
+            Revisa tu Carro <span className="text-secundario text-sm font-bold">EC</span>
           </div>
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-secundario">
             Compra y vende autos en Ecuador con la ficha del vendedor y los datos oficiales
             de la placa a la vista.
           </p>
         </div>
 
         <div className="text-sm">
-          <h4 className="mb-3 font-semibold text-slate-700">Producto</h4>
-          <ul className="space-y-2 text-slate-500">
-            <li><Link href="/marketplace" className="hover:text-slate-900">Autos en venta</Link></li>
-            <li><Link href="/marketplace/publicar" className="hover:text-slate-900">Publicar mi auto</Link></li>
-            <li><Link href="/consultar" className="hover:text-slate-900">Consulta de placa</Link></li>
-            <li><Link href="/precios" className="hover:text-slate-900">Precios</Link></li>
-            <li><Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link></li>
+          <h4 className="mb-3 font-semibold text-secundario">Producto</h4>
+          <ul className="space-y-2 text-secundario">
+            <li><Link href="/marketplace" className="hover:text-tinta">Autos en venta</Link></li>
+            <li><Link href="/marketplace/publicar" className="hover:text-tinta">Publicar mi auto</Link></li>
+            <li><Link href="/consultar" className="hover:text-tinta">Consulta de placa</Link></li>
+            <li><Link href="/precios" className="hover:text-tinta">Precios</Link></li>
+            <li><Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link></li>
           </ul>
         </div>
 
         <div className="text-sm">
-          <h4 className="mb-3 font-semibold text-slate-700">Fuentes oficiales</h4>
-          <ul className="space-y-2 text-slate-500">
+          <h4 className="mb-3 font-semibold text-secundario">Fuentes oficiales</h4>
+          <ul className="space-y-2 text-secundario">
             {fuentes.map((f) => (
               <li key={f.clave}>{f.nombre}</li>
             ))}
@@ -50,8 +50,8 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-slate-200 px-6 py-5">
-        <p className="mx-auto max-w-6xl text-center text-xs text-slate-400">
+      <div className="border-t border-borde px-6 py-5">
+        <p className="mx-auto max-w-6xl text-center text-xs text-secundario">
           © {new Date().getFullYear()} Revisa tu Carro EC · Los datos provienen de fuentes públicas oficiales. Sin afiliación con las instituciones.
         </p>
       </div>

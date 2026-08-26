@@ -70,16 +70,16 @@ function Fila({
   sensible?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-slate-100 py-2 last:border-b-0">
-      <dt className="text-sm text-slate-500">
+    <div className="flex items-start justify-between gap-3 border-b border-borde-suave py-2 last:border-b-0">
+      <dt className="text-sm text-secundario">
         {etiqueta}
         {sensible && (
-          <span className="ml-1.5 align-middle text-[10px] font-medium uppercase tracking-wide text-amber-600">
+          <span className="ml-1.5 align-middle text-[10px] font-medium uppercase tracking-wide text-declarado-texto">
             declarado por el vendedor
           </span>
         )}
       </dt>
-      <dd className="text-right text-sm font-semibold text-slate-900">{children}</dd>
+      <dd className="text-right text-sm font-semibold text-tinta">{children}</dd>
     </div>
   );
 }
@@ -126,7 +126,7 @@ function Galeria({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
 
   if (fotos.length === 0) {
     return (
-      <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 text-slate-300 sm:aspect-[16/8]">
+      <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-borde bg-superficie-tenue text-secundario sm:aspect-[16/8]">
         <span className="text-5xl" aria-hidden>
           🚗
         </span>
@@ -159,7 +159,7 @@ function Galeria({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
       </div>
 
       <div className="hidden sm:block">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 sombra-tarjeta">
+        <div className="overflow-hidden rounded-2xl border border-borde bg-superficie-tenue sombra-tarjeta">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={principal.url}
@@ -175,7 +175,7 @@ function Galeria({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
                 type="button"
                 onClick={() => setActiva(i)}
                 className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                  i === activa ? "border-blue-500" : "border-transparent hover:border-slate-300"
+                  i === activa ? "border-marca" : "border-transparent hover:border-borde-fuerte"
                 }`}
                 aria-label={`Ver foto ${i + 1} de ${fotos.length}`}
               >
@@ -188,7 +188,7 @@ function Galeria({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
       </div>
 
       {fotos.length > 1 && (
-        <p className="mt-2 text-center text-[11px] text-slate-400 sm:hidden">
+        <p className="mt-2 text-center text-[11px] text-secundario sm:hidden">
           Desliza para ver las {fotos.length} fotos
         </p>
       )}
@@ -207,23 +207,23 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
   return (
     <section className="mt-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-slate-900">Ficha técnica</h2>
+        <h2 className="text-xl font-bold text-tinta">Ficha técnica</h2>
         {fichaIncompleta(ficha.completitud) ? (
-          <Insignia tono="alerta">Ficha incompleta</Insignia>
+          <Insignia tono="neutro">Ficha incompleta</Insignia>
         ) : (
           <BarraCompletitud pct={ficha.completitud} />
         )}
       </div>
 
       {!tieneAlgo ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
-          <p className="text-slate-600">
+        <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
+          <p className="text-secundario">
             El vendedor aún no completó la ficha técnica de este vehículo.
           </p>
         </div>
       ) : (
         <>
-          <p className="mb-4 text-xs text-slate-400">
+          <p className="mb-4 text-xs text-secundario">
             Los datos de estado y condición son declarados por el vendedor; la plataforma no
             los verifica.
           </p>
@@ -323,9 +323,9 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
               >
                 <ul className="space-y-2">
                   {ficha.extras.map((e, i) => (
-                    <li key={i} className="rounded-xl bg-slate-50 px-3 py-2">
-                      <p className="text-sm font-semibold text-slate-900">{e.nombre}</p>
-                      {e.detalle && <p className="text-xs text-slate-500">{e.detalle}</p>}
+                    <li key={i} className="rounded-xl bg-superficie-tenue px-3 py-2">
+                      <p className="text-sm font-semibold text-tinta">{e.nombre}</p>
+                      {e.detalle && <p className="text-xs text-secundario">{e.detalle}</p>}
                     </li>
                   ))}
                 </ul>
@@ -342,11 +342,11 @@ function BarraCompletitud({ pct }: { pct: number }) {
   const seguro = Math.max(0, Math.min(100, Math.round(pct)));
   return (
     <div className="w-full max-w-xs">
-      <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+      <div className="mb-1 flex items-center justify-between text-xs text-secundario">
         <span>Ficha completada</span>
-        <span className="font-semibold text-slate-700">{seguro}%</span>
+        <span className="font-semibold text-secundario">{seguro}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-borde">
         <div
           className={`h-full rounded-full transition-all ${colorCompletitud(seguro)}`}
           style={{ width: `${seguro}%` }}
@@ -433,19 +433,19 @@ export default function PublicacionDetallePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-6 sm:py-10">
-      <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
+      <Link href="/marketplace" className="text-sm text-secundario hover:text-tinta">
         ← Volver al marketplace
       </Link>
 
-      {cargando && <p className="mt-6 text-slate-500">Cargando publicación…</p>}
+      {cargando && <p className="mt-6 text-secundario">Cargando publicación…</p>}
 
       {noEncontrada && !cargando && (
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-          <p className="text-lg font-semibold text-slate-700">No encontramos esta publicación.</p>
-          <p className="mt-1 text-slate-500">Puede que ya no esté disponible o se haya pausado.</p>
+        <div className="mt-6 rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
+          <p className="text-lg font-semibold text-secundario">No encontramos esta publicación.</p>
+          <p className="mt-1 text-secundario">Puede que ya no esté disponible o se haya pausado.</p>
           <Link
             href="/marketplace"
-            className="mt-4 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+            className="mt-4 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
           >
             Ver otras publicaciones
           </Link>
@@ -453,7 +453,7 @@ export default function PublicacionDetallePage() {
       )}
 
       {error && !cargando && (
-        <p className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+        <p className="mt-6 rounded-xl border border-error bg-error-tinte p-4 text-error">
           {error}
         </p>
       )}
@@ -469,38 +469,38 @@ export default function PublicacionDetallePage() {
           <header className="mt-5">
             <div className="flex flex-wrap items-center gap-1.5">
               {pub.plan === "premium" && (
-                <span className="inline-flex items-center rounded-full bg-marca px-2.5 py-0.5 text-xs font-black text-white">
+                <span className="inline-flex items-center rounded-full bg-marca px-2.5 py-0.5 text-xs font-black text-superficie">
                   ★ Premium
                 </span>
               )}
               {pub.verificado && <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>}
-              {fichaIncompleta(pctFicha) && <Insignia tono="alerta">Ficha incompleta</Insignia>}
+              {fichaIncompleta(pctFicha) && <Insignia tono="neutro">Ficha incompleta</Insignia>}
               {/* Solo el dueño ve este chip; nunca un comprador anónimo. */}
               {esMia && viveEnGarage && <Insignia tono="info">🚗 Vive en tu garage</Insignia>}
             </div>
 
-            <p className="mt-3 text-4xl font-black leading-none text-slate-900 sm:text-5xl">
+            <p className="mt-3 text-4xl font-black leading-none text-tinta sm:text-5xl">
               {precioFmt(pub.precio_usd)}
             </p>
-            <h1 className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">
+            <h1 className="mt-2 text-xl font-bold text-tinta sm:text-2xl">
               {tituloVehiculo(pub)}
             </h1>
-            <p className="mt-0.5 font-mono text-sm tracking-widest text-slate-400">{pub.placa}</p>
+            <p className="mt-0.5 font-mono text-sm tracking-widest text-secundario">{pub.placa}</p>
 
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
-              {pub.marca && <span>Marca: <b className="text-slate-700">{pub.marca}</b></span>}
-              {pub.modelo && <span>Modelo: <b className="text-slate-700">{pub.modelo}</b></span>}
-              {pub.anio != null && <span>Año: <b className="text-slate-700">{pub.anio}</b></span>}
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-secundario">
+              {pub.marca && <span>Marca: <b className="text-secundario">{pub.marca}</b></span>}
+              {pub.modelo && <span>Modelo: <b className="text-secundario">{pub.modelo}</b></span>}
+              {pub.anio != null && <span>Año: <b className="text-secundario">{pub.anio}</b></span>}
               {/* Dónde está el auto en venta. Es opcional: si el vendedor no la eligió,
                   no se pinta la etiqueta (mejor ausente que "Ciudad: —"). */}
-              {pub.ciudad && <span>Ciudad: <b className="text-slate-700">{pub.ciudad}</b></span>}
+              {pub.ciudad && <span>Ciudad: <b className="text-secundario">{pub.ciudad}</b></span>}
               {/* Recorrido declarado por el vendedor. Igual que la ciudad, es opcional:
                   si no lo declaró no se pinta la etiqueta. No es el mismo dato que el
                   odómetro del último service (bloque "Historial documentado"). */}
               {pub.kilometraje != null && (
                 <span>
                   Kilometraje:{" "}
-                  <b className="text-slate-700">
+                  <b className="text-secundario">
                     {pub.kilometraje.toLocaleString("es-EC")} km
                   </b>
                 </span>
@@ -517,14 +517,14 @@ export default function PublicacionDetallePage() {
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
                 href={`/consultar/${encodeURIComponent(pub.placa)}`}
-                className="rounded-full bg-brand-gradient px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                className="rounded-full bg-accion px-6 py-3 text-center text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
               >
                 Verificar esta placa
               </Link>
               {esMia && (
                 <Link
                   href="/marketplace/mis-publicaciones"
-                  className="rounded-full border border-slate-300 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-full border border-borde-fuerte bg-superficie px-6 py-3 text-center text-sm font-semibold text-secundario transition hover:bg-superficie-tenue"
                 >
                   Editar mi anuncio
                 </Link>
@@ -536,24 +536,24 @@ export default function PublicacionDetallePage() {
             <ContactoVendedor publicacionId={pub.id} esMia={esMia} />
 
             {pub.descripcion && (
-              <p className="mt-4 whitespace-pre-line text-slate-600">{pub.descripcion}</p>
+              <p className="mt-4 whitespace-pre-line text-secundario">{pub.descripcion}</p>
             )}
           </header>
 
           {/* CTA persistente del dueño (M2.5): solo lo ve él, y solo si falta ficha. */}
           {esMia && fichaPendiente(pctFicha) && (
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie-tenue p-4">
               <div>
-                <p className="text-sm font-semibold text-amber-800">
+                <p className="text-sm font-semibold text-tinta">
                   Completa tu ficha ({pctFicha} %)
                 </p>
-                <p className="mt-0.5 text-sm text-amber-700">
+                <p className="mt-0.5 text-sm text-secundario">
                   Es gratis y los anuncios con ficha completa generan más confianza.
                 </p>
               </div>
               <Link
                 href="/marketplace/mis-publicaciones"
-                className="shrink-0 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+                className="shrink-0 rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
               >
                 Completar ahora
               </Link>
@@ -566,11 +566,11 @@ export default function PublicacionDetallePage() {
           ) : (
             <section className="mt-8">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-bold text-slate-900">Ficha técnica</h2>
-                <Insignia tono="alerta">Ficha incompleta</Insignia>
+                <h2 className="text-xl font-bold text-tinta">Ficha técnica</h2>
+                <Insignia tono="neutro">Ficha incompleta</Insignia>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
-                <p className="text-slate-600">
+              <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
+                <p className="text-secundario">
                   El vendedor aún no completó la ficha técnica de este vehículo.
                 </p>
               </div>
@@ -584,20 +584,20 @@ export default function PublicacionDetallePage() {
 
           {/* 5. EXTRAS: historial documentado (argumento premium). */}
           {pub.mantenimientos && pub.mantenimientos.total > 0 && (
-            <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+            <div className="mt-6 rounded-2xl border border-marca bg-marca-tinte/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-marca">
                 Historial documentado
               </p>
-              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-secundario">
                 <span>
-                  <b className="text-slate-900">{pub.mantenimientos.total}</b> mantenimiento
+                  <b className="text-tinta">{pub.mantenimientos.total}</b> mantenimiento
                   {pub.mantenimientos.total === 1 ? "" : "s"} registrado
                   {pub.mantenimientos.total === 1 ? "" : "s"}
                 </span>
                 {pub.mantenimientos.ultimo_kilometraje != null && (
                   <span>
                     Último:{" "}
-                    <b className="text-slate-900">
+                    <b className="text-tinta">
                       {pub.mantenimientos.ultimo_kilometraje.toLocaleString("es-EC")} km
                     </b>
                   </span>

@@ -11,18 +11,18 @@ export default function ConsultarPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-20 text-center">
       <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-        Ingresa la <span className="text-brand-gradient">placa</span> a consultar
+        Ingresa la <span className="text-marca">placa</span> a consultar
       </h1>
-      <p className="mt-3 text-slate-600">
+      <p className="mt-3 text-secundario">
         Formato: 3 letras + 3 o 4 números. Ej: ABC1234.
       </p>
       <div className="mt-8 mx-auto max-w-xl">
         <ConsultaForm tamanio="hero" />
       </div>
       {/* La consulta es una herramienta de apoyo: desde aquí se vuelve al market. */}
-      <p className="mt-8 text-sm text-slate-500">
+      <p className="mt-8 text-sm text-secundario">
         ¿Buscas comprar?{" "}
-        <Link href="/marketplace" className="font-semibold text-blue-700 hover:underline">
+        <Link href="/marketplace" className="font-semibold text-marca hover:underline">
           Mira los autos en venta
         </Link>{" "}
         — cada anuncio ya trae estos datos oficiales junto a su ficha técnica.

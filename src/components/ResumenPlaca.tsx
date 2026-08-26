@@ -94,8 +94,8 @@ export function fechaLegible(iso: string | null | undefined): string | null {
 function DatoGrande({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] uppercase tracking-wide text-slate-400">{label}</p>
-      <div className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">{children}</div>
+      <p className="text-[11px] uppercase tracking-wide text-secundario">{label}</p>
+      <div className="mt-1 text-xl font-bold text-tinta sm:text-2xl">{children}</div>
     </div>
   );
 }
@@ -115,14 +115,14 @@ export function ResumenPlaca({
   // "Al día" solo se afirma con la foto COMPLETA. Si el municipio sigue consultando o no
   // respondió, se dice eso — un falso negativo aquí perjudica a quien compra.
   const veredicto = cargando
-    ? { clase: "bg-slate-100 text-slate-500", texto: "Consultando…" }
+    ? { clase: "bg-superficie-tenue text-secundario", texto: "Consultando…" }
     : r.tienePendientes
-      ? { clase: "bg-amber-500 text-white", texto: "Con pendientes" }
+      ? { clase: "bg-atencion text-superficie", texto: "Con pendientes" }
       : r.municipalesEnProceso
-        ? { clase: "bg-slate-100 text-slate-500", texto: "Consultando…" }
+        ? { clase: "bg-superficie-tenue text-secundario", texto: "Consultando…" }
         : r.municipalesCaidas
-          ? { clase: "bg-slate-100 text-slate-500", texto: "Sin dato municipal" }
-          : { clase: "bg-emerald-500 text-white", texto: "Al día" };
+          ? { clase: "bg-superficie-tenue text-secundario", texto: "Sin dato municipal" }
+          : { clase: "bg-confirmado text-superficie", texto: "Al día" };
 
   // Qué mostrar en "Multas": el conteo si se conoce, el veredicto si está bloqueado por
   // tokens, o un neutro mientras el municipio responde.
@@ -135,52 +135,52 @@ export function ResumenPlaca({
       : String(r.multasPendientes ?? 0);
 
   return (
-    <section className="rounded-3xl border border-slate-200/70 bg-white p-6 sombra-tarjeta sm:p-8">
+    <section className="rounded-3xl border border-borde/70 bg-superficie p-6 sombra-tarjeta sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-sm tracking-[0.3em] text-slate-400">{placa}</p>
-          <h1 className="mt-1 break-words text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-4xl">
+          <p className="font-mono text-sm tracking-[0.3em] text-secundario">{placa}</p>
+          <h1 className="mt-1 break-words text-3xl font-extrabold leading-tight tracking-tight text-tinta sm:text-4xl">
             {r.titulo}
           </h1>
           {r.detalleVehiculo && (
-            <p className="mt-1 text-sm text-slate-500">{r.detalleVehiculo}</p>
+            <p className="mt-1 text-sm text-secundario">{r.detalleVehiculo}</p>
           )}
         </div>
         <span
           className={`inline-flex shrink-0 items-center gap-2 self-start rounded-full px-5 py-2.5 text-sm font-bold ${veredicto.clase}`}
         >
-          {cargando && <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />}
+          {cargando && <span className="h-2 w-2 animate-pulse rounded-full bg-secundario" />}
           {veredicto.texto}
         </span>
       </div>
 
       {/* Máximo 6 datos, grandes y sin párrafos. */}
-      <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-slate-100 pt-6 sm:grid-cols-3">
+      <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-borde-suave pt-6 sm:grid-cols-3">
         <DatoGrande label="Matrícula">
           <Insignia tono={r.matriculaTono}>{r.matriculaEtiqueta}</Insignia>
         </DatoGrande>
         <DatoGrande label={r.detalleBloqueado ? "¿Tiene multas?" : "Multas pendientes"}>
-          <span className={r.tienePendientes ? "text-amber-600" : ""}>{valorMultas}</span>
+          <span className={r.tienePendientes ? "text-atencion" : ""}>{valorMultas}</span>
         </DatoGrande>
         <DatoGrande label="Total a pagar">
           {r.montoMultas != null ? (
-            <span className="text-amber-600">${r.montoMultas.toFixed(0)}</span>
+            <span className="text-atencion">${r.montoMultas.toFixed(0)}</span>
           ) : (
-            <span className="text-slate-300">—</span>
+            <span className="text-secundario">—</span>
           )}
         </DatoGrande>
       </div>
 
       {fecha && (
-        <p className="mt-5 text-[11px] text-slate-400">Consultado el {fecha}</p>
+        <p className="mt-5 text-[11px] text-secundario">Consultado el {fecha}</p>
       )}
       {r.municipalesEnProceso && (
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className="mt-1 text-[11px] text-secundario">
           Seguimos consultando las infracciones municipales.
         </p>
       )}
       {!r.municipalesEnProceso && r.municipalesCaidas && (
-        <p className="mt-1 text-[11px] text-amber-600">
+        <p className="mt-1 text-[11px] text-atencion">
           No pudimos consultar las infracciones municipales. Puedes reintentarlo en el
           detalle de multas.
         </p>

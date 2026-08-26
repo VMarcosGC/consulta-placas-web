@@ -128,7 +128,7 @@ export function BarraNavegacionMovil() {
     <nav
       data-barra-movil
       aria-label="Navegación principal"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-borde bg-superficie/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       <ul className="mx-auto flex max-w-md">
         {ENTRADAS.map((entrada) => {
@@ -143,7 +143,7 @@ export function BarraNavegacionMovil() {
                 // El alto completo de la barra es el área táctil: nadie tiene que
                 // apuntarle al ícono.
                 className={`relative flex h-[var(--alto-barra-movil)] flex-col items-center justify-center gap-1 px-0.5 transition-colors ${
-                  activa ? "text-blue-600" : "text-slate-500 active:text-slate-800"
+                  activa ? "text-marca" : "text-secundario active:text-tinta"
                 }`}
               >
                 {/* Barrita superior de la entrada activa: refuerza el color para quien
@@ -151,7 +151,7 @@ export function BarraNavegacionMovil() {
                 {activa && (
                   <span
                     aria-hidden
-                    className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-brand-gradient"
+                    className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-accion"
                   />
                 )}
                 <Icono className="h-6 w-6 shrink-0" />

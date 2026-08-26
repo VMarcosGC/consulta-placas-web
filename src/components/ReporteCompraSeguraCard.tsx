@@ -28,14 +28,14 @@ export function ReporteCompraSeguraCard({
 }) {
   if (producto.desbloqueado) {
     return (
-      <div className="rounded-2xl border border-blue-200 bg-white p-5 ring-1 ring-blue-500/20 sombra-tarjeta">
+      <div className="rounded-2xl border border-marca bg-superficie p-5 ring-1 ring-marca/20 sombra-tarjeta">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-bold text-slate-900">🛡️ {producto.nombre}</h3>
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          <h3 className="text-sm font-bold text-tinta">🛡️ {producto.nombre}</h3>
+          <span className="inline-flex items-center gap-1 rounded-full bg-confirmado-tinte px-2.5 py-1 text-xs font-semibold text-confirmado-texto">
             ✓ generado
           </span>
         </div>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-secundario">
           Tu reporte está listo. Revisa cada bloque desbloqueado en las secciones de arriba.
         </p>
       </div>
@@ -43,7 +43,7 @@ export function ReporteCompraSeguraCard({
   }
 
   return (
-    <div className="rounded-2xl border border-blue-200 bg-gradient-to-b from-blue-50/60 to-white p-5 ring-1 ring-blue-500/20 sombra-tarjeta">
+    <div className="rounded-2xl border border-marca bg-marca-tinte/60 p-5 ring-1 ring-marca/20 sombra-tarjeta">
       <UnlockCard
         placa={placa}
         producto={producto}
@@ -54,7 +54,7 @@ export function ReporteCompraSeguraCard({
           <ul className="space-y-1">
             {INCLUYE.map((i) => (
               <li key={i} className="flex items-start gap-2 text-xs">
-                <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gradient" />
+                <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accion" />
                 {i}
               </li>
             ))}

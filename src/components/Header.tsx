@@ -56,16 +56,16 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-borde bg-superficie/85 backdrop-blur-xl">
       {/* Padding y gap más chicos en celular: a 360px el logo, el saldo y el menú de la
           cuenta tienen que entrar en la misma fila sin encimarse. */}
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-6 sm:px-6">
         <Link
           href="/"
           aria-label="Revisa tu Carro EC — inicio"
-          className="flex shrink items-center gap-2 text-base font-semibold text-slate-900 sm:text-lg"
+          className="flex shrink items-center gap-2 text-base font-semibold text-tinta sm:text-lg"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand-gradient text-white text-sm font-black shadow-sm">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand-gradient text-superficie text-sm font-black shadow-sm">
             RC
           </span>
           {/* Bajo 400px queda solo el monograma. Medido: el nombre completo ocupa ~143px
@@ -77,21 +77,21 @@ export function Header() {
               lo pierde en pantallas más chicas. */}
           <span className="hidden min-[400px]:inline">
             Revisa tu <span className="text-brand-gradient">Carro</span>
-            <span className="ml-1 align-top text-[10px] font-bold text-slate-400">EC</span>
+            <span className="ml-1 align-top text-[10px] font-bold text-secundario">EC</span>
           </span>
         </Link>
 
         {/* Market primero (M2.6): el producto es el market de autos; la consulta de placa
             es una herramienta de apoyo y por eso va después. */}
-        <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
-          <Link href="/marketplace" className="font-semibold text-slate-800 hover:text-slate-900">
+        <div className="hidden md:flex items-center gap-6 text-sm text-secundario">
+          <Link href="/marketplace" className="font-semibold text-tinta hover:text-tinta">
             Marketplace
           </Link>
-          <Link href="/marketplace/publicar" className="hover:text-slate-900">Publicar</Link>
-          <Link href="/consultar" className="hover:text-slate-900">Consulta de placa</Link>
-          <Link href="/precios" className="hover:text-slate-900">Precios</Link>
+          <Link href="/marketplace/publicar" className="hover:text-tinta">Publicar</Link>
+          <Link href="/consultar" className="hover:text-tinta">Consulta de placa</Link>
+          <Link href="/precios" className="hover:text-tinta">Precios</Link>
           {logueado && (
-            <Link href="/mi-garage" className="hover:text-slate-900">Mi garage</Link>
+            <Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link>
           )}
           {/* Accesos de admin DUPLICADOS a propósito: viven acá y también en MenuCuenta.
               Estaban solo acá, dentro de este bloque `hidden md:flex`, así que un admin
@@ -102,10 +102,10 @@ export function Header() {
               lugares. */}
           {usuario?.es_admin && (
             <>
-              <Link href="/admin/moderacion" className="font-semibold text-blue-600 hover:text-blue-800">
+              <Link href="/admin/moderacion" className="font-semibold text-marca hover:text-marca-texto">
                 Moderar
               </Link>
-              <Link href="/admin/verificaciones" className="font-semibold text-blue-600 hover:text-blue-800">
+              <Link href="/admin/verificaciones" className="font-semibold text-marca hover:text-marca-texto">
                 Verificar
               </Link>
             </>
@@ -119,7 +119,7 @@ export function Header() {
               {typeof usuario?.saldo_tokens === "number" && (
                 <Link
                   href="/precios"
-                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1.5 text-sm font-bold text-amber-700 hover:bg-amber-100"
+                  className="inline-flex items-center gap-1 rounded-full bg-superficie-tenue px-2.5 py-1.5 text-sm font-bold text-secundario hover:bg-superficie-tenue"
                   title="Tus tokens — toca para ver precios"
                 >
                   <span aria-hidden>🪙</span>
@@ -148,7 +148,7 @@ export function Header() {
                 /* `min-h-11` = 44px, el mínimo táctil. Se fija por altura y no por
                    `py`/tamaño de fuente para no desalinear la fila del header a 320px:
                    el ancho no cambia, así que el ajuste medido a esos anchos se conserva. */
-                className="inline-flex min-h-11 items-center justify-center rounded-lg px-2 py-1.5 text-sm text-slate-600 hover:text-slate-900 sm:px-3"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg px-2 py-1.5 text-sm text-secundario hover:text-tinta sm:px-3"
               >
                 <span className="sm:hidden">Entrar</span>
                 <span className="hidden sm:inline">Iniciar sesión</span>
@@ -156,7 +156,7 @@ export function Header() {
               <Link
                 href="/registro"
                 /* Mismo mínimo táctil que "Entrar": son vecinos y quedarían dispares. */
-                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accion px-3 py-1.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
               >
                 Crear cuenta
               </Link>

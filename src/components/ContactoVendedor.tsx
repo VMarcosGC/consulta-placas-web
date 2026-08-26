@@ -38,22 +38,22 @@ export function ContactoVendedor({
   // el vendedor; esto es la otra mitad: ni siquiera se dispara la llamada.
   if (esMia) {
     return (
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <div className="mt-4 rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta">
+        <p className="text-xs font-semibold uppercase tracking-wide text-secundario">
           Así lo verán los compradores
         </p>
-        <p className="mt-2 text-sm text-slate-600">
-          En tu anuncio aparece un botón <b className="text-slate-800">Ver teléfono</b>. Al
+        <p className="mt-2 text-sm text-secundario">
+          En tu anuncio aparece un botón <b className="text-tinta">Ver teléfono</b>. Al
           pulsarlo, el comprador ve tu número y un botón para escribirte por WhatsApp con
           un mensaje ya redactado.
         </p>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-secundario">
           Tu número no aparece en el listado ni en esta página: se muestra solo cuando
           alguien lo pide, para protegerlo de robots.
         </p>
         <Link
           href="/marketplace/mi-perfil-vendedor"
-          className="mt-3 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-800"
+          className="mt-3 inline-flex text-sm font-semibold text-marca hover:text-marca-texto"
         >
           Editar mi contacto →
         </Link>
@@ -81,26 +81,26 @@ export function ContactoVendedor({
 
   if (estado === "revelado" && contacto) {
     return (
-      <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+      <div className="mt-4 rounded-2xl border border-confirmado bg-confirmado-tinte p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-confirmado-texto">
           Contacto del vendedor
         </p>
-        <p className="mt-1 text-2xl font-black text-slate-900">
+        <p className="mt-1 text-2xl font-black text-tinta">
           {telefonoLegible(contacto.telefono)}
         </p>
         {contacto.nombre_publico && (
-          <p className="text-sm text-slate-600">{contacto.nombre_publico}</p>
+          <p className="text-sm text-secundario">{contacto.nombre_publico}</p>
         )}
         <a
           href={contacto.whatsapp_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+          className="mt-3 inline-flex items-center gap-2 rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
         >
           Escribir por WhatsApp
           <span aria-hidden>↗</span>
         </a>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-secundario">
           Coordina la revisión del vehículo antes de cualquier pago. Nunca envíes dinero
           por adelantado.
         </p>
@@ -110,11 +110,11 @@ export function ContactoVendedor({
 
   if (estado === "sin_contacto") {
     return (
-      <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-        <p className="text-sm font-semibold text-amber-900">
+      <div className="mt-4 rounded-2xl border border-borde bg-superficie-tenue p-4">
+        <p className="text-sm font-semibold text-tinta">
           El vendedor todavía no publicó un teléfono de contacto.
         </p>
-        <p className="mt-1 text-sm text-amber-800">
+        <p className="mt-1 text-sm text-secundario">
           Puedes guardar este anuncio en favoritos y volver a intentarlo más tarde.
         </p>
       </div>
@@ -123,13 +123,13 @@ export function ContactoVendedor({
 
   if (estado === "no_disponible") {
     return (
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta">
-        <p className="text-sm font-semibold text-slate-700">
+      <div className="mt-4 rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta">
+        <p className="text-sm font-semibold text-secundario">
           Este anuncio ya no está disponible.
         </p>
         <Link
           href="/marketplace"
-          className="mt-2 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-800"
+          className="mt-2 inline-flex text-sm font-semibold text-marca hover:text-marca-texto"
         >
           Ver otros autos publicados →
         </Link>
@@ -144,20 +144,20 @@ export function ContactoVendedor({
           type="button"
           onClick={verTelefono}
           disabled={estado === "cargando"}
-          className="rounded-full bg-brand-gradient px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+          className="rounded-full bg-accion px-6 py-3 text-center text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:opacity-60"
         >
           {estado === "cargando" ? "Buscando el contacto…" : "Ver teléfono"}
         </button>
       </div>
 
       {estado === "error" && (
-        <p className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm text-rose-700">
+        <p className="mt-2 rounded-xl border border-error bg-error-tinte px-4 py-2.5 text-sm text-error">
           No pudimos obtener el contacto. Revisa tu conexión e intenta de nuevo.
         </p>
       )}
 
       {estado !== "error" && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-secundario">
           Mostramos el número solo cuando lo pides, para protegerlo de robots.
         </p>
       )}

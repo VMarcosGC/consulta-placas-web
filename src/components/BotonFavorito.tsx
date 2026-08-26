@@ -37,8 +37,8 @@ export function BotonFavorito({
       }}
       className={`absolute right-2 top-2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-lg leading-none shadow-sm ring-1 backdrop-blur transition disabled:opacity-60 ${
         guardado
-          ? "bg-rose-600 text-white ring-rose-600"
-          : "bg-white/90 text-slate-500 ring-slate-200 hover:text-rose-600"
+          ? "bg-error text-superficie ring-error"
+          : "bg-superficie/90 text-secundario ring-borde hover:text-error"
       }`}
     >
       <span aria-hidden>{guardado ? "♥" : "♡"}</span>
@@ -56,29 +56,29 @@ export function InvitacionFavorito({ onCerrar }: { onCerrar: () => void }) {
     // `--alto-barra-movil` a secas y en un teléfono con muesca el aviso caía DENTRO de
     // la barra —y con z-50 sobre z-40, encima de ella—. La variable es una sola para
     // que las dos alturas no puedan volver a desincronizarse.
-    <div className="fixed inset-x-3 bottom-[calc(var(--alto-barra-movil-total)+0.75rem)] z-50 mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta md:bottom-3">
+    <div className="fixed inset-x-3 bottom-[calc(var(--alto-barra-movil-total)+0.75rem)] z-50 mx-auto max-w-md rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta md:bottom-3">
       <div className="flex items-start gap-3">
         <span className="text-2xl leading-none" aria-hidden>
           ♡
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-slate-900">
+          <p className="text-sm font-bold text-tinta">
             Guarda este auto para verlo después
           </p>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="mt-0.5 text-sm text-secundario">
             Crea tu cuenta gratis y arma tu lista. Te avisamos aquí mismo si alguno baja
             de precio.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <a
               href="/registro"
-              className="inline-flex rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white"
+              className="inline-flex rounded-full bg-accion px-4 py-2 text-sm font-semibold text-superficie"
             >
               Crear cuenta gratis
             </a>
             <a
               href="/login"
-              className="inline-flex rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+              className="inline-flex rounded-full border border-borde-fuerte px-4 py-2 text-sm font-semibold text-secundario"
             >
               Ya tengo cuenta
             </a>
@@ -88,7 +88,7 @@ export function InvitacionFavorito({ onCerrar }: { onCerrar: () => void }) {
           type="button"
           onClick={onCerrar}
           aria-label="Cerrar aviso"
-          className="rounded-full px-2 py-1 text-slate-400 hover:text-slate-700"
+          className="rounded-full px-2 py-1 text-secundario hover:text-secundario"
         >
           ✕
         </button>

@@ -70,15 +70,15 @@ export default async function ConsultarPlacaPage({ params }: Props) {
         // La salida al market no es decorativa: §1.0.1 dice que si una consulta falla
         // el flujo del marketplace continúa. Sin este enlace, una consulta fallida es
         // un callejón sin salida.
-        <div className="sombra-tarjeta rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
-          <h2 className="text-xl font-bold text-red-700">No pudimos consultar esta placa</h2>
-          <p className="mt-2 text-sm text-slate-600">
+        <div className="sombra-tarjeta rounded-3xl border border-error bg-error-tinte p-8 text-center">
+          <h2 className="text-xl font-bold text-error">No pudimos consultar esta placa</h2>
+          <p className="mt-2 text-sm text-secundario">
             Es un problema nuestro, no de la placa. A veces la consulta demora unos
             segundos la primera vez: espera un momento y vuelve a intentarlo.
           </p>
-          <p className="mt-4 text-sm text-slate-600">
+          <p className="mt-4 text-sm text-secundario">
             Mientras tanto puedes{" "}
-            <Link href="/marketplace" className="font-semibold text-blue-700 hover:underline">
+            <Link href="/marketplace" className="font-semibold text-marca hover:underline">
               ver los autos en venta
             </Link>
             : el market funciona igual aunque una consulta falle.

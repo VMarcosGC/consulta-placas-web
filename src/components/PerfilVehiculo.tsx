@@ -55,7 +55,7 @@ function multasActivas(perfil: VehiculoConsolidado): MultaDetalle[] {
 
 function MarcaFuente({ fuente }: { fuente: string }) {
   return (
-    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide font-semibold text-slate-500">
+    <span className="rounded bg-superficie-tenue px-1.5 py-0.5 text-[10px] uppercase tracking-wide font-semibold text-secundario">
       {fuente}
     </span>
   );
@@ -73,10 +73,10 @@ function BotonReintentar({
       type="button"
       onClick={onReintentar}
       disabled={reintentando}
-      className="mt-2 inline-flex items-center gap-2 rounded-full border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+      className="mt-2 inline-flex items-center gap-2 rounded-full border border-error px-3 py-1.5 text-xs font-medium text-error transition hover:bg-error-tinte disabled:cursor-not-allowed disabled:opacity-50"
     >
       {reintentando && (
-        <span className="h-3 w-3 animate-spin rounded-full border-2 border-rose-300 border-t-transparent" />
+        <span className="h-3 w-3 animate-spin rounded-full border-2 border-error border-t-transparent" />
       )}
       {reintentando ? "Reintentando…" : "Reintentar conexión"}
     </button>
@@ -87,7 +87,7 @@ function SkeletonLista({ filas = 2 }: { filas?: number }) {
   return (
     <div className="animate-pulse space-y-2" aria-busy="true" aria-live="polite">
       {Array.from({ length: filas }).map((_, i) => (
-        <div key={i} className="h-10 rounded-xl bg-slate-100" />
+        <div key={i} className="h-10 rounded-xl bg-superficie-tenue" />
       ))}
     </div>
   );
@@ -103,9 +103,9 @@ function Dato({
 }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] uppercase tracking-wide text-slate-400">{label}</dt>
-      <dd className="mt-1 truncate text-[15px] font-semibold text-slate-900">
-        {valor ?? <span className="text-slate-300">—</span>}
+      <dt className="text-[11px] uppercase tracking-wide text-secundario">{label}</dt>
+      <dd className="mt-1 truncate text-[15px] font-semibold text-tinta">
+        {valor ?? <span className="text-secundario">—</span>}
       </dd>
     </div>
   );
@@ -130,9 +130,9 @@ function CompletaTuRevision({
   if (pendientes.length === 0 && !mostrarBundle) return null;
 
   return (
-    <section className="rounded-3xl border border-slate-200/70 bg-white p-6 sm:p-8 sombra-tarjeta">
-      <h2 className="text-lg font-bold text-slate-900">Completa tu revisión del vehículo</h2>
-      <p className="mb-5 mt-1 text-sm text-slate-500">
+    <section className="rounded-3xl border border-borde/70 bg-superficie p-6 sm:p-8 sombra-tarjeta">
+      <h2 className="text-lg font-bold text-tinta">Completa tu revisión del vehículo</h2>
+      <p className="mb-5 mt-1 text-sm text-secundario">
         Desbloquea solo lo que necesitas. Pagas con tokens — los datos de arriba son gratis.
       </p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -159,7 +159,7 @@ function CompletaTuRevision({
 
 function PildoraCategoria({ cat }: { cat: CategoriaMulta }) {
   const esPendiente = cat.etiqueta.toLowerCase().startsWith("pendiente");
-  const tono = esPendiente ? "bg-amber-50 text-amber-700" : "bg-slate-50 text-slate-500";
+  const tono = esPendiente ? "bg-atencion-tinte text-atencion-texto" : "bg-superficie-tenue text-secundario";
   const monto =
     cat.monto_usd != null && cat.monto_usd > 0 ? ` · $${cat.monto_usd.toFixed(2)}` : "";
   return (
@@ -173,14 +173,14 @@ function PildoraCategoria({ cat }: { cat: CategoriaMulta }) {
 function BloqueMulta({ d }: { d: MultaDetalle }) {
   const tienePend = d.pendientes > 0 || (d.total_a_pagar_usd ?? 0) > 0;
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+    <div className="rounded-xl border border-borde-suave bg-superficie-tenue/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <MarcaFuente fuente={d.fuente} />
-          <span className="text-sm font-semibold text-slate-700">{d.ambito}</span>
+          <span className="text-sm font-semibold text-secundario">{d.ambito}</span>
         </div>
         {tienePend && d.total_a_pagar_usd != null && d.total_a_pagar_usd > 0 ? (
-          <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-sm font-bold text-amber-700">
+          <span className="rounded-lg bg-atencion-tinte px-2.5 py-1 text-sm font-bold text-atencion-texto">
             ${d.total_a_pagar_usd.toFixed(2)}
           </span>
         ) : null}
@@ -192,7 +192,7 @@ function BloqueMulta({ d }: { d: MultaDetalle }) {
           ))}
         </div>
       ) : (
-        <p className="mt-2 text-sm font-medium text-emerald-600">Sin registros</p>
+        <p className="mt-2 text-sm font-medium text-confirmado">Sin registros</p>
       )}
     </div>
   );
@@ -215,7 +215,7 @@ function CuerpoMultas({
   // desbloquea en "Completa tu revisión del vehículo" (producto `multas_con_montos`).
   if (perfil.multas_bloqueado) {
     return (
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-secundario">
         {perfil.tiene_pendientes
           ? "Este vehículo tiene multas o infracciones registradas. Desbloquea el detalle con montos por fuente más arriba."
           : "Sin multas ni infracciones pendientes. Desbloquea el detalle completo si quieres confirmarlo."}
@@ -227,8 +227,8 @@ function CuerpoMultas({
   return (
     <>
       {amtErrorFuente && (
-        <div className="mb-3 rounded-xl border border-rose-100 bg-rose-50/70 p-3">
-          <p className="text-xs text-rose-600">
+        <div className="mb-3 rounded-xl border border-error bg-error-tinte/70 p-3">
+          <p className="text-xs text-error">
             No pudimos consultar las infracciones municipales (AMT).
           </p>
           <BotonReintentar onReintentar={onReintentar} reintentando={reintentando} />
@@ -238,7 +238,7 @@ function CuerpoMultas({
         cargandoAmt ? (
           <SkeletonLista />
         ) : (
-          <p className="text-sm font-medium text-emerald-600">
+          <p className="text-sm font-medium text-confirmado">
             Sin multas ni infracciones registradas.
           </p>
         )
@@ -283,7 +283,7 @@ function CuerpoIdentificacion({ perfil }: { perfil: VehiculoConsolidado }) {
       {hayIdent && (
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Identificación</p>
+            <p className="text-[11px] uppercase tracking-wide text-secundario">Identificación</p>
             {id.bloqueado ? (
               <Insignia tono="neutro">🔒 ofuscado</Insignia>
             ) : (
@@ -301,7 +301,7 @@ function CuerpoIdentificacion({ perfil }: { perfil: VehiculoConsolidado }) {
       {hayTitular && (
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Titular</p>
+            <p className="text-[11px] uppercase tracking-wide text-secundario">Titular</p>
             {t.validado ? (
               <Insignia tono="ok">validado</Insignia>
             ) : (
@@ -309,7 +309,7 @@ function CuerpoIdentificacion({ perfil }: { perfil: VehiculoConsolidado }) {
             )}
           </div>
           <Dato label="Titular registrado" valor={t.nombre_ofuscado ?? "—"} />
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-secundario">
             {t.mensaje ?? "Mostramos solo una validación; nunca el dato personal completo."}
           </p>
         </div>
@@ -317,7 +317,7 @@ function CuerpoIdentificacion({ perfil }: { perfil: VehiculoConsolidado }) {
 
       {hayValores && (
         <div>
-          <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-400">Valores SRI</p>
+          <p className="mb-2 text-[11px] uppercase tracking-wide text-secundario">Valores SRI</p>
           <dl className="grid grid-cols-2 gap-4">
             <Dato
               label="Matrícula"
@@ -391,11 +391,11 @@ function BotonEnlace({ e }: { e: EnlaceExterno }) {
         href={e.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${base} bg-brand-gradient text-white shadow-sm hover:opacity-90`}
+        className={`${base} bg-accion text-superficie shadow-sm hover:opacity-90`}
       >
         <span className="min-w-0">
           <span className="block text-sm font-bold">{e.etiqueta} ↗</span>
-          <span className="block truncate text-[11px] text-white/80">{e.descripcion}</span>
+          <span className="block truncate text-[11px] text-superficie/80">{e.descripcion}</span>
         </span>
       </a>
     );
@@ -405,14 +405,14 @@ function BotonEnlace({ e }: { e: EnlaceExterno }) {
       href={e.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${base} border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50`}
+      className={`${base} border border-borde bg-superficie hover:border-borde-fuerte hover:bg-superficie-tenue`}
     >
       <span className="min-w-0">
-        <span className="block text-sm font-semibold text-slate-900">
+        <span className="block text-sm font-semibold text-tinta">
           {e.etiqueta}
-          <span className="ml-1 text-slate-400 transition group-hover:text-slate-600">↗</span>
+          <span className="ml-1 text-secundario transition group-hover:text-secundario">↗</span>
         </span>
-        <span className="block truncate text-[11px] text-slate-400">{e.descripcion}</span>
+        <span className="block truncate text-[11px] text-secundario">{e.descripcion}</span>
       </span>
     </a>
   );
@@ -431,13 +431,13 @@ const ETIQUETA_ESTADO: Record<string, string> = {
 };
 
 const COLOR_ESTADO: Record<string, string> = {
-  completada: "bg-emerald-50 text-emerald-700",
-  sin_resultados: "bg-slate-100 text-slate-500",
-  en_proceso: "bg-sky-50 text-sky-700",
-  error_fuente: "bg-rose-50 text-rose-700",
-  error: "bg-rose-50 text-rose-700",
-  consulta_externa: "bg-sky-50 text-sky-700",
-  no_integrada: "bg-slate-100 text-slate-400",
+  completada: "bg-confirmado-tinte text-confirmado-texto",
+  sin_resultados: "bg-superficie-tenue text-secundario",
+  en_proceso: "bg-marca-tinte text-marca-texto",
+  error_fuente: "bg-error-tinte text-error",
+  error: "bg-error-tinte text-error",
+  consulta_externa: "bg-marca-tinte text-marca-texto",
+  no_integrada: "bg-superficie-tenue text-secundario",
 };
 
 function ChipFuente({ fuente }: { fuente: EstadoFuenteItem }) {
@@ -448,12 +448,12 @@ function ChipFuente({ fuente }: { fuente: EstadoFuenteItem }) {
       title={fuente.detalle ?? fuente.nombre}
     >
       {fuente.estado === "en_proceso" && (
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-500" />
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-marca" />
       )}
       <span className="font-semibold">{fuente.clave}</span>
       <span className="opacity-70">{ETIQUETA_ESTADO[fuente.estado] ?? fuente.estado}</span>
       {fuente.origen === "no_oficial" && (
-        <span title="Fuente no oficial" className="text-amber-500">
+        <span title="Fuente no oficial" className="text-declarado-texto">
           ⓘ
         </span>
       )}
@@ -533,7 +533,7 @@ export function PerfilVehiculo({ inicial }: Props) {
   const resumenMultas: { texto: string; tono: TonoInsignia } = r.municipalesEnProceso
     ? { texto: "consultando…", tono: "neutro" }
     : r.municipalesCaidas
-      ? { texto: "sin dato municipal", tono: "alerta" }
+      ? { texto: "sin dato municipal", tono: "neutro" }
       : r.detalleBloqueado
         ? { texto: r.tienePendientes ? "con pendientes" : "al día", tono: r.tienePendientes ? "alerta" : "ok" }
         : (r.multasPendientes ?? 0) > 0
@@ -580,7 +580,7 @@ export function PerfilVehiculo({ inicial }: Props) {
 
       {enlaces.length > 0 && (
         <Acordeon titulo="Consultar en portales oficiales">
-          <p className="mb-4 text-sm leading-relaxed text-slate-500">
+          <p className="mb-4 text-sm leading-relaxed text-secundario">
             Algunas validaciones se hacen directamente en el portal oficial, porque su
             captcha no permite automatizarlas. Abren en una pestaña nueva.
           </p>

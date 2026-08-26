@@ -19,9 +19,9 @@ import type { VehiculoConsolidado } from "@/types/api";
 
 function Linea({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-2 last:border-b-0">
-      <span className="text-sm text-slate-500">{etiqueta}</span>
-      <span className="text-right text-sm font-semibold text-slate-900">{children}</span>
+    <div className="flex items-center justify-between gap-3 border-b border-borde-suave py-2 last:border-b-0">
+      <span className="text-sm text-secundario">{etiqueta}</span>
+      <span className="text-right text-sm font-semibold text-tinta">{children}</span>
     </div>
   );
 }
@@ -67,21 +67,21 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
     (!sinDatosOficiales && r.matriculaEtiqueta === "Sin dato" && r.municipalesEnProceso);
 
   return (
-    <section className="rounded-2xl border border-slate-200/70 bg-white p-5 sombra-tarjeta sm:p-6">
+    <section className="rounded-2xl border border-borde/70 bg-superficie p-5 sombra-tarjeta sm:p-6">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-bold text-slate-900">Datos oficiales</h2>
+        <h2 className="text-sm font-bold text-tinta">Datos oficiales</h2>
         <Insignia tono="info">Fuentes públicas</Insignia>
       </div>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-secundario">
         Esto no lo declara el vendedor: viene de la ANT y las agencias municipales de tránsito.
       </p>
 
       {sinDatosOficiales ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-secundario">
           Aún no hay datos oficiales disponibles para esta placa. Consulta la placa para actualizarlos.
         </p>
       ) : enProceso ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-secundario">
           Datos oficiales en proceso. Estamos consultando las fuentes públicas de esta placa.
         </p>
       ) : (
@@ -91,22 +91,22 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
           </Linea>
           <Linea etiqueta="Multas e infracciones">
             {r!.municipalesEnProceso ? (
-              <span className="text-slate-400">Consultando…</span>
+              <span className="text-secundario">Consultando…</span>
             ) : municipalesSinConsultar ? (
-              <span className="text-slate-400">Aún no consultadas</span>
+              <span className="text-secundario">Aún no consultadas</span>
             ) : r!.tienePendientes ? (
-              <span className="text-amber-600">Con pendientes</span>
+              <span className="text-atencion">Con pendientes</span>
             ) : r!.municipalesCaidas ? (
-              <span className="text-slate-400">Sin dato municipal</span>
+              <span className="text-secundario">Sin dato municipal</span>
             ) : (
-              <span className="text-emerald-600">Al día</span>
+              <span className="text-confirmado">Al día</span>
             )}
           </Linea>
           {/* El monto es microdesbloqueo de pago: con el detalle bloqueado no se muestra
               (doble guarda — `derivarResumen` ya lo anula). */}
           {!r!.detalleBloqueado && r!.montoMultas != null && (
             <Linea etiqueta="Total a pagar">
-              <span className="text-amber-600">${r!.montoMultas.toFixed(0)}</span>
+              <span className="text-atencion">${r!.montoMultas.toFixed(0)}</span>
             </Linea>
           )}
         </div>
@@ -115,11 +115,11 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <Link
           href={`/consultar/${encodeURIComponent(placa)}`}
-          className="text-sm font-semibold text-blue-700 hover:underline"
+          className="text-sm font-semibold text-marca hover:underline"
         >
           Ver detalle completo →
         </Link>
-        {fecha && <span className="text-[11px] text-slate-400">Consultado el {fecha}</span>}
+        {fecha && <span className="text-[11px] text-secundario">Consultado el {fecha}</span>}
       </div>
     </section>
   );

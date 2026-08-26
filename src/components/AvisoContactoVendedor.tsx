@@ -67,12 +67,12 @@ export function AvisoContactoVendedor() {
 
   if (estado === "error") {
     return (
-      <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 sombra-tarjeta">
+      <div className="mb-4 rounded-2xl border border-borde bg-superficie px-4 py-3 text-sm text-secundario sombra-tarjeta">
         No pudimos verificar tu contacto de vendedor.{" "}
         <button
           type="button"
           onClick={reintentar}
-          className="font-semibold text-blue-600 hover:text-blue-800"
+          className="font-semibold text-marca hover:text-marca-texto"
         >
           Reintentar
         </button>
@@ -84,14 +84,14 @@ export function AvisoContactoVendedor() {
 
   if (completo) {
     return (
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 sombra-tarjeta">
-        <p className="text-sm text-slate-600">
-          Los compradores te ven como <b className="text-slate-900">{perfil?.nombre_publico}</b>{" "}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3 sombra-tarjeta">
+        <p className="text-sm text-secundario">
+          Los compradores te ven como <b className="text-tinta">{perfil?.nombre_publico}</b>{" "}
           y pueden escribirte por WhatsApp.
         </p>
         <Link
           href="/marketplace/mi-perfil-vendedor"
-          className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+          className="text-sm font-semibold text-marca hover:text-marca-texto"
         >
           Editar mi contacto
         </Link>
@@ -100,19 +100,19 @@ export function AvisoContactoVendedor() {
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie-tenue p-4">
       <div>
-        <p className="text-sm font-semibold text-amber-900">
+        <p className="text-sm font-semibold text-tinta">
           Todavía no pueden escribirte.
         </p>
-        <p className="mt-0.5 text-sm text-amber-800">
+        <p className="mt-0.5 text-sm text-secundario">
           Completa tu contacto para que los compradores interesados en tus autos puedan
           comunicarse contigo.
         </p>
       </div>
       <Link
         href="/marketplace/mi-perfil-vendedor"
-        className="shrink-0 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+        className="shrink-0 rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
       >
         Completar mi contacto
       </Link>

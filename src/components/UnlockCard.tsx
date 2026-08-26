@@ -42,10 +42,10 @@ export function UnlockCard({
   // Ya desbloqueado: mostramos el dato revelado, sin volver a cobrar.
   if (producto.desbloqueado) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta">
+      <div className="rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-slate-900">{producto.nombre}</h3>
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          <h3 className="text-sm font-semibold text-tinta">{producto.nombre}</h3>
+          <span className="inline-flex items-center gap-1 rounded-full bg-confirmado-tinte px-2.5 py-1 text-xs font-semibold text-confirmado-texto">
             ✓ desbloqueado
           </span>
         </div>
@@ -87,27 +87,27 @@ export function UnlockCard({
   }
 
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta">
+    <div className="flex flex-col rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2">
           <span aria-hidden className="text-lg leading-none">{icono}</span>
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">{producto.nombre}</h3>
+            <h3 className="text-sm font-semibold text-tinta">{producto.nombre}</h3>
             {(descripcion ?? producto.descripcion) && (
-              <p className="mt-0.5 text-xs text-slate-500">{descripcion ?? producto.descripcion}</p>
+              <p className="mt-0.5 text-xs text-secundario">{descripcion ?? producto.descripcion}</p>
             )}
           </div>
         </div>
         <TokenBadge tokens={producto.tokens} conPrecio />
       </div>
 
-      {preview && <div className="mt-3 rounded-xl bg-slate-50/70 p-3 text-sm text-slate-600">{preview}</div>}
+      {preview && <div className="mt-3 rounded-xl bg-superficie-tenue/70 p-3 text-sm text-secundario">{preview}</div>}
 
       <button
         type="button"
         onClick={desbloquear}
         disabled={cargando}
-        className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+        className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-accion px-4 py-2.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:opacity-60"
       >
         {cargando ? (
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -118,10 +118,10 @@ export function UnlockCard({
       </button>
 
       {error && (
-        <div className="mt-2 text-xs text-rose-600">
+        <div className="mt-2 text-xs text-error">
           {error}
           {saldoInsuficiente && (
-            <Link href="/precios" className="ml-1 font-semibold text-blue-600 underline">
+            <Link href="/precios" className="ml-1 font-semibold text-marca underline">
               Recargar tokens
             </Link>
           )}

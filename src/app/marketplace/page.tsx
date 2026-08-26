@@ -108,8 +108,8 @@ function Bloque({
     <section className="mb-10">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="text-lg font-bold text-slate-900 sm:text-xl">{titulo}</h2>
-          {descripcion && <p className="text-sm text-slate-500">{descripcion}</p>}
+          <h2 className="text-lg font-bold text-tinta sm:text-xl">{titulo}</h2>
+          {descripcion && <p className="text-sm text-secundario">{descripcion}</p>}
         </div>
         {accion}
       </div>
@@ -122,7 +122,7 @@ function Bloque({
 // comprador lo guardó; una subida nunca se anuncia.
 function BadgeBaja({ monto }: { monto: number }) {
   return (
-    <span className="inline-flex w-fit items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+    <span className="inline-flex w-fit items-center rounded-full bg-confirmado-tinte px-2 py-0.5 text-[11px] font-bold text-confirmado-texto">
       ↓ Bajó {montoCorto(monto)}
     </span>
   );
@@ -141,7 +141,7 @@ function NotaTope({
 }) {
   if (total <= mostrados) return null;
   return (
-    <p className="mt-3 text-sm text-slate-500">
+    <p className="mt-3 text-sm text-secundario">
       Mostrando {criterio ? `los ${mostrados} ${criterio}` : mostrados} de {total}. Usa el
       buscador para encontrar el tuyo.
     </p>
@@ -162,11 +162,11 @@ function Selector({
 }) {
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-slate-600">{etiqueta}</span>
+      <span className="font-medium text-secundario">{etiqueta}</span>
       <select
         value={valor}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+        className="rounded-xl border border-borde-fuerte bg-superficie px-3 py-2.5 text-tinta outline-none focus:border-marca focus:ring-2 focus:ring-marca/25"
       >
         {children}
       </select>
@@ -380,10 +380,10 @@ function ContenidoMarketplace() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <header className="mb-6">
-        <h1 className="text-2xl font-black text-slate-900 sm:text-3xl">
-          Autos <span className="text-brand-gradient">en venta</span>
+        <h1 className="text-2xl font-black text-tinta sm:text-3xl">
+          Autos <span className="text-marca">en venta</span>
         </h1>
-        <p className="mt-1 text-sm text-slate-500 sm:text-base">
+        <p className="mt-1 text-sm text-secundario sm:text-base">
           Cada anuncio muestra la ficha técnica del vendedor y los datos oficiales de su
           placa. También hay referencias de portales externos, sin verificar.
         </p>
@@ -397,7 +397,7 @@ function ContenidoMarketplace() {
           </label>
           <div className="relative">
             <span
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-secundario"
               aria-hidden
             >
               🔍
@@ -408,11 +408,11 @@ function ContenidoMarketplace() {
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               placeholder="¿Qué auto buscas? Marca, modelo o placa"
-              className="w-full rounded-2xl border border-slate-300 bg-white py-4 pl-12 pr-28 text-base text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              className="w-full rounded-2xl border border-borde-fuerte bg-superficie py-4 pl-12 pr-28 text-base text-tinta shadow-sm outline-none placeholder:text-secundario focus:border-marca focus:ring-2 focus:ring-marca/25"
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-accion px-4 py-2 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
             >
               Buscar
             </button>
@@ -433,8 +433,8 @@ function ContenidoMarketplace() {
                 onClick={() => (activa ? actualizarUrl({ precio_min: null, precio_max: null }) : aplicarBanda(b))}
                 className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
                   activa
-                    ? "bg-brand-gradient text-white"
-                    : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "bg-accion text-superficie"
+                    : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
                 }`}
               >
                 {b.etiqueta} <span className="opacity-70">({total})</span>
@@ -447,13 +447,13 @@ function ContenidoMarketplace() {
             onClick={() => setPanelAbierto((v) => !v)}
             className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
               nAvanzados > 0
-                ? "border-sky-400 bg-sky-50 text-sky-700"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                ? "border-marca bg-marca-tinte text-marca-texto"
+                : "border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
             }`}
           >
             Filtros
             {nAvanzados > 0 && (
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-gradient text-[11px] font-black text-white">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-accion text-[11px] font-black text-superficie">
                 {nAvanzados}
               </span>
             )}
@@ -463,7 +463,7 @@ function ContenidoMarketplace() {
 
         {/* Panel de filtros avanzados (colapsable en móvil para no saturar). */}
         {panelAbierto && (
-          <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta sm:grid-cols-2 lg:grid-cols-3">
             <Selector
               etiqueta="Tipo de vehículo"
               valor={filtros.tipo ?? ""}
@@ -561,7 +561,7 @@ function ContenidoMarketplace() {
                 <button
                   type="button"
                   onClick={limpiarFiltros}
-                  className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
                 >
                   Limpia todos los filtros
                 </button>
@@ -575,26 +575,26 @@ function ContenidoMarketplace() {
       <div className="mb-8 flex flex-wrap items-center gap-2">
         <Link
           href="/marketplace/publicar"
-          className="inline-flex items-center justify-center rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+          className="inline-flex items-center justify-center rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
         >
           + Publicar mi auto
         </Link>
         <Link
           href="/marketplace/mis-publicaciones"
-          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          className="inline-flex items-center justify-center rounded-full border border-borde-fuerte bg-superficie px-4 py-2.5 text-sm font-semibold text-secundario shadow-sm hover:bg-superficie-tenue"
         >
           Mis publicaciones
         </Link>
         <Link
           href="/marketplace/mis-referencias"
-          className="inline-flex items-center justify-center rounded-full px-3 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center justify-center rounded-full px-3 py-2.5 text-sm font-semibold text-secundario hover:text-tinta"
         >
           Mis referencias
         </Link>
       </div>
 
       {errorFeed && !busquedaActiva && (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+        <p className="rounded-xl border border-error bg-error-tinte p-4 text-error">
           {errorFeed}
         </p>
       )}
@@ -604,7 +604,7 @@ function ContenidoMarketplace() {
         <section className="mb-10">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-slate-900">
+              <h2 className="text-lg font-bold text-tinta">
                 {cargandoBusqueda
                   ? "Buscando autos…"
                   : nResultados === 1
@@ -618,10 +618,10 @@ function ContenidoMarketplace() {
                       key={p.clave}
                       type="button"
                       onClick={() => quitarPill(p.clave)}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      className="inline-flex items-center gap-1 rounded-full border border-borde-fuerte bg-superficie px-3 py-1 text-xs font-semibold text-secundario hover:bg-superficie-tenue"
                     >
                       {p.texto}
-                      <span className="text-slate-400" aria-hidden>
+                      <span className="text-secundario" aria-hidden>
                         ×
                       </span>
                       <span className="sr-only">Quitar filtro</span>
@@ -633,31 +633,31 @@ function ContenidoMarketplace() {
             <button
               type="button"
               onClick={limpiarFiltros}
-              className="shrink-0 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="shrink-0 rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
             >
               Limpiar filtros
             </button>
           </div>
 
           {cargandoBusqueda ? (
-            <p className="text-slate-500">Buscando autos…</p>
+            <p className="text-secundario">Buscando autos…</p>
           ) : busqueda.error ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
-              <p className="font-semibold text-rose-700">{busqueda.error}</p>
+            <div className="rounded-2xl border border-error bg-error-tinte p-6 text-center">
+              <p className="font-semibold text-error">{busqueda.error}</p>
               <button
                 type="button"
                 onClick={limpiarFiltros}
-                className="mt-3 inline-flex rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+                className="mt-3 inline-flex rounded-full border border-error bg-superficie px-4 py-2 text-sm font-semibold text-error hover:bg-error-tinte"
               >
                 Reiniciar búsqueda
               </button>
             </div>
           ) : nResultados === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center sombra-tarjeta">
-              <p className="font-semibold text-slate-700">
+            <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
+              <p className="font-semibold text-secundario">
                 No encontramos autos con esos filtros.
               </p>
-              <p className="mt-1 text-sm text-slate-500">Prueba con menos filtros.</p>
+              <p className="mt-1 text-sm text-secundario">Prueba con menos filtros.</p>
             </div>
           ) : (
             <>
@@ -690,7 +690,7 @@ function ContenidoMarketplace() {
                     type="button"
                     onClick={cargarMas}
                     disabled={cargandoMas}
-                    className="rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {cargandoMas ? "Cargando…" : "Cargar más autos"}
                   </button>
@@ -704,17 +704,17 @@ function ContenidoMarketplace() {
       {/* ── Bloques curados (solo sin búsqueda activa) ──────────────────────── */}
       {!busquedaActiva && (
         <>
-          {cargandoFeed && <p className="text-slate-500">Cargando publicaciones…</p>}
+          {cargandoFeed && <p className="text-secundario">Cargando publicaciones…</p>}
 
           {feedVacio && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-              <p className="text-lg font-semibold text-slate-700">
+            <div className="rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
+              <p className="text-lg font-semibold text-secundario">
                 Todavía no hay publicaciones.
               </p>
-              <p className="mt-1 text-slate-500">Sé el primero en publicar tu vehículo.</p>
+              <p className="mt-1 text-secundario">Sé el primero en publicar tu vehículo.</p>
               <Link
                 href="/marketplace/publicar"
-                className="mt-4 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+                className="mt-4 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
               >
                 Publicar ahora
               </Link>
@@ -798,9 +798,9 @@ function ContenidoMarketplace() {
                     key={marca}
                     type="button"
                     onClick={() => buscarMarca(marca)}
-                    className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-sky-400 hover:text-sky-700"
+                    className="rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario shadow-sm transition hover:border-marca hover:text-marca-texto"
                   >
-                    {marca} <span className="text-slate-400">({total})</span>
+                    {marca} <span className="text-secundario">({total})</span>
                   </button>
                 ))}
               </div>
@@ -837,10 +837,10 @@ function ContenidoMarketplace() {
                     key={b.clave}
                     type="button"
                     onClick={() => aplicarBanda(b)}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 text-left sombra-tarjeta transition hover:border-sky-400"
+                    className="rounded-2xl border border-borde bg-superficie p-5 text-left sombra-tarjeta transition hover:border-marca"
                   >
-                    <p className="text-base font-bold text-slate-900">{b.etiqueta}</p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="text-base font-bold text-tinta">{b.etiqueta}</p>
+                    <p className="mt-1 text-sm text-secundario">
                       {total === 1 ? "1 auto disponible" : `${total} autos disponibles`}
                     </p>
                   </button>
@@ -867,19 +867,19 @@ function ContenidoMarketplace() {
 
       {/* Vía 3 de publicación: referenciar un anuncio externo. Se conserva del diseño
           anterior — es la entrada que hace descubrible el flujo de referencias. */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie-tenue/70 p-4">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-800">
+          <p className="text-sm font-semibold text-tinta">
             🔗 ¿Viste un auto en Facebook u OLX?
           </p>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="mt-0.5 text-sm text-secundario">
             Pega el link y lo sumamos al feed como referencia externa. No hace falta que sea
             tuyo y es gratis.
           </p>
         </div>
         <Link
           href="/marketplace/referenciar"
-          className="inline-flex shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          className="inline-flex shrink-0 items-center justify-center rounded-full border border-borde-fuerte bg-superficie px-5 py-2.5 text-sm font-semibold text-secundario shadow-sm hover:bg-superficie-tenue"
         >
           Referenciar anuncio externo
         </Link>
@@ -899,7 +899,7 @@ export default function MarketplacePage() {
     <Suspense
       fallback={
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-          <p className="text-slate-500">Cargando marketplace…</p>
+          <p className="text-secundario">Cargando marketplace…</p>
         </div>
       }
     >
