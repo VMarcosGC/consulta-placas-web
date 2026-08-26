@@ -464,7 +464,7 @@ function PasoDatos({
                 : "border-slate-200 bg-white hover:border-slate-300"
             }`}
           >
-            <span className="absolute right-0 top-0 rounded-bl-lg bg-brand-gradient px-2 py-0.5 text-[10px] font-black text-white">
+            <span className="absolute right-0 top-0 rounded-bl-lg bg-marca px-2 py-0.5 text-[10px] font-black text-white">
               ★ PREMIUM
             </span>
             <p className="font-bold text-slate-900">Premium · con tokens</p>

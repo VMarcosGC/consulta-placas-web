@@ -21,22 +21,24 @@ export function Acordeon({
   return (
     <details
       open={abiertoPorDefecto}
-      className="group overflow-hidden rounded-2xl border border-slate-200/70 bg-white sombra-tarjeta"
+      className="group overflow-hidden rounded-2xl border border-borde bg-superficie sombra-tarjeta"
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 transition hover:bg-slate-50 sm:px-6">
-        <span className="text-sm font-semibold text-slate-800">{titulo}</span>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 transition hover:bg-superficie-tenue sm:px-6">
+        <span className="text-sm font-semibold text-tinta">{titulo}</span>
         <span className="flex items-center gap-2">
           {resumen}
           {/* Chevron: rota al abrir. `open:` es la variante de Tailwind para <details>. */}
           <span
             aria-hidden
-            className="text-slate-400 transition-transform group-open:rotate-180"
+            className="text-secundario transition-transform group-open:rotate-180"
           >
             ▾
           </span>
         </span>
       </summary>
-      <div className="border-t border-slate-100 px-5 py-5 sm:px-6">{children}</div>
+      {/* `borde-suave` y no `borde`: es un divisor INTERNO, debe pesar menos que
+          el filete que cierra la tarjeta. */}
+      <div className="border-t border-borde-suave px-5 py-5 sm:px-6">{children}</div>
     </details>
   );
 }

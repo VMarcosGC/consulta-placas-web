@@ -1,13 +1,128 @@
 @import "tailwindcss";
 
-/* ── Sistema visual "Confianza clara" ──────────────────────────────────────
-   Base clara, azul confianza → cian (serio pero fresco y atractivo). Verde =
-   "al día", rojo/ámbar = pendientes. Pensado para legibilidad alta en celulares
-   de gama baja y a plena luz, y para enganchar sin perder seriedad. */
+/* ── Sistema de diseño — "dos registros" ───────────────────────────────────
+   Fuente: ../consulta_placas_ec/docs/DISENO.md. Los hex y los ratios de esta
+   sección vienen de §2; no se ajustan "a ojo" acá.
+
+   La idea que ordena todo (§1): en la misma pantalla conviven DOS clases de
+   dato —lo que el vendedor DECLARA y lo que dice un REGISTRO PÚBLICO— y hoy se
+   pintan igual, así que la transparencia que da nombre al producto es
+   invisible. El registro oficial es frío y monoespaciado; lo declarado es
+   cálido y sans. La distinción dice de dónde viene el dato, no cuánto vale.
+
+   REGLA DURA (§2): un color, un trabajo. Si `--accion` aparece dos veces en
+   una pantalla, deja de significar "esto es lo que vas a tocar".
+
+   Estado de la migración: FASE 1A. Los tokens ya existen y están aplicados en
+   los cuatro primitivos compartidos (ListingCard, BentoCard, CampoTexto,
+   Acordeon). El resto de `src/app/` sigue con utilidades literales de Tailwind
+   (`slate`, `blue`, `emerald`, `amber`, `rose`) y se migra en 1B/1C. Que los
+   dos sistemas convivan un tiempo es esperado, no un descuido. */
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  /* Gradiente de marca: azul confianza → celeste → cian */
+
+  /* ── §2 Paleta. Base WGSN x Coloro, Key Colours S/S 27. Los hex son
+     aproximaciones derivadas de las descripciones oficiales: Coloro no publica
+     equivalencias y sus swatches son físicos y licenciados. ───────────────── */
+
+  /* Acciones primarias y registro oficial. El único color frío de la paleta:
+     es el que marca "esto lo dice un registro público", no nosotros. */
+  --color-marca: #2f3fc7;        /* Coloro 125-28-38 · 7.90:1 sobre blanco */
+
+  /* SOLO la acción de conversión. Es la variante oscurecida del Energy Orange
+     (#F0562A), que da 3.46:1 con texto blanco y no pasa AA. No se revierte
+     "porque se ve más vivo" (§6). */
+  --color-accion: #cb4a16;       /* 018-57-34 oscurecido · 4.64:1 sobre blanco */
+
+  /* Estado "al día". Nunca una acción. */
+  --color-confirmado: #4b7a3e;   /* Coloro 050-61-19 · 5.06:1 sobre blanco */
+
+  /* Superficie de lo declarado por el vendedor. Es un tono medio: sirve de
+     superficie, NO de color de texto (2.86:1 sobre blanco). Para texto va el
+     par tinte/texto de más abajo. */
+  --color-declarado: #c08d7c;    /* Coloro 014-60-13 */
+
+  /* Estado "pendiente" DEL VEHÍCULO (tiene una multa). Nunca una acción. */
+  --color-atencion: #b04a22;     /* derivado · 5.46:1 sobre blanco */
+
+  /* TERCER estado del vehículo: "requiere atención" (TASK-017). El vehículo
+     tiene una escala de tres pasos —`tonoEstadoComponente()` devuelve
+     bueno → regular → requiere_atencion— y hasta ahora el tercero PRESTABA
+     la familia de `--atencion` con un anillo encima. Prestar rompe la regla
+     dura de §2 (un color, un trabajo): `--atencion` significaba dos cosas.
+
+     Es vino y no rojo A PROPÓSITO. El rojo ya es `--error`, que es un fallo
+     NUESTRO, y §2 prohíbe que un problema de la interfaz se lea como un
+     problema del auto. Dicho con honestidad: la separación con `--error` es
+     de 17° de hue, que no es mucho en una pantalla barata a pleno sol. Lo
+     que realmente separa a los dos no es el hue sino el anillo del tono
+     `peligro` y el lugar donde aparece cada uno — el mismo razonamiento de
+     §1, donde la tipografía carga la distinción para que el sistema
+     sobreviva al daltonismo y a la escala de grises. No quites el anillo
+     creyendo que el color nuevo ya alcanza. */
+  --color-critico: #8a2f43;      /* derivado · 8.18:1 blanco · 7.61:1 lienzo */
+
+  /* Fallo de LA INTERFAZ (no pudimos cargar, el formulario está mal). Nunca un
+     estado del vehículo. No es `--atencion` con otro nombre: pintarlos igual
+     haría que un problema nuestro se lea como un problema del auto, que es lo
+     contrario de repartir bien la responsabilidad (§7). */
+  --color-error: #a8332b;        /* derivado · 6.62:1 blanco · 6.16:1 lienzo */
+
+  --color-lienzo: #faf6f3;       /* fondo de página */
+  --color-tinta: #22201f;        /* texto primario · 15.10:1 sobre lienzo */
+  /* Texto secundario. Se oscureció de `#77695f` (TASK-017): sobre
+     `--superficie-tenue` daba 4.52:1 y el piso de este sistema para texto
+     secundario es 4.8:1. Ahora pasa 5:1 sobre las TRES superficies donde
+     aparece, que es el umbral que hay que sostener al tocar cualquiera de
+     los cuatro hex. */
+  --color-secundario: #706258;   /* 5.46:1 lienzo · 5.87:1 blanco · 5.02:1 tenue */
+
+  /* ── §2 Tintes y su texto. Todo texto sobre un tinte usa el tono oscuro de
+     SU PROPIA familia, nunca negro ni gris genérico. ─────────────────────── */
+  --color-confirmado-tinte: #e8f0e4;
+  --color-confirmado-texto: #2e4a26;   /* 8.48:1 */
+  --color-atencion-tinte: #fbe9e2;
+  --color-atencion-texto: #7a3316;     /* 7.72:1 */
+  --color-marca-tinte: #e9ebf8;
+  --color-marca-texto: #2a3170;        /* 9.99:1 */
+  --color-declarado-tinte: #f3e9e4;
+  --color-declarado-texto: #6b4a3d;    /* 6.58:1 */
+  --color-critico-tinte: #f7e7ea;
+  --color-critico-texto: #7a2a3b;      /* 7.91:1 */
+  /* §2 no define tinte para `--error` (el token se agregó después de la tabla).
+     En vez de inventar un segundo hex de la familia, el texto es el propio
+     `--error` sobre su tinte: 5.54:1, medido. */
+  --color-error-tinte: #f9e7e5;
+
+  /* ── Neutros cálidos. Nacieron derivados en 1A porque la tabla de §2 definía
+     texto y estados pero no bordes ni superficies, y `slate` es azulado y pelea
+     con el lienzo cálido. **Desde TASK-017 están EN la tabla de §2**, con su
+     único trabajo y su contraste: dejaron de ser un anexo local de este archivo
+     y son parte del sistema. Si cambian acá, cambian allá. ────────────────── */
+  --color-superficie: #ffffff;        /* tarjetas: el lienzo es el fondo de PÁGINA */
+  --color-superficie-tenue: #f2ece8;  /* relleno sutil · secundario encima da 5.02:1 */
+  --color-borde: #e4dad4;             /* filete de tarjeta (decorativo) */
+  --color-borde-suave: #efe7e2;       /* divisor interno (decorativo) */
+  /* Borde de CONTROL DE FORMULARIO. Más oscuro a propósito: WCAG 1.4.11 exige
+     3:1 para el límite de un componente de interfaz y da 3.04:1. El
+     `slate-300` que reemplaza daba 1.48:1, o sea que fallaba. (1.48 y no 1.49:
+     en Tailwind 4 la fuente de verdad es el OKLCH del paquete, no el hex
+     publicado, que ya viene redondeado a 8 bits. No lo "corrijas" otra vez.) */
+  --color-borde-fuerte: #a0918a;
+
+  /* ── Gradiente de marca = IDENTIDAD, y CONVIVE con `--marca` (§2). No se
+     reemplaza uno por otro: `--marca` es el plano para acciones y registro
+     oficial; el gradiente vive **SOLO en el logo**.
+
+     Eran dos lugares —logo y chip Premium— hasta TASK-017. El chip pasó a
+     `--marca` plano: un chip Premium es METADATO de una publicación, no la
+     identidad del producto, y mientras el gradiente estuviera ahí no había
+     forma de responder "¿este gradiente me está diciendo marca o me está
+     diciendo estado?". Con un solo uso la respuesta es siempre la misma.
+     §6 descartó los gradientes amplios por rendimiento en Android de gama
+     baja; un SEGUNDO uso vuelve a ser decisión nueva y hay que justificarla
+     en DISENO.md §2. ─────────────────────────────────────────────────────── */
   --color-brand-from: #2563eb;   /* blue-600  */
   --color-brand-via:  #0ea5e9;   /* sky-500   */
   --color-brand-to:   #06b6d4;   /* cyan-500  */
@@ -41,11 +156,44 @@ html { scroll-behavior: smooth; }
   }
 }
 
+/* Lienzo CÁLIDO (§2). Reemplaza el `#f6f8fc` azulado anterior.
+   Honestidad sobre esta decisión (§7): el lienzo cálido es una preferencia
+   estética, no una consecuencia de "confianza". Se eligió porque diferencia del
+   blanco-azulado de todos los clasificados ecuatorianos, no porque comunique
+   algo. Queda etiquetado como tal y pendiente de validar con usuarios reales.
+
+   El color va acá y NO como clase en `layout.tsx`: una utilidad `text-*` en el
+   <body> gana sobre esta regla y dejaría el token sin efecto. */
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
-  /* Lienzo claro con una sutil tibieza azulada, no blanco plano. */
-  background-color: #f6f8fc;
-  color: #0f172a; /* slate-900 */
+  background-color: var(--color-lienzo);
+  color: var(--color-tinta);
+}
+
+/* ── §3 Tipografía ─────────────────────────────────────────────────────────
+   Dos roles, y la distinción entre ellos es SEMÁNTICA, no estética:
+     · Sans — todo lo declarado, la interfaz y el precio.
+     · Mono — la placa y los datos que vienen de un registro oficial.
+   Que la tipografía cargue la misma distinción que el color no es redundancia:
+   es lo que hace que el sistema sobreviva al daltonismo, a la escala de grises
+   y a una pantalla barata a pleno sol (§1).
+
+   Escala: precio 26px/500 · título 15px/500 · cuerpo 12–14px/400 · placa 11px
+   con letter-spacing amplio.
+
+   La mono NO se usa para etiquetas de procedencia repetidas en el listado:
+   añade densidad sin aportar (§3, y §6 la descartó explícitamente). Se reserva
+   para el identificador y para el dato oficial en el detalle. */
+
+/* La placa ya venía en mono; ese instinto era correcto y acá se FORMALIZA en un
+   solo lugar en vez de repetirse suelta por los componentes. Va en `--marca`
+   porque ese es el color del registro oficial (§2), no un gris de relleno. */
+.texto-placa {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--color-marca);
 }
 
 /* Texto con gradient marca */
@@ -70,24 +218,27 @@ body {
   );
 }
 
-/* Glow del hero: halo azul/cian suave sobre fondo claro (atracción sin ruido). */
+/* Glow del hero. Los topes transparentes se llevan al lienzo cálido para que el
+   degradado no muera contra un azul que ya no existe. Las paradas de COLOR
+   siguen en el gradiente viejo a propósito: pertenecen a la landing, que es 1B. */
 .hero-glow {
   background:
-    radial-gradient(55% 55% at 50% 0%, rgba(37, 99, 235, 0.16) 0%, rgba(246, 248, 252, 0) 70%),
-    radial-gradient(40% 40% at 82% 25%, rgba(6, 182, 212, 0.14) 0%, rgba(246, 248, 252, 0) 70%);
+    radial-gradient(55% 55% at 50% 0%, rgba(37, 99, 235, 0.16) 0%, rgba(250, 246, 243, 0) 70%),
+    radial-gradient(40% 40% at 82% 25%, rgba(6, 182, 212, 0.14) 0%, rgba(250, 246, 243, 0) 70%);
 }
 
-/* Anillo de foco azul accesible. */
+/* Anillo de foco accesible, en `--marca` (rgb 47 63 199). */
 .focus-glow:focus {
   outline: none;
   box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.25),
-    0 0 0 1px rgba(37, 99, 235, 0.6);
+    0 0 0 3px rgba(47, 63, 199, 0.25),
+    0 0 0 1px rgba(47, 63, 199, 0.6);
 }
 
-/* Sombra de tarjeta cálida y sutil (no la sombra dura por defecto). */
+/* Sombra de tarjeta sutil. Tintada con `--tinta` (rgb 34 32 31) y no con el
+   azul pizarra de antes: una sombra fría sobre lienzo cálido se ve gris sucia. */
 .sombra-tarjeta {
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 2px rgba(34, 32, 31, 0.05), 0 8px 24px -12px rgba(34, 32, 31, 0.16);
 }
 
 /* Aparición suave */

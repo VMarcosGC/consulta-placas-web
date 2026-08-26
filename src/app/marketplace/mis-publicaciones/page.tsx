@@ -193,7 +193,7 @@ export default function MisPublicacionesPage() {
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     {esPremium ? (
-                      <span className="rounded-full bg-brand-gradient px-2 py-0.5 text-xs font-black text-white">
+                      <span className="rounded-full bg-marca px-2 py-0.5 text-xs font-black text-white">
                         ★ Premium
                       </span>
                     ) : (

@@ -469,7 +469,7 @@ export default function PublicacionDetallePage() {
           <header className="mt-5">
             <div className="flex flex-wrap items-center gap-1.5">
               {pub.plan === "premium" && (
-                <span className="inline-flex items-center rounded-full bg-brand-gradient px-2.5 py-0.5 text-xs font-black text-white">
+                <span className="inline-flex items-center rounded-full bg-marca px-2.5 py-0.5 text-xs font-black text-white">
                   ★ Premium
                 </span>
               )}

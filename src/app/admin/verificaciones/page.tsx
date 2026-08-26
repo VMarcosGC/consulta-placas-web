@@ -134,7 +134,7 @@ export default function VerificacionesPage() {
             >
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-brand-gradient px-2 py-0.5 text-xs font-black text-white">
+                  <span className="rounded-full bg-marca px-2 py-0.5 text-xs font-black text-white">
                     ★ Premium
                   </span>
                   <span className="font-mono text-xs tracking-widest text-slate-500">

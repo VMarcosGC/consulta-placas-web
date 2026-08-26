@@ -44,7 +44,10 @@ export default function RootLayout({
       {/* `espacio-barra-movil` reserva abajo el alto de la barra de navegación de
           celular (fixed). Va en el body y no en el <main> porque el Footer queda
           debajo del main y también se taparía. Desde `md` no reserva nada. */}
-      <body className="min-h-full flex flex-col text-slate-900 espacio-barra-movil">
+      {/* Sin `text-*` acá: el color de texto base lo fija `--tinta` en el body de
+          globals.css. Una utilidad de Tailwind en este elemento gana por
+          especificidad y dejaría el token del sistema sin efecto. */}
+      <body className="min-h-full flex flex-col espacio-barra-movil">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
