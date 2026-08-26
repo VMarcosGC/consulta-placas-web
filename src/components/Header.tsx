@@ -119,7 +119,7 @@ export function Header() {
               {typeof usuario?.saldo_tokens === "number" && (
                 <Link
                   href="/precios"
-                  className="inline-flex items-center gap-1 rounded-full bg-superficie-tenue px-2.5 py-1.5 text-sm font-bold text-secundario hover:bg-superficie-tenue"
+                  className="inline-flex items-center gap-1 rounded-full bg-superficie-tenue px-2.5 py-1.5 text-sm font-bold text-secundario transition hover:opacity-90"
                   title="Tus tokens — toca para ver precios"
                 >
                   <span aria-hidden>🪙</span>

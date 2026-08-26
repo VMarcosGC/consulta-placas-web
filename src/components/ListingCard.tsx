@@ -103,7 +103,7 @@ function Portada({ url, alt }: { url?: string | null; alt: string }) {
         />
       ) : (
         // "Sin fotos" pasa a `text-secundario` (5.02:1 sobre el relleno). Antes era un
-        // `slate-300` decorativo a 1.4:1: en una pantalla barata a pleno sol —el caso de
+        // `slate-300` decorativo a 1.27:1: en una pantalla barata a pleno sol —el caso de
         // uso que manda acá— simplemente no se leía.
         <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-secundario">
           <span className="text-3xl" aria-hidden>

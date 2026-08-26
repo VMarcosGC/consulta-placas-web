@@ -21,9 +21,14 @@ import {
   ReferenciaActualizar,
 } from "@/types/api";
 
+// Mismo mapa que `VERIFICACION_BADGE` en `mis-publicaciones` (TASK-017 fase 3):
+// en curso → `--marca` · éxito → `--confirmado` · rechazo → `--error`. Las dos
+// páginas describen el mismo hecho —la plataforma decidió sobre lo que enviaste—
+// y antes lo pintaban distinto, así que el mismo estado cambiaba de color según
+// desde qué entrada del menú llegaras.
 const BADGE: Record<EstadoModeracion, { texto: string; clase: string }> = {
-  pendiente: { texto: "⏳ En revisión", clase: "bg-superficie-tenue text-secundario" },
-  aprobada: { texto: "✓ Publicada", clase: "bg-superficie-tenue text-secundario" },
+  pendiente: { texto: "⏳ En revisión", clase: "bg-marca-tinte text-marca-texto" },
+  aprobada: { texto: "✓ Publicada", clase: "bg-confirmado-tinte text-confirmado-texto" },
   rechazada: { texto: "✕ Rechazada", clase: "bg-error-tinte text-error" },
 };
 
@@ -344,7 +349,7 @@ export default function MisReferenciasPage() {
                   </button>
                   <button
                     onClick={() => borrar(r.id)}
-                    className="rounded-lg border border-error px-3 py-1.5 text-xs font-medium text-error hover:bg-error-tinte"
+                    className="rounded-lg border border-destructivo px-3 py-1.5 text-xs font-medium text-destructivo transition hover:bg-destructivo-tinte"
                   >
                     Eliminar
                   </button>

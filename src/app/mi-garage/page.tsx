@@ -172,14 +172,14 @@ export default function MiGaragePage() {
                     {pub.estado === "borrador" ? (
                       <Link
                         href="/marketplace/mis-publicaciones"
-                        className="rounded-lg border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario hover:bg-superficie-tenue"
+                        className="rounded-lg border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario transition hover:opacity-90"
                       >
                         Borrador sin publicar ({pct} %)
                       </Link>
                     ) : fichaPendiente(pct) ? (
                       <Link
                         href="/marketplace/mis-publicaciones"
-                        className="rounded-lg border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario hover:bg-superficie-tenue"
+                        className="rounded-lg border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario transition hover:opacity-90"
                       >
                         Completa tu ficha ({pct} %)
                       </Link>
@@ -196,7 +196,7 @@ export default function MiGaragePage() {
                         que este auto YA tiene publicación. */}
                     <Link
                       href={enlacePublicacion(pub)}
-                      className="rounded-lg border border-marca bg-marca-tinte px-3 py-1.5 text-xs font-semibold text-marca hover:bg-marca-tinte"
+                      className="rounded-lg border border-marca bg-marca-tinte px-3 py-1.5 text-xs font-semibold text-marca-texto transition hover:opacity-90"
                     >
                       Ya publicado →
                     </Link>
@@ -217,7 +217,7 @@ export default function MiGaragePage() {
                 </Link>
                 <button
                   onClick={() => borrar(v.id)}
-                  className="rounded-lg border border-error px-3 py-1.5 text-xs text-error hover:bg-error-tinte"
+                  className="rounded-lg border border-destructivo px-3 py-1.5 text-xs text-destructivo transition hover:bg-destructivo-tinte"
                 >
                   Eliminar
                 </button>

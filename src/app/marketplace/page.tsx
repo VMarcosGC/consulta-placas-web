@@ -431,9 +431,14 @@ function ContenidoMarketplace() {
                 type="button"
                 aria-pressed={activa}
                 onClick={() => (activa ? actualizarUrl({ precio_min: null, precio_max: null }) : aplicarBanda(b))}
+                // Chip ACTIVO en `--marca`, no en `--accion` (TASK-017 fase 3). Un filtro
+                // aplicado es estado de selección, no la acción de conversión, y §2 reserva
+                // `--accion` para esa sola cosa. Además queda en la misma familia que el
+                // botón "Filtros" de acá al lado, que ya marcaba su estado activo con
+                // `--marca`: eran dos lenguajes para "esto está activo" en la misma barra.
                 className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
                   activa
-                    ? "bg-accion text-superficie"
+                    ? "bg-marca text-superficie"
                     : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
                 }`}
               >
@@ -453,7 +458,9 @@ function ContenidoMarketplace() {
           >
             Filtros
             {nAvanzados > 0 && (
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-accion text-[11px] font-black text-superficie">
+              // Contador de filtros activos: metadato, no acción. En `--marca` para no
+              // gastar `--accion` (§2) y para acompañar al botón que lo contiene.
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-marca text-[11px] font-black text-superficie">
                 {nAvanzados}
               </span>
             )}

@@ -665,7 +665,7 @@ export function FichaEditor({
                 <button
                   type="button"
                   onClick={() => setExtras(extras.filter((_, j) => j !== i))}
-                  className="rounded-xl border border-error px-3 py-2 text-xs font-medium text-error hover:bg-error-tinte"
+                  className="rounded-xl border border-destructivo px-3 py-2 text-xs font-medium text-destructivo transition hover:bg-destructivo-tinte"
                 >
                   Quitar
                 </button>

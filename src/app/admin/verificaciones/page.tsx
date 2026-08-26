@@ -163,14 +163,19 @@ export default function VerificacionesPage() {
                 <button
                   onClick={() => decidir(p.id, "verificado")}
                   disabled={ocupado}
-                  className="flex-1 rounded-full bg-confirmado px-4 py-2 text-sm font-semibold text-superficie hover:bg-confirmado disabled:opacity-50"
+                  // Ver el razonamiento en `admin/moderacion`: `--confirmado` es estado y §2
+                  // dice "nunca una acción"; verificar es la acción primaria de la pantalla,
+                  // y eso es `--marca`. El hover era del mismo color que el fondo.
+                  className="flex-1 rounded-full bg-marca px-4 py-2 text-sm font-semibold text-superficie transition hover:opacity-90 disabled:opacity-50"
                 >
                   {ocupado ? "…" : "Verificar"}
                 </button>
                 <button
                   onClick={() => decidir(p.id, "rechazado")}
                   disabled={ocupado}
-                  className="flex-1 rounded-full border border-error px-4 py-2 text-sm font-semibold text-error hover:bg-error-tinte disabled:opacity-50"
+                  // Rechazar una verificación es una decisión terminal (§10.6): acción
+                  // destructiva, `--destructivo`, contorno.
+                  className="flex-1 rounded-full border border-destructivo px-4 py-2 text-sm font-semibold text-destructivo transition hover:bg-destructivo-tinte disabled:opacity-50"
                 >
                   Rechazar
                 </button>

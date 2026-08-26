@@ -27,11 +27,23 @@ import { ApiError, EstadoVerificacion, PublicacionInterna } from "@/types/api";
 // Costo referencial (lo cobra el backend; aquí solo para el rótulo del botón).
 const TOKENS_VERIFICACION = 80;
 
+// Estados de una decisión de la plataforma sobre lo que el vendedor envió.
+//
+// MISMO ESTADO, MISMO TOKEN que en `mis-referencias` (TASK-017 fase 3). Las dos
+// páginas cuelgan del mismo menú de cuenta y dicen lo mismo —"un admin decidió
+// sobre lo tuyo"—, así que antes se leían como dos productos distintos: acá
+// "rechazado" era gris y allá rojo, acá "en revisión" azul y allá gris.
+//
+// El mapa es: ausencia → neutro · en curso → `--marca` · éxito → `--confirmado`
+// · rechazo → `--error`. Y `verificado` es `--confirmado` porque es EXACTAMENTE
+// el mismo sello que el comprador ve verde en el feed (`ListingCard` usa
+// `<Insignia tono="ok">`). El vendedor no puede ver gris lo que el comprador ve
+// verde: es el sello que la premium compra (AGENTS.md §10.6).
 const VERIFICACION_BADGE: Record<EstadoVerificacion, { texto: string; clase: string }> = {
   no_verificado: { texto: "Sin verificar", clase: "bg-superficie-tenue text-secundario" },
   pendiente: { texto: "En revisión", clase: "bg-marca-tinte text-marca-texto" },
-  verificado: { texto: "✓ Verificado", clase: "bg-superficie-tenue text-secundario" },
-  rechazado: { texto: "Verificación rechazada", clase: "bg-superficie-tenue text-secundario" },
+  verificado: { texto: "✓ Verificado", clase: "bg-confirmado-tinte text-confirmado-texto" },
+  rechazado: { texto: "Verificación rechazada", clase: "bg-error-tinte text-error" },
 };
 
 export default function MisPublicacionesPage() {
@@ -226,7 +238,7 @@ export default function MisPublicacionesPage() {
                     <button
                       type="button"
                       onClick={() => setFichaAbierta(p.id)}
-                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario transition hover:bg-superficie-tenue"
+                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario transition hover:opacity-90"
                     >
                       Completa tu ficha ({pct} %)
                       <span aria-hidden>→</span>
@@ -292,7 +304,7 @@ export default function MisPublicacionesPage() {
                     <button
                       onClick={() => verificar(p.id)}
                       disabled={ocupado}
-                      className="flex-1 rounded-full bg-confirmado px-4 py-2 text-sm font-semibold text-superficie hover:bg-confirmado disabled:opacity-50"
+                      className="flex-1 rounded-full bg-marca px-4 py-2 text-sm font-semibold text-superficie transition hover:opacity-90 disabled:opacity-50"
                     >
                       {ocupado ? "…" : `Solicitar verificación · ${TOKENS_VERIFICACION} tokens`}
                     </button>
@@ -310,7 +322,7 @@ export default function MisPublicacionesPage() {
                   <button
                     onClick={() => borrar(p.id)}
                     disabled={ocupado}
-                    className="rounded-full border border-error px-4 py-2 text-sm font-semibold text-error hover:bg-error-tinte disabled:opacity-50"
+                    className="rounded-full border border-destructivo px-4 py-2 text-sm font-semibold text-destructivo transition hover:bg-destructivo-tinte disabled:opacity-50"
                   >
                     Eliminar
                   </button>

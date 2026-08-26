@@ -72,10 +72,14 @@ function Stepper({ paso }: { paso: Paso }) {
             <div className="flex items-center gap-2">
               <span
                 className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-black ${
+                  // Paso ACTIVO en `--marca`: el contenedor ya usa `border-marca
+                  // bg-marca-tinte` y la etiqueta `text-marca-texto`, así que la burbuja en
+                  // `--accion` era la única pieza del mismo estado en otra familia. Un
+                  // indicador de progreso además no es una acción (§2).
                   hecho
                     ? "bg-confirmado text-superficie"
                     : activo
-                      ? "bg-accion text-superficie"
+                      ? "bg-marca text-superficie"
                       : "bg-borde text-secundario"
                 }`}
               >

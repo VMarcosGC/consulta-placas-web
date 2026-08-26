@@ -167,14 +167,25 @@ export default function ModeracionPage() {
                 <button
                   onClick={() => decidir(p.id, "aprobada")}
                   disabled={ocupado}
-                  className="flex-1 rounded-full bg-confirmado px-4 py-2 text-sm font-semibold text-superficie hover:bg-confirmado disabled:opacity-50"
+                  // `--marca` y no `--confirmado`: §2 define `--confirmado` como el estado
+                  // "al día" y dice explícitamente "nunca una acción". Aprobar es la acción
+                  // primaria de esta pantalla, y `--marca` es justamente "acciones primarias
+                  // y registro oficial". `--accion` no aplica: está reservado a la acción de
+                  // conversión, y moderar no lo es.
+                  // `hover:opacity-90` porque `hover:bg-confirmado` era el MISMO color que el
+                  // fondo: el botón no daba ninguna respuesta al pasar el mouse.
+                  className="flex-1 rounded-full bg-marca px-4 py-2 text-sm font-semibold text-superficie transition hover:opacity-90 disabled:opacity-50"
                 >
                   {ocupado ? "…" : "Aprobar"}
                 </button>
                 <button
                   onClick={() => decidir(p.id, "rechazada")}
                   disabled={ocupado}
-                  className="flex-1 rounded-full border border-error px-4 py-2 text-sm font-semibold text-error hover:bg-error-tinte disabled:opacity-50"
+                  // Rechazar DESTRUYE la referencia que alguien aportó: es acción, no
+                  // mensaje. Va en `--destructivo`, el token nuevo de TASK-017 fase 3, para
+                  // que `--error` vuelva a significar una sola cosa ("algo falló de nuestro
+                  // lado"). Contorno y nunca relleno: es la forma la que lo separa.
+                  className="flex-1 rounded-full border border-destructivo px-4 py-2 text-sm font-semibold text-destructivo transition hover:bg-destructivo-tinte disabled:opacity-50"
                 >
                   Rechazar
                 </button>

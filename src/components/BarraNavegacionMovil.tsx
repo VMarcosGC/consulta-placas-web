@@ -151,7 +151,12 @@ export function BarraNavegacionMovil() {
                 {activa && (
                   <span
                     aria-hidden
-                    className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-accion"
+                    // `--marca`, igual que la etiqueta de tres líneas más arriba
+                    // (`text-marca`). Estaba en `--accion` y eso partía el mismo estado en
+                    // dos familias dentro del mismo componente; encima esta barra se ve en
+                    // TODAS las pantallas móviles, así que sumaba un `--accion` permanente
+                    // que competía con el CTA real de cada página (§2, regla dura).
+                    className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-marca"
                   />
                 )}
                 <Icono className="h-6 w-6 shrink-0" />

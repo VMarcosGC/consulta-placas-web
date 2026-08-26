@@ -13,11 +13,15 @@
    REGLA DURA (§2): un color, un trabajo. Si `--accion` aparece dos veces en
    una pantalla, deja de significar "esto es lo que vas a tocar".
 
-   Estado de la migración: FASE 1A. Los tokens ya existen y están aplicados en
-   los cuatro primitivos compartidos (ListingCard, BentoCard, CampoTexto,
-   Acordeon). El resto de `src/app/` sigue con utilidades literales de Tailwind
-   (`slate`, `blue`, `emerald`, `amber`, `rose`) y se migra en 1B/1C. Que los
-   dos sistemas convivan un tiempo es esperado, no un descuido. */
+   Estado de la migración: COMPLETA (1A + 1B + 1C). No queda ninguna utilidad
+   de color literal de Tailwind en `src/`: ni las cinco que la migración
+   perseguía (`slate`, `blue`, `emerald`, `amber`, `rose`) ni ninguna de las
+   otras 17 familias. Lo único que sobrevive son dos `text-white` en
+   `ListingCard` —mismo valor que `text-superficie`, sin efecto visual— y un
+   `#94a3b8` DENTRO de un comentario histórico en `BentoCard`.
+
+   Si vuelve a aparecer una utilidad literal, no es "convivencia esperada":
+   es una regresión. El grep que lo comprueba está en la bitácora. */
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -68,6 +72,28 @@
      haría que un problema nuestro se lea como un problema del auto, que es lo
      contrario de repartir bien la responsabilidad (§7). */
   --color-error: #a8332b;        /* derivado · 6.62:1 blanco · 6.16:1 lienzo */
+
+  /* ACCIÓN destructiva (borrar, rechazar, quitar). Nunca un estado, nunca un
+     mensaje: es el control que el usuario toca para destruir algo.
+
+     Por qué existe (TASK-017 fase 3). `--error` estaba cargando dos trabajos:
+     el mensaje "no pudimos cargar" Y el botón "Eliminar". Uno es algo que nos
+     pasó, el otro es algo que el usuario va a hacer — y §2 separa acción de
+     estado en todos los demás tokens (`--confirmado`, `--atencion` y
+     `--critico` dicen "nunca una acción"). `--error` era el único sin esa
+     línea, y por eso se le acumuló la acción encima.
+
+     LA SEPARACIÓN ES POR PESO, NO POR TONO, y conviene decirlo antes de que
+     alguien "arregle" el hue. La paleta ya tiene CINCO tokens cálidos dentro de
+     ~20° (`--error` 3.8°, `--critico` 346.8°, `--atencion` 16.9°, `--accion`
+     17.2°): un sexto rojo separado por 1–5° sería invisible y además repetiría
+     el problema que §2 ya admite entre `--critico` y `--error`. Lo que separa a
+     este token de `--error` es que es MÁS OSCURO (9.91:1 contra 6.62:1 sobre
+     blanco) y que su forma es siempre la misma: botón de contorno, nunca
+     relleno. Peso y forma cargan la distinción, igual que la tipografía en §1 y
+     el anillo en §2. No lo aclares para "diferenciarlo": lo borrarías. */
+  --color-destructivo: #7e2119;       /* 9.91:1 blanco · 9.22:1 lienzo · 8.47:1 tenue */
+  --color-destructivo-tinte: #f7e7e4; /* solo hover del botón · texto encima 8.26:1 */
 
   --color-lienzo: #faf6f3;       /* fondo de página */
   --color-tinta: #22201f;        /* texto primario · 15.10:1 sobre lienzo */

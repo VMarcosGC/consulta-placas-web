@@ -240,7 +240,7 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
                 <button
                   type="button"
                   onClick={() => borrar(f.id)}
-                  className="rounded px-1.5 text-xs font-medium text-error hover:bg-error-tinte"
+                  className="rounded px-1.5 text-xs font-medium text-destructivo transition hover:bg-destructivo-tinte"
                 >
                   Eliminar
                 </button>
