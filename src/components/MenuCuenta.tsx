@@ -39,7 +39,26 @@ const OPCIONES: OpcionMenu[] = [
   {
     href: "/marketplace/mis-publicaciones",
     etiqueta: "Mis publicaciones",
-    ayuda: "Tus anuncios y referencias",
+    // Decía "Tus anuncios y referencias" y era una promesa falsa: las referencias
+    // viven en OTRA ruta y desde acá no se llega a ellas. La ayuda ahora describe
+    // el destino real y la entrada siguiente cubre lo que faltaba.
+    ayuda: "Los autos que publicaste aquí",
+  },
+  // "Mis referencias" y "Referenciar" NO tenían entrada en ninguna navegación
+  // (TASK-017 fase 2): solo se llegaba desde dentro del feed o escribiendo la URL,
+  // y el menú además prometía referencias donde no las había. Van acá y no en la
+  // barra pública por dos razones: las dos exigen sesión —redirigen a
+  // `/login?next=…`— y la barra ya tiene cinco entradas, así que sumar una sexta
+  // para una acción secundaria le quita claridad a las primarias.
+  {
+    href: "/marketplace/mis-referencias",
+    etiqueta: "Mis referencias",
+    ayuda: "Anuncios de otros sitios que aportaste",
+  },
+  {
+    href: "/marketplace/referenciar",
+    etiqueta: "Referenciar un anuncio",
+    ayuda: "Aporta un auto publicado en otro portal",
   },
   {
     href: RUTA_CONTACTO,
@@ -56,9 +75,14 @@ const OPCIONES: OpcionMenu[] = [
   },
 ];
 
-// Tareas de administración. Vivían en la barra de arriba del Header, dentro del bloque
-// `hidden md:flex`: un admin en celular no las alcanzaba. Se mudaron acá enteras (no
-// duplicadas) para que exista una sola lista.
+// Tareas de administración. Vivían SOLO en la barra de arriba del Header, dentro del
+// bloque `hidden md:flex`, así que un admin en celular no las alcanzaba; por eso se
+// sumaron acá.
+//
+// Están DUPLICADAS a propósito, en los dos lugares. El comentario anterior decía "se
+// mudaron acá enteras (no duplicadas)" y era falso: siguen en `Header.tsx:103-112`, que
+// lo documenta correctamente. Si se agrega una tercera tarea de admin, hay que tocar los
+// dos archivos.
 const OPCIONES_ADMIN: OpcionMenu[] = [
   {
     href: "/admin/moderacion",
