@@ -51,6 +51,23 @@ export default function PreciosPage() {
         </p>
       </div>
 
+      {/* Aviso de que todavía NO se cobra (TASK-017 fase 2).
+          La monetización está suspendida (AGENTS.md §1.0.3): los precios del catálogo
+          están en 0 y no hay proveedor de pago activo. Hasta ahora eso solo constaba en
+          un comentario del código, así que la página presentaba paquetes comprables que
+          nadie puede comprar — en un producto cuya propuesta es la transparencia, eso se
+          autodestruye.
+
+          En `--marca-tinte` y no en ámbar a propósito: no es una advertencia sobre algo
+          que salió mal, es información sobre cómo funciona hoy el producto. El ámbar
+          diría "cuidado". */}
+      <p className="mx-auto mt-6 max-w-2xl rounded-2xl bg-marca-tinte px-5 py-4 text-center text-sm text-marca-texto">
+        <strong>Todavía no cobramos nada.</strong> Estamos en una etapa sin pagos: los
+        valores de esta página son referenciales, para que sepas qué costará cada cosa
+        cuando activemos la compra de tokens. Mientras tanto publicar, contactar a un
+        vendedor y consultar los datos públicos de una placa son gratis.
+      </p>
+
       {/* Gratis siempre */}
       <section className="mt-12 sombra-tarjeta rounded-3xl border border-emerald-200 bg-white p-8">
         <div className="flex items-center gap-2">
@@ -93,7 +110,10 @@ export default function PreciosPage() {
               )}
               <div className="text-4xl font-black text-slate-900">{p.tokens}</div>
               <div className="text-xs uppercase tracking-wide text-slate-400">tokens</div>
+              {/* "referencial" pegado al precio y no solo en el aviso de arriba: quien
+                  llega scrolleando a esta tarjeta puede no haber leído la cabecera. */}
               <div className="mt-3 text-lg font-bold text-brand-gradient">{p.precio}</div>
+              <div className="text-[11px] text-slate-400">referencial</div>
             </article>
           ))}
         </div>

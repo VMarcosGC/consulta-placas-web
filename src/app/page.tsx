@@ -14,7 +14,19 @@ export default function Home() {
       <DestacadosMarket />
       <ValoresSection />
       <HerramientasSection />
-      <PlanesSection />
+      {/* Sin bloque de precios acá (TASK-017 fase 2). Dos motivos:
+
+          1. SECUENCIA. Cada bloque debe responder la pregunta que el anterior deja
+             abierta. Después del hero la pregunta es "muéstrame los autos", no
+             "cuánto cuesta un token": el visitante todavía no vio un solo carro.
+
+          2. VERACIDAD. La monetización está SUSPENDIDA (AGENTS.md §1.0.3): todos los
+             precios del catálogo están en 0 y no hay proveedor de pago activo. Un
+             bloque de planes en la portada ofrece una compra que no existe.
+
+          /precios sigue en el menú y ahora dice de frente que hoy no se cobra. Cuando
+          la monetización se reactive, esto se decide de nuevo — no se revierte por
+          costumbre. */}
       <CtaSection />
     </div>
   );
@@ -128,106 +140,6 @@ function HerramientasSection() {
         </div>
       </div>
     </section>
-  );
-}
-
-function PlanesSection() {
-  return (
-    <section id="planes" className="mx-auto max-w-6xl px-6 py-20">
-      <div className="text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Precios claros</h2>
-        <p className="mt-2 text-slate-600">
-          Publicar y completar tu ficha es gratis. Pagas con tokens solo lo que tiene costo
-          o valor real.
-        </p>
-      </div>
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
-        <PlanCard
-          nombre="Gratis"
-          precio="$0"
-          unidad="siempre"
-          descripcion="Publicar y navegar el market"
-          beneficios={[
-            "Publica tu auto en el feed estándar",
-            "Ficha técnica completa y fotos",
-            "Ver todos los anuncios sin cuenta",
-            "Consulta pública de placa: datos básicos",
-          ]}
-          cta={{ label: "Publicar gratis", href: "/marketplace/publicar" }}
-          destacado={false}
-        />
-        <PlanCard
-          nombre="Datos por tokens"
-          precio="$0.04"
-          unidad="/ token"
-          descripcion="Destaca tu anuncio o desbloquea datos"
-          beneficios={[
-            "Publicación Premium destacada y verificable",
-            "Identificadores técnicos y multas con valores",
-            "Desde $1 = 25 tokens",
-            "5 tokens de cortesía al registrarte",
-          ]}
-          cta={{ label: "Ver precios", href: "/precios" }}
-          destacado
-        />
-      </div>
-      <p className="mt-8 text-center text-xs text-slate-400">
-        1 token ≈ USD 0.04. Los pagos llegan cuando integremos el gateway local
-        (PlaceToPay/MercadoPago). Mientras tanto, regístrate y recibe 5 tokens de cortesía.
-      </p>
-    </section>
-  );
-}
-
-interface PlanProps {
-  nombre: string;
-  precio: string;
-  unidad: string;
-  descripcion: string;
-  beneficios: string[];
-  cta: { label: string; href: string };
-  destacado: boolean;
-}
-
-function PlanCard({ nombre, precio, unidad, descripcion, beneficios, cta, destacado }: PlanProps) {
-  return (
-    <article
-      className={`relative rounded-3xl border p-6 ${
-        destacado
-          ? "border-blue-300 bg-white ring-2 ring-blue-500/30 sombra-tarjeta"
-          : "border-slate-200 bg-white sombra-tarjeta"
-      }`}
-    >
-      {destacado && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gradient px-3 py-1 text-xs font-semibold text-white shadow-sm">
-          Más popular
-        </span>
-      )}
-      <h3 className="text-xl font-bold text-slate-900">{nombre}</h3>
-      <p className="text-sm text-slate-500">{descripcion}</p>
-      <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-4xl font-black text-slate-900">{precio}</span>
-        <span className="text-sm text-slate-400">{unidad}</span>
-      </div>
-      <ul className="mt-5 space-y-2 text-sm text-slate-700">
-        {beneficios.map((b) => (
-          <li key={b} className="flex items-start gap-2">
-            <span className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gradient" />
-            {b}
-          </li>
-        ))}
-      </ul>
-      <Link
-        href={cta.href}
-        className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-sm font-semibold ${
-          destacado
-            ? "bg-brand-gradient text-white shadow-sm hover:opacity-90"
-            : "border border-slate-300 text-slate-700 hover:bg-slate-100"
-        }`}
-      >
-        {cta.label}
-      </Link>
-    </article>
   );
 }
 
