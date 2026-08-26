@@ -92,12 +92,11 @@ function objetoAOpciones<K extends string>(
   return (Object.keys(mapa) as K[]).map((valor) => ({ valor, etiqueta: mapa[valor] }));
 }
 
-// Color de la barra de completitud según el % (verde=alto, ámbar=medio, rojo=bajo).
-// Coherente con el semáforo del tema "confianza clara".
+// La completitud es metadato de la publicación, no estado del vehículo: se mantiene
+// neutra incluso cuando falta mucho por llenar.
 export function colorCompletitud(pct: number): string {
-  if (pct >= 70) return "bg-emerald-500";
-  if (pct >= 35) return "bg-amber-500";
-  return "bg-rose-500";
+  if (pct >= 70) return "bg-confirmado";
+  return "bg-secundario";
 }
 
 // ── Umbrales de completitud (M2.5) ──────────────────────────────────────────

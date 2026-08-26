@@ -54,9 +54,9 @@ export function FotosReferencia({
   return (
     <div>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <label className="text-sm font-semibold text-slate-700">
+        <label className="text-sm font-semibold text-secundario">
           Fotos del anuncio (opcional){" "}
-          <span className="font-normal text-slate-400">
+          <span className="font-normal text-secundario">
             ({fotos.length}/{MAX_FOTOS_REFERENCIA})
           </span>
         </label>
@@ -64,7 +64,7 @@ export function FotosReferencia({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={subiendo || lleno}
-          className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+          className="rounded-full border border-borde-fuerte bg-superficie px-3.5 py-1.5 text-xs font-semibold text-secundario hover:bg-superficie-tenue disabled:opacity-40"
         >
           {subiendo ? "Subiendo…" : "+ Subir fotos"}
         </button>
@@ -77,21 +77,21 @@ export function FotosReferencia({
           onChange={onArchivos}
         />
       </div>
-      <p className="mb-2 text-xs text-slate-400">
+      <p className="mb-2 text-xs text-secundario">
         Puedes guardar las fotos del anuncio original y subirlas aquí. Máximo{" "}
         {MAX_FOTOS_REFERENCIA}.
       </p>
-      {error && <p className="mb-2 text-xs font-medium text-rose-600">{error}</p>}
+      {error && <p className="mb-2 text-xs font-medium text-error">{error}</p>}
       {fotos.length > 0 && (
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {fotos.map((url, i) => (
-            <li key={url} className="relative overflow-hidden rounded-xl border border-slate-200">
+            <li key={url} className="relative overflow-hidden rounded-xl border border-borde">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt={`Foto ${i + 1}`} className="h-20 w-full object-cover" />
               <button
                 type="button"
                 onClick={() => onCambio(fotos.filter((f) => f !== url))}
-                className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 text-xs font-bold text-rose-600 shadow-sm"
+                className="absolute right-1 top-1 rounded-full bg-superficie/90 px-1.5 text-xs font-bold text-error shadow-sm"
                 aria-label={`Quitar foto ${i + 1}`}
               >
                 ✕

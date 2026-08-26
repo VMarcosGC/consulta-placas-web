@@ -100,7 +100,7 @@ export default function MiGaragePage() {
 
   if (cargando) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-16 text-center text-slate-400">
+      <div className="mx-auto max-w-4xl px-6 py-16 text-center text-secundario">
         Cargando tu garage…
       </div>
     );
@@ -113,14 +113,14 @@ export default function MiGaragePage() {
           <h1 className="text-3xl sm:text-4xl font-bold">
             Hola{usuario?.nombre ? `, ${usuario.nombre}` : ""} 👋
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-secundario">
             {vehiculos.length} {vehiculos.length === 1 ? "vehículo" : "vehículos"} registrado{vehiculos.length === 1 ? "" : "s"}
           </p>
         </div>
       </header>
 
       {error && (
-        <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+        <p className="mb-6 rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
           {error}
         </p>
       )}
@@ -128,13 +128,13 @@ export default function MiGaragePage() {
       <FormularioNuevo onCreado={(v) => setVehiculos((vs) => [v, ...vs])} />
 
       {/* Garage ≠ Publicar (M2.10): son cosas distintas y conviene decirlo sin ruido. */}
-      <p className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-500 sombra-tarjeta">
+      <p className="mt-6 rounded-xl border border-borde bg-superficie px-4 py-2.5 text-xs text-secundario sombra-tarjeta">
         Tu garage es privado (tu historial). Publicar crea un anuncio público de venta.
       </p>
 
       <section className="mt-6 space-y-3">
         {vehiculos.length === 0 ? (
-          <p className="sombra-tarjeta rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+          <p className="sombra-tarjeta rounded-2xl border border-borde bg-superficie p-6 text-center text-sm text-secundario">
             Todavía no agregas ningún vehículo. Usa el formulario de arriba.
           </p>
         ) : (
@@ -144,21 +144,21 @@ export default function MiGaragePage() {
             return (
             <article
               key={v.id}
-              className="sombra-tarjeta flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-300"
+              className="sombra-tarjeta flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie p-5 transition hover:-translate-y-0.5 hover:border-marca"
             >
               <div className="flex items-center gap-4">
-                <span className="grid h-12 w-20 place-items-center rounded-xl border border-blue-200 bg-blue-50 font-mono text-sm font-bold tracking-wider text-blue-900">
+                <span className="grid h-12 w-20 place-items-center rounded-xl border border-marca bg-marca-tinte font-mono text-sm font-bold tracking-wider text-marca-texto">
                   {v.placa}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">
+                  <p className="text-sm font-semibold text-tinta">
                     {[v.marca, v.modelo].filter(Boolean).join(" ") || "Sin descripción"}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-secundario">
                     {[v.anio, v.color].filter(Boolean).join(" · ") || "Agrega detalles"}
                   </p>
                   {v.ciudad_registro && (
-                    <p className="mt-0.5 text-xs font-medium text-slate-500">📍 {v.ciudad_registro}</p>
+                    <p className="mt-0.5 text-xs font-medium text-secundario">📍 {v.ciudad_registro}</p>
                   )}
                 </div>
               </div>
@@ -172,23 +172,23 @@ export default function MiGaragePage() {
                     {pub.estado === "borrador" ? (
                       <Link
                         href="/marketplace/mis-publicaciones"
-                        className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                        className="rounded-lg border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario hover:bg-superficie-tenue"
                       >
                         Borrador sin publicar ({pct} %)
                       </Link>
                     ) : fichaPendiente(pct) ? (
                       <Link
                         href="/marketplace/mis-publicaciones"
-                        className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+                        className="rounded-lg border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario hover:bg-superficie-tenue"
                       >
                         Completa tu ficha ({pct} %)
                       </Link>
                     ) : pub.estado === "vendida" ? (
-                      <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                      <span className="rounded-lg bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario">
                         Vendido
                       </span>
                     ) : (
-                      <span className="rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                      <span className="rounded-lg bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario">
                         ✓ Ficha completa
                       </span>
                     )}
@@ -196,7 +196,7 @@ export default function MiGaragePage() {
                         que este auto YA tiene publicación. */}
                     <Link
                       href={enlacePublicacion(pub)}
-                      className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                      className="rounded-lg border border-marca bg-marca-tinte px-3 py-1.5 text-xs font-semibold text-marca hover:bg-marca-tinte"
                     >
                       Ya publicado →
                     </Link>
@@ -204,20 +204,20 @@ export default function MiGaragePage() {
                 ) : (
                   <Link
                     href={urlPublicar(v)}
-                    className="rounded-lg bg-brand-gradient px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+                    className="rounded-lg bg-accion px-3 py-1.5 text-xs font-semibold text-superficie shadow-sm hover:opacity-90"
                   >
                     Publicar este auto
                   </Link>
                 )}
                 <Link
                   href={`/consultar/${v.placa}`}
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  className="rounded-lg border border-borde-fuerte px-3 py-1.5 text-xs font-medium text-secundario hover:bg-superficie-tenue"
                 >
                   Consultar
                 </Link>
                 <button
                   onClick={() => borrar(v.id)}
-                  className="rounded-lg border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                  className="rounded-lg border border-error px-3 py-1.5 text-xs text-error hover:bg-error-tinte"
                 >
                   Eliminar
                 </button>
@@ -270,7 +270,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
     return (
       <button
         onClick={() => setAbierto(true)}
-        className="w-full rounded-2xl border border-dashed border-slate-300 px-6 py-6 text-center text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600"
+        className="w-full rounded-2xl border border-dashed border-borde-fuerte px-6 py-6 text-center text-sm text-secundario hover:border-marca hover:text-marca"
       >
         + Agregar vehículo a mi garage
       </button>
@@ -278,7 +278,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="sombra-tarjeta rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+    <form onSubmit={submit} className="sombra-tarjeta rounded-2xl border border-borde bg-superficie p-6 space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoTexto label="Placa" value={placa} onChange={(v) => setPlaca(v.toUpperCase())} placeholder="ABC1234" requerido />
         <CampoTexto label="Marca" value={marca} onChange={setMarca} placeholder="Toyota" />
@@ -288,7 +288,7 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
         <CampoTexto label="Ciudad donde está el vehículo" value={ciudad} onChange={setCiudad} placeholder="Quito, Cuenca, Guayaquil…" />
       </div>
       {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+        <p className="rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
           {error}
         </p>
       )}
@@ -296,14 +296,14 @@ function FormularioNuevo({ onCreado }: { onCreado: (v: Vehiculo) => void }) {
         <button
           type="submit"
           disabled={enviando}
-          className="rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
+          className="rounded-xl bg-accion px-4 py-2.5 text-sm font-semibold text-superficie shadow-sm disabled:opacity-60"
         >
           {enviando ? "Guardando..." : "Guardar"}
         </button>
         <button
           type="button"
           onClick={() => setAbierto(false)}
-          className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-100"
+          className="rounded-xl border border-borde-fuerte px-4 py-2.5 text-sm text-secundario hover:bg-superficie-tenue"
         >
           Cancelar
         </button>

@@ -95,27 +95,27 @@ export default function ReferenciarPage() {
   }
 
   const inputCls =
-    "w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus-glow";
+    "w-full rounded-xl border border-borde-fuerte px-3 py-2 text-sm text-tinta focus-glow";
 
   if (exito) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-10 sombra-tarjeta">
-          <p className="text-2xl font-black text-emerald-700">¡Referencia enviada! ✓</p>
-          <p className="mt-2 text-slate-600">
+        <div className="rounded-2xl border border-confirmado bg-confirmado-tinte p-10 sombra-tarjeta">
+          <p className="text-2xl font-black text-confirmado-texto">¡Referencia enviada! ✓</p>
+          <p className="mt-2 text-secundario">
             La revisará nuestro equipo y, una vez aprobada, aparecerá en el marketplace
             dentro de «Referencias externas».
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/marketplace/mis-referencias"
-              className="rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+              className="rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
             >
               Ver mis referencias
             </Link>
             <Link
               href="/marketplace"
-              className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-full border border-borde-fuerte px-5 py-2.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
             >
               Volver al marketplace
             </Link>
@@ -126,7 +126,7 @@ export default function ReferenciarPage() {
                 setPrecio(""); setImagen(""); setPlaca("");
                 setDescripcion(""); setCiudad(""); setKilometraje(""); setFotos([]);
               }}
-              className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-full border border-borde-fuerte px-5 py-2.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
             >
               Referenciar otro
             </button>
@@ -139,18 +139,18 @@ export default function ReferenciarPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="flex items-center justify-between">
-        <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
+        <Link href="/marketplace" className="text-sm text-secundario hover:text-tinta">
           ← Volver al marketplace
         </Link>
         <Link
           href="/marketplace/mis-referencias"
-          className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+          className="text-sm font-semibold text-marca hover:text-marca-texto"
         >
           Mis referencias →
         </Link>
       </div>
-      <h1 className="mt-3 text-3xl font-black text-slate-900">Referenciar un anuncio</h1>
-      <p className="mt-1 text-slate-500">
+      <h1 className="mt-3 text-3xl font-black text-tinta">Referenciar un anuncio</h1>
+      <p className="mt-1 text-secundario">
         ¿Viste un auto en venta en <span className="font-semibold">Facebook Marketplace</span>,
         OLX o PatioTuerca? Pega el link y completa los datos. Es{" "}
         <span className="font-semibold">gratis</span>; nuestro equipo lo revisa antes de publicarlo.
@@ -158,7 +158,7 @@ export default function ReferenciarPage() {
 
       <form onSubmit={enviar} className="mt-8 space-y-5">
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">
+          <label className="mb-1 block text-sm font-semibold text-secundario">
             Enlace del anuncio
           </label>
           <input
@@ -169,14 +169,14 @@ export default function ReferenciarPage() {
             inputMode="url"
             required
           />
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-secundario">
             Copia la URL del anuncio desde tu navegador o la app de Facebook.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">Marca</label>
+            <label className="mb-1 block text-sm font-semibold text-secundario">Marca</label>
             <input
               className={inputCls}
               value={marca}
@@ -186,7 +186,7 @@ export default function ReferenciarPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">Modelo</label>
+            <label className="mb-1 block text-sm font-semibold text-secundario">Modelo</label>
             <input
               className={inputCls}
               value={modelo}
@@ -196,7 +196,7 @@ export default function ReferenciarPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">Año</label>
+            <label className="mb-1 block text-sm font-semibold text-secundario">Año</label>
             <input
               className={inputCls}
               type="number"
@@ -208,7 +208,7 @@ export default function ReferenciarPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">
+            <label className="mb-1 block text-sm font-semibold text-secundario">
               Precio (USD)
             </label>
             <input
@@ -224,7 +224,7 @@ export default function ReferenciarPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">
+          <label className="mb-1 block text-sm font-semibold text-secundario">
             Placa (opcional)
           </label>
           <input
@@ -237,7 +237,7 @@ export default function ReferenciarPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">
+            <label className="mb-1 block text-sm font-semibold text-secundario">
               Ciudad (opcional)
             </label>
             <input
@@ -249,7 +249,7 @@ export default function ReferenciarPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">
+            <label className="mb-1 block text-sm font-semibold text-secundario">
               Kilometraje (opcional)
             </label>
             <input
@@ -265,7 +265,7 @@ export default function ReferenciarPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">
+          <label className="mb-1 block text-sm font-semibold text-secundario">
             Descripción del anuncio (opcional)
           </label>
           <textarea
@@ -275,7 +275,7 @@ export default function ReferenciarPage() {
             maxLength={2000}
             placeholder="Copia aquí el texto del anuncio original: estado, extras, motivo de venta…"
           />
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-secundario">
             Mientras más detalle copies, más útil es la referencia. Igual se muestra como
             dato no verificado.
           </p>
@@ -284,7 +284,7 @@ export default function ReferenciarPage() {
         <FotosReferencia fotos={fotos} onCambio={setFotos} />
 
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">
+          <label className="mb-1 block text-sm font-semibold text-secundario">
             Imagen por enlace (opcional)
           </label>
           <input
@@ -294,13 +294,13 @@ export default function ReferenciarPage() {
             placeholder="https://…/foto.jpg"
             inputMode="url"
           />
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-secundario">
             Alternativa a subir fotos: pega el enlace directo de una imagen del anuncio.
           </p>
         </div>
 
         {error && (
-          <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          <p className="rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
             {error}
           </p>
         )}
@@ -308,7 +308,7 @@ export default function ReferenciarPage() {
         <button
           type="submit"
           disabled={enviando}
-          className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {enviando ? "Enviando…" : "Enviar referencia"}
         </button>

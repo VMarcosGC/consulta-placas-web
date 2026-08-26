@@ -63,33 +63,33 @@ function Stepper({ paso }: { paso: Paso }) {
             key={p.numero}
             className={`rounded-2xl border p-3 transition ${
               activo
-                ? "border-blue-400 bg-blue-50 ring-1 ring-blue-300"
+                ? "border-marca bg-marca-tinte ring-1 ring-marca/25"
                 : hecho
-                  ? "border-emerald-200 bg-emerald-50/60"
-                  : "border-slate-200 bg-white"
+                  ? "border-confirmado bg-confirmado-tinte/60"
+                  : "border-borde bg-superficie"
             }`}
           >
             <div className="flex items-center gap-2">
               <span
                 className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-black ${
                   hecho
-                    ? "bg-emerald-500 text-white"
+                    ? "bg-confirmado text-superficie"
                     : activo
-                      ? "bg-brand-gradient text-white"
-                      : "bg-slate-200 text-slate-500"
+                      ? "bg-accion text-superficie"
+                      : "bg-borde text-secundario"
                 }`}
               >
                 {hecho ? "✓" : p.numero}
               </span>
               <span
                 className={`truncate text-sm font-semibold ${
-                  activo ? "text-blue-800" : hecho ? "text-emerald-800" : "text-slate-500"
+                  activo ? "text-marca-texto" : hecho ? "text-confirmado-texto" : "text-secundario"
                 }`}
               >
                 {p.titulo}
               </span>
             </div>
-            <p className="mt-1 hidden text-xs text-slate-500 sm:block">{p.ayuda}</p>
+            <p className="mt-1 hidden text-xs text-secundario sm:block">{p.ayuda}</p>
           </li>
         );
       })}
@@ -267,28 +267,28 @@ function PasoDatos({
   }
 
   const inputCls =
-    "w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus-glow";
+    "w-full rounded-xl border border-borde-fuerte px-3 py-2 text-sm text-tinta focus-glow";
 
   return (
     <form onSubmit={enviar} className="mt-8 space-y-5">
       {desdeGarage && !ajustando ? (
         // Prellenado desde el garage (M2.10): confirmamos el vehículo en vez de recapturar.
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+        <div className="rounded-2xl border border-marca bg-marca-tinte p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-marca">
             Publicando desde tu garage
           </p>
-          <p className="mt-1 text-lg font-bold text-slate-900">
+          <p className="mt-1 text-lg font-bold text-tinta">
             {contextoVehiculo || "Tu vehículo"}
           </p>
-          <p className="mt-0.5 font-mono text-sm tracking-widest text-slate-500">{placa}</p>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-0.5 font-mono text-sm tracking-widest text-secundario">{placa}</p>
+          <p className="mt-2 text-xs text-secundario">
             Queda vinculado a tu garage. Abajo defines precio y plan; los datos del auto ya
             los tomamos de tu garage.
           </p>
           <button
             type="button"
             onClick={() => setAjustando(true)}
-            className="mt-2 text-xs font-semibold text-blue-700 underline"
+            className="mt-2 text-xs font-semibold text-marca underline"
           >
             Ajustar o publicar otra placa
           </button>
@@ -297,7 +297,7 @@ function PasoDatos({
         <>
           {vehiculos.length > 0 && (
             <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">
+              <label className="mb-1 block text-sm font-semibold text-secundario">
                 Vincular un vehículo de tu garage (opcional)
               </label>
               <select
@@ -312,14 +312,14 @@ function PasoDatos({
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-secundario">
                 Vincularlo habilita los argumentos Premium (historial de mantenimientos).
               </p>
             </div>
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-semibold text-slate-700">Placa</label>
+            <label className="mb-1 block text-sm font-semibold text-secundario">Placa</label>
             <input
               className={`${inputCls} font-mono tracking-widest`}
               value={placa}
@@ -332,7 +332,7 @@ function PasoDatos({
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-semibold text-slate-700">Título (opcional)</label>
+        <label className="mb-1 block text-sm font-semibold text-secundario">Título (opcional)</label>
         <input
           className={inputCls}
           value={titulo}
@@ -343,7 +343,7 @@ function PasoDatos({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-semibold text-slate-700">
+        <label className="mb-1 block text-sm font-semibold text-secundario">
           Descripción (opcional)
         </label>
         <textarea
@@ -355,7 +355,7 @@ function PasoDatos({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-semibold text-slate-700">Precio (USD)</label>
+        <label className="mb-1 block text-sm font-semibold text-secundario">Precio (USD)</label>
         <input
           className={inputCls}
           type="number"
@@ -374,7 +374,7 @@ function PasoDatos({
       <div>
         <label
           htmlFor="kilometraje-publicacion"
-          className="mb-1 block text-sm font-semibold text-slate-700"
+          className="mb-1 block text-sm font-semibold text-secundario"
         >
           Kilometraje (opcional)
         </label>
@@ -390,7 +390,7 @@ function PasoDatos({
           onChange={(e) => setKilometraje(e.target.value)}
           placeholder="85000"
         />
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-secundario">
           El recorrido que marca el odómetro hoy. Es el primer dato que mira un comprador;
           si prefieres, puedes dejarlo vacío.
         </p>
@@ -402,7 +402,7 @@ function PasoDatos({
       <div>
         <label
           htmlFor="ciudad-publicacion"
-          className="mb-1 block text-sm font-semibold text-slate-700"
+          className="mb-1 block text-sm font-semibold text-secundario"
         >
           Ciudad donde está el auto (opcional)
         </label>
@@ -426,12 +426,12 @@ function PasoDatos({
           ))}
         </select>
         {ciudadSugerida && ciudad === ciudadSugerida ? (
-          <p className="mt-1 text-xs text-blue-700">
+          <p className="mt-1 text-xs text-marca">
             Tomamos <b>{ciudadSugerida}</b> de tu garage, que es donde está matriculado el
             auto. Si lo vendes en otra ciudad, cámbiala aquí.
           </p>
         ) : (
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-secundario">
             Ayuda a que te encuentren compradores cerca. Puedes dejarla sin especificar.
           </p>
         )}
@@ -439,19 +439,19 @@ function PasoDatos({
 
       {/* Selector de plan */}
       <div>
-        <span className="mb-2 block text-sm font-semibold text-slate-700">Plan</span>
+        <span className="mb-2 block text-sm font-semibold text-secundario">Plan</span>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => setPlan("light")}
             className={`rounded-2xl border p-4 text-left transition ${
               plan === "light"
-                ? "border-blue-400 bg-blue-50 ring-1 ring-blue-300"
-                : "border-slate-200 bg-white hover:border-slate-300"
+                ? "border-marca bg-marca-tinte ring-1 ring-marca/25"
+                : "border-borde bg-superficie hover:border-borde-fuerte"
             }`}
           >
-            <p className="font-bold text-slate-900">Light · Gratis</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="font-bold text-tinta">Light · Gratis</p>
+            <p className="mt-1 text-xs text-secundario">
               Aparece en el feed estándar. Sin destacar.
             </p>
           </button>
@@ -460,21 +460,21 @@ function PasoDatos({
             onClick={() => setPlan("premium")}
             className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
               plan === "premium"
-                ? "border-blue-500 ring-2 ring-blue-400"
-                : "border-slate-200 bg-white hover:border-slate-300"
+                ? "border-marca ring-2 ring-marca/25"
+                : "border-borde bg-superficie hover:border-borde-fuerte"
             }`}
           >
-            <span className="absolute right-0 top-0 rounded-bl-lg bg-marca px-2 py-0.5 text-[10px] font-black text-white">
+            <span className="absolute right-0 top-0 rounded-bl-lg bg-marca px-2 py-0.5 text-[10px] font-black text-superficie">
               ★ PREMIUM
             </span>
-            <p className="font-bold text-slate-900">Premium · con tokens</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="font-bold text-tinta">Premium · con tokens</p>
+            <p className="mt-1 text-xs text-secundario">
               Destacado arriba, etiqueta «Verificado» y argumentos de venta.
             </p>
           </button>
         </div>
         {plan === "premium" && (
-          <p className="mt-2 text-xs text-blue-700">
+          <p className="mt-2 text-xs text-marca">
             El plan Premium descuenta tokens de tu billetera al publicar.{" "}
             <Link href="/precios" className="font-semibold underline">
               Ver precios
@@ -484,7 +484,7 @@ function PasoDatos({
       </div>
 
       {error && (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
           {error}
         </p>
       )}
@@ -492,11 +492,11 @@ function PasoDatos({
       <button
         type="submit"
         disabled={enviando}
-        className="w-full rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {enviando ? "Guardando…" : "Continuar a la ficha técnica →"}
       </button>
-      <p className="text-center text-xs text-slate-400">
+      <p className="text-center text-xs text-secundario">
         Guardamos tu anuncio como borrador. Nadie lo ve hasta que tú lo publiques.
       </p>
     </form>
@@ -551,15 +551,15 @@ export default function PublicarPage() {
 
   // Bloque de publicación reutilizado en los pasos 2 y 3.
   const bloquePublicar = (
-    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 sombra-tarjeta">
+    <div className="mt-5 rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-800">
+          <p className="text-sm font-semibold text-tinta">
             {listoParaPublicar
               ? "Tu anuncio ya puede publicarse"
               : `Te falta ${faltaParaPublicar} % de ficha para publicar`}
           </p>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="mt-0.5 text-sm text-secundario">
             {listoParaPublicar
               ? "Al publicarlo aparecerá en el feed y cualquiera podrá verlo."
               : `Necesitas al menos ${UMBRAL_FICHA_PUBLICACION} % para que el anuncio le sirva a un comprador.`}
@@ -567,7 +567,7 @@ export default function PublicarPage() {
           {/* El premium se cobra AL PUBLICAR (no al crear el borrador): hay que decirlo
               antes de pulsar, no dejar que se entere con un 402. */}
           {plan === "premium" && (
-            <p className="mt-1 text-xs font-medium text-blue-700">
+            <p className="mt-1 text-xs font-medium text-marca">
               Al publicar se descuentan los tokens del plan Premium de tu billetera.
             </p>
           )}
@@ -576,13 +576,13 @@ export default function PublicarPage() {
           type="button"
           onClick={publicar}
           disabled={!listoParaPublicar || publicando}
-          className="shrink-0 rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {publicando ? "Publicando…" : "Publicar anuncio"}
         </button>
       </div>
       {errorPublicar && (
-        <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="mt-3 rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
           {errorPublicar}
         </p>
       )}
@@ -597,11 +597,11 @@ export default function PublicarPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
-      <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
+      <Link href="/marketplace" className="text-sm text-secundario hover:text-tinta">
         ← Volver al marketplace
       </Link>
-      <h1 className="mt-3 text-3xl font-black text-slate-900">Publicar mi auto</h1>
-      <p className="mt-1 text-slate-500">
+      <h1 className="mt-3 text-3xl font-black text-tinta">Publicar mi auto</h1>
+      <p className="mt-1 text-secundario">
         Tres pasos. Mientras más completa la ficha, más confianza genera tu anuncio —
         y no cuesta tokens.
       </p>
@@ -612,7 +612,7 @@ export default function PublicarPage() {
           que en Next 16 exige un límite de Suspense para no romper el prerender. */}
       {paso === 1 && (
         <Suspense
-          fallback={<p className="mt-8 text-sm text-slate-500">Cargando formulario…</p>}
+          fallback={<p className="mt-8 text-sm text-secundario">Cargando formulario…</p>}
         >
           <PasoDatos
             onCreada={(id, planElegido) => {
@@ -628,11 +628,11 @@ export default function PublicarPage() {
         <section className="mt-8">
           {/* M2.8: el anuncio NACE como borrador. Decir "ya está publicado" era falso y
               hacía que el vendedor abandonara creyendo que había terminado. */}
-          <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-800">
+          <div className="mb-4 rounded-2xl border border-borde bg-superficie-tenue p-4">
+            <p className="text-sm font-semibold text-tinta">
               Guardado como borrador — aún no publicado
             </p>
-            <p className="mt-0.5 text-sm text-slate-600">
+            <p className="mt-0.5 text-sm text-secundario">
               Nadie lo ve todavía. Completa la ficha técnica (es gratis) y cuando llegues al{" "}
               {UMBRAL_FICHA_PUBLICACION} % podrás publicarlo.
             </p>
@@ -644,18 +644,18 @@ export default function PublicarPage() {
             <button
               type="button"
               onClick={() => setPaso(3)}
-              className="rounded-full bg-brand-gradient px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              className="rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
             >
               Continuar a las fotos →
             </button>
             <button
               type="button"
               onClick={completarDespues}
-              className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="rounded-full border border-borde-fuerte px-6 py-3 text-sm font-semibold text-secundario transition hover:bg-superficie-tenue"
             >
               Completar después
             </button>
-            <p className="text-xs text-slate-400 sm:mr-auto">
+            <p className="text-xs text-secundario sm:mr-auto">
               Ficha al {completitud} %. Guarda cada bloque antes de avanzar.
             </p>
           </div>
@@ -667,8 +667,8 @@ export default function PublicarPage() {
       {paso === 3 && publicacionId != null && (
         <section className="mt-8">
           <div className="mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Fotos del vehículo</h2>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <h2 className="text-lg font-bold text-tinta">Fotos del vehículo</h2>
+            <p className="mt-0.5 text-sm text-secundario">
               La primera foto es la portada del anuncio en el feed. Puedes subirlas ahora o
               más tarde desde Mis publicaciones.
             </p>
@@ -678,17 +678,17 @@ export default function PublicarPage() {
 
           {/* Recordatorio honesto: si la ficha quedó floja, el comprador lo va a ver. */}
           {completitud < 100 && (
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-semibold text-amber-800">
+            <div className="mt-5 rounded-2xl border border-borde bg-superficie-tenue p-4">
+              <p className="text-sm font-semibold text-tinta">
                 Tu ficha va al {completitud} %.
               </p>
-              <p className="mt-0.5 text-sm text-amber-700">
+              <p className="mt-0.5 text-sm text-secundario">
                 Puedes volver al paso anterior y sumar detalle cuando quieras.
               </p>
               <button
                 type="button"
                 onClick={() => setPaso(2)}
-                className="mt-2 text-sm font-semibold text-amber-900 underline"
+                className="mt-2 text-sm font-semibold text-tinta underline"
               >
                 ← Volver a la ficha técnica
               </button>
@@ -701,7 +701,7 @@ export default function PublicarPage() {
             <button
               type="button"
               onClick={completarDespues}
-              className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="rounded-full border border-borde-fuerte px-6 py-3 text-sm font-semibold text-secundario transition hover:bg-superficie-tenue"
             >
               Seguir después en mis publicaciones
             </button>
@@ -712,11 +712,11 @@ export default function PublicarPage() {
       {/* Barra de progreso de la ficha, visible desde el paso 2 en adelante. */}
       {paso > 1 && (
         <div className="mt-8">
-          <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+          <div className="mb-1 flex items-center justify-between text-xs text-secundario">
             <span>Completitud de la ficha</span>
-            <span className="font-semibold text-slate-700">{completitud} %</span>
+            <span className="font-semibold text-secundario">{completitud} %</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-borde">
             <div
               className={`h-full rounded-full transition-all ${colorCompletitud(completitud)}`}
               style={{ width: `${completitud}%` }}

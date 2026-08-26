@@ -104,12 +104,12 @@ function b(v: boolean | null | undefined): string {
 // ── Sub-controles ────────────────────────────────────────────────────────────
 
 const campoCls =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-glow";
+  "w-full rounded-xl border border-borde-fuerte bg-superficie px-3 py-2 text-sm text-tinta focus-glow";
 
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-secundario">{label}</span>
       {children}
     </label>
   );
@@ -415,18 +415,18 @@ export function FichaEditor({
   }
 
   if (cargando) {
-    return <p className="p-4 text-sm text-slate-500">Cargando ficha…</p>;
+    return <p className="p-4 text-sm text-secundario">Cargando ficha…</p>;
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 sombra-tarjeta">
+    <div className="rounded-2xl border border-borde bg-superficie p-4 sm:p-5 sombra-tarjeta">
       {/* Barra de completitud */}
       <div className="mb-4">
-        <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+        <div className="mb-1 flex items-center justify-between text-xs text-secundario">
           <span>Ficha completada</span>
-          <span className="font-semibold text-slate-700">{completitud}%</span>
+          <span className="font-semibold text-secundario">{completitud}%</span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-borde">
           <div
             className={`h-full rounded-full transition-all ${colorCompletitud(completitud)}`}
             style={{ width: `${completitud}%` }}
@@ -435,7 +435,7 @@ export function FichaEditor({
       </div>
 
       {/* Pestañas */}
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-borde">
         {PESTANAS.map((p) => (
           <TabBtn key={p.clave} activo={tab === p.clave} onClick={() => setTab(p.clave)}>
             {p.label}
@@ -447,12 +447,12 @@ export function FichaEditor({
       </div>
 
       {error && (
-        <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="mb-3 rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
           {error}
         </p>
       )}
       {ok && (
-        <p className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+        <p className="mb-3 rounded-xl border border-confirmado bg-confirmado-tinte p-3 text-sm text-confirmado-texto">
           Bloque guardado. Los demás bloques quedaron intactos.
         </p>
       )}
@@ -634,7 +634,7 @@ export function FichaEditor({
       {/* Bloque: Extras */}
       {tab === "extras" && (
         <div>
-          <p className="mb-3 text-sm text-slate-500">
+          <p className="mb-3 text-sm text-secundario">
             Agrega los extras del vehículo (láminas de seguridad, llantas nuevas, etc.).
             Guardar reemplaza la lista completa.
           </p>
@@ -642,7 +642,7 @@ export function FichaEditor({
             {extras.map((e, i) => (
               <div
                 key={i}
-                className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1fr_1.5fr_auto]"
+                className="grid grid-cols-1 gap-2 rounded-xl border border-borde p-3 sm:grid-cols-[1fr_1.5fr_auto]"
               >
                 <input
                   className={campoCls}
@@ -665,7 +665,7 @@ export function FichaEditor({
                 <button
                   type="button"
                   onClick={() => setExtras(extras.filter((_, j) => j !== i))}
-                  className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                  className="rounded-xl border border-error px-3 py-2 text-xs font-medium text-error hover:bg-error-tinte"
                 >
                   Quitar
                 </button>
@@ -675,7 +675,7 @@ export function FichaEditor({
           <button
             type="button"
             onClick={() => setExtras([...extras, { nombre: "", detalle: "" }])}
-            className="mt-3 rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="mt-3 rounded-full border border-borde-fuerte px-4 py-2 text-sm font-medium text-secundario hover:bg-superficie-tenue"
           >
             + Agregar extra
           </button>
@@ -703,8 +703,8 @@ function TabBtn({
       onClick={onClick}
       className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
         activo
-          ? "border-blue-500 text-blue-700"
-          : "border-transparent text-slate-500 hover:text-slate-800"
+          ? "border-marca text-marca"
+          : "border-transparent text-secundario hover:text-tinta"
       }`}
     >
       {children}
@@ -737,7 +737,7 @@ function BotonGuardar({ onClick, guardando }: { onClick: () => void; guardando: 
       type="button"
       onClick={onClick}
       disabled={guardando}
-      className="rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+      className="rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {guardando ? "Guardando…" : "Guardar este bloque"}
     </button>

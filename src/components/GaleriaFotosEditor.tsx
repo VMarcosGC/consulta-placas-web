@@ -141,21 +141,21 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
   const lleno = fotos.length >= LIMITE_FOTOS;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+    <div className="rounded-2xl border border-borde bg-superficie-tenue/60 p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-bold text-slate-900">
+        <h3 className="text-sm font-bold text-tinta">
           Fotos del vehículo{" "}
-          <span className="font-normal text-slate-400">
+          <span className="font-normal text-secundario">
             ({fotos.length}/{LIMITE_FOTOS})
           </span>
         </h3>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500">
+          <label className="text-xs text-secundario">
             Sección:
             <select
               value={bloque}
               onChange={(e) => setBloque(e.target.value as BloqueFoto)}
-              className="ml-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs"
+              className="ml-1 rounded-lg border border-borde-fuerte bg-superficie px-2 py-1 text-xs"
             >
               {BLOQUES.map((b) => (
                 <option key={b.valor} value={b.valor}>
@@ -168,7 +168,7 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={subiendo || lleno}
-            className="rounded-full bg-brand-gradient px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+            className="rounded-full bg-accion px-4 py-1.5 text-xs font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:opacity-50"
           >
             {subiendo ? progreso ?? "Subiendo…" : "+ Agregar fotos"}
           </button>
@@ -183,35 +183,35 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
         </div>
       </div>
 
-      <p className="mb-3 text-xs text-slate-400">
+      <p className="mb-3 text-xs text-secundario">
         La primera foto es la portada del anuncio. Puedes reordenarlas y elegir a qué sección
         pertenece cada una. Máximo {LIMITE_FOTOS}.
       </p>
 
       {lleno && (
-        <p className="mb-3 text-xs font-medium text-amber-600">
+        <p className="mb-3 text-xs font-medium text-error">
           Llegaste al máximo de {LIMITE_FOTOS} fotos. Elimina alguna para subir otra.
         </p>
       )}
-      {aviso && <p className="mb-3 text-xs font-medium text-amber-600">{aviso}</p>}
-      {error && <p className="mb-3 text-xs font-medium text-rose-600">{error}</p>}
+      {aviso && <p className="mb-3 text-xs font-medium text-error">{aviso}</p>}
+      {error && <p className="mb-3 text-xs font-medium text-error">{error}</p>}
 
       {cargando ? (
-        <p className="text-sm text-slate-500">Cargando fotos…</p>
+        <p className="text-sm text-secundario">Cargando fotos…</p>
       ) : fotos.length === 0 ? (
-        <p className="text-sm text-slate-500">Aún no subes fotos de este vehículo.</p>
+        <p className="text-sm text-secundario">Aún no subes fotos de este vehículo.</p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {fotos.map((f, i) => (
             <li
               key={f.id}
-              className="overflow-hidden rounded-xl border border-slate-200 bg-white sombra-tarjeta"
+              className="overflow-hidden rounded-xl border border-borde bg-superficie sombra-tarjeta"
             >
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.url} alt={`Foto ${i + 1}`} className="h-28 w-full object-cover" />
                 {i === 0 && (
-                  <span className="absolute left-1 top-1 rounded-full bg-brand-gradient px-2 py-0.5 text-[10px] font-bold text-white">
+                  <span className="absolute left-1 top-1 rounded-full bg-accion px-2 py-0.5 text-[10px] font-bold text-superficie">
                     Portada
                   </span>
                 )}
@@ -222,7 +222,7 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
                     type="button"
                     onClick={() => mover(i, -1)}
                     disabled={i === 0}
-                    className="rounded px-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                    className="rounded px-1.5 text-secundario hover:bg-superficie-tenue disabled:opacity-30"
                     aria-label="Mover a la izquierda"
                   >
                     ←
@@ -231,7 +231,7 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
                     type="button"
                     onClick={() => mover(i, 1)}
                     disabled={i === fotos.length - 1}
-                    className="rounded px-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-30"
+                    className="rounded px-1.5 text-secundario hover:bg-superficie-tenue disabled:opacity-30"
                     aria-label="Mover a la derecha"
                   >
                     →
@@ -240,7 +240,7 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
                 <button
                   type="button"
                   onClick={() => borrar(f.id)}
-                  className="rounded px-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                  className="rounded px-1.5 text-xs font-medium text-error hover:bg-error-tinte"
                 >
                   Eliminar
                 </button>

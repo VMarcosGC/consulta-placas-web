@@ -64,7 +64,7 @@ export default function MiCuentaPage() {
 
   if (cargando) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center text-slate-400">
+      <div className="mx-auto max-w-2xl px-6 py-16 text-center text-secundario">
         Cargando tu cuenta…
       </div>
     );
@@ -73,27 +73,27 @@ export default function MiCuentaPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-3xl font-bold">Mi cuenta</h1>
-      <p className="mt-2 text-sm text-slate-500">Cómo entras a Revisa tu Carro EC.</p>
+      <p className="mt-2 text-sm text-secundario">Cómo entras a Revisa tu Carro EC.</p>
 
       {error && (
-        <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+        <p className="mt-6 rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
           {error}
         </p>
       )}
 
       {usuario && (
-        <section className="sombra-tarjeta mt-8 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-semibold text-slate-900">Tus datos</h2>
+        <section className="sombra-tarjeta mt-8 rounded-2xl border border-borde bg-superficie p-5 sm:p-6">
+          <h2 className="text-lg font-semibold text-tinta">Tus datos</h2>
           <dl className="mt-3 space-y-2 text-sm">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <dt className="text-slate-500">Correo</dt>
+              <dt className="text-secundario">Correo</dt>
               {/* `break-all`: un correo largo no puede empujar la tarjeta a 360px. */}
-              <dd className="break-all font-medium text-slate-900">{usuario.email}</dd>
+              <dd className="break-all font-medium text-tinta">{usuario.email}</dd>
             </div>
             {usuario.nombre && (
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <dt className="text-slate-500">Nombre</dt>
-                <dd className="font-medium text-slate-900">{usuario.nombre}</dd>
+                <dt className="text-secundario">Nombre</dt>
+                <dd className="font-medium text-tinta">{usuario.nombre}</dd>
               </div>
             )}
           </dl>
@@ -109,11 +109,11 @@ export default function MiCuentaPage() {
 
       {/* El contacto de vendedor es OTRA cosa (identidad comercial, no de cuenta) y vive
           en su propia pantalla; se enlaza para que nadie los confunda ni los busque acá. */}
-      <p className="mt-6 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-500 sombra-tarjeta">
+      <p className="mt-6 rounded-xl border border-borde bg-superficie px-4 py-3 text-xs text-secundario sombra-tarjeta">
         ¿Buscas el nombre y el número con los que te escriben los compradores? Eso vive en{" "}
         <Link
           href="/marketplace/mi-perfil-vendedor"
-          className="font-semibold text-blue-600 hover:text-blue-800"
+          className="font-semibold text-marca hover:text-marca-texto"
         >
           Mi contacto
         </Link>

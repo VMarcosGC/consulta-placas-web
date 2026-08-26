@@ -105,14 +105,14 @@ export function AccesoGoogle({
       />
 
       {canjeando && (
-        <p className="mt-3 text-center text-sm text-slate-500">Entrando con Google…</p>
+        <p className="mt-3 text-center text-sm text-secundario">Entrando con Google…</p>
       )}
 
       {/* ── Salida del 409, mitad 1: volver al formulario de contraseña ───────────── */}
       {conflicto && (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="mt-4 rounded-xl border border-borde bg-superficie-tenue px-4 py-3 text-sm text-secundario">
           <p className="font-semibold">{conflicto}</p>
-          <p className="mt-1.5 text-xs text-amber-800">
+          <p className="mt-1.5 text-xs text-secundario">
             Es tu misma cuenta: entra con tu contraseña y, ya adentro, vincula Google
             desde <span className="font-semibold">Mi cuenta</span>. La próxima vez entras
             con un toque.
@@ -121,14 +121,14 @@ export function AccesoGoogle({
             <button
               type="button"
               onClick={alPedirContrasena}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-borde-fuerte bg-superficie px-4 py-2.5 text-sm font-semibold text-tinta hover:bg-superficie-tenue"
             >
               Entrar con mi contraseña
             </button>
           ) : (
             <Link
               href={`/login?next=${RUTA_VINCULAR}`}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-borde-fuerte bg-superficie px-4 py-2.5 text-sm font-semibold text-tinta hover:bg-superficie-tenue"
             >
               Entrar con mi contraseña
             </Link>
@@ -137,7 +137,7 @@ export function AccesoGoogle({
       )}
 
       {error && (
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
           {error}
         </p>
       )}
@@ -145,9 +145,9 @@ export function AccesoGoogle({
       {/* Separador. El formulario de contraseña queda debajo: en registro el botón de
           Google es una ALTERNATIVA visible al formulario, no un enlace al pie. */}
       <div className="mt-6 flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs uppercase tracking-wide text-slate-400">o</span>
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-borde" />
+        <span className="text-xs uppercase tracking-wide text-secundario">o</span>
+        <span className="h-px flex-1 bg-borde" />
       </div>
     </div>
   );

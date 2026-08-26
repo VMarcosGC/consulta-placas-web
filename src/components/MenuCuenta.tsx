@@ -232,7 +232,7 @@ export function MenuCuenta({
   // Clases compartidas por los items: alto cómodo para el dedo en gama baja.
   const claseItem =
     "flex w-full items-start gap-3 px-4 py-2.5 text-left text-sm transition-colors " +
-    "hover:bg-slate-50 focus:bg-slate-50 focus:outline-none";
+    "hover:bg-superficie-tenue focus:bg-superficie-tenue focus:outline-none";
 
   return (
     <div
@@ -253,29 +253,29 @@ export function MenuCuenta({
         /* `min-h-11` = 44px, el mínimo táctil: el círculo interno mide 28px y el `py`
            dejaba el botón en 40px. Se corrige por altura, no agrandando el círculo ni la
            fuente, para no mover el resto de la fila del header a 320px. */
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 sm:px-3"
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-borde bg-superficie px-2 py-1.5 text-sm font-medium text-secundario hover:border-borde-fuerte sm:px-3"
       >
-        <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient text-[11px] font-black text-white">
+        <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accion text-[11px] font-black text-superficie">
           {inicial}
           {/* Punto ámbar = "todavía no pueden escribirte". El texto va en el aria-label
               del botón; acá es decoración. */}
           {faltaContacto && (
             <span
               aria-hidden
-              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-amber-500"
+              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-secundario"
             />
           )}
         </span>
         {/* Solo el nombre se oculta en pantallas chicas; el círculo queda siempre. */}
         <span className="hidden max-w-[10rem] truncate sm:inline">{nombre}</span>
-        <span aria-hidden className="text-[10px] leading-none text-slate-400">
+        <span aria-hidden className="text-[10px] leading-none text-secundario">
           ▾
         </span>
       </button>
 
       {abierto && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white sombra-tarjeta">
-          <p className="truncate border-b border-slate-100 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-borde bg-superficie sombra-tarjeta">
+          <p className="truncate border-b border-borde-suave px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-secundario">
             {nombre}
           </p>
 
@@ -285,7 +285,7 @@ export function MenuCuenta({
                 {/* Línea divisoria antes del primer item de admin: separa "mi cuenta"
                     de "mi trabajo de moderación". */}
                 {opcion.admin && !opciones[indice - 1]?.admin && (
-                  <div role="separator" className="my-1 h-px bg-slate-100" />
+                  <div role="separator" className="my-1 h-px bg-superficie-tenue" />
                 )}
                 <Link
                   href={opcion.href}
@@ -300,23 +300,23 @@ export function MenuCuenta({
                   <span className="min-w-0 flex-1">
                     <span
                       className={`flex items-center gap-2 font-semibold ${
-                        opcion.admin ? "text-blue-600" : "text-slate-800"
+                        opcion.admin ? "text-marca" : "text-tinta"
                       }`}
                     >
                       {opcion.etiqueta}
                       {opcion.href === RUTA_CONTACTO && faltaContacto && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                        <span className="rounded-full bg-superficie-tenue px-2 py-0.5 text-[10px] font-bold text-secundario">
                           Falta tu número
                         </span>
                       )}
                     </span>
-                    <span className="mt-0.5 block text-xs text-slate-500">{opcion.ayuda}</span>
+                    <span className="mt-0.5 block text-xs text-secundario">{opcion.ayuda}</span>
                   </span>
                 </Link>
               </Fragment>
             ))}
 
-            <div role="separator" className="my-1 h-px bg-slate-100" />
+            <div role="separator" className="my-1 h-px bg-superficie-tenue" />
 
             <button
               type="button"
@@ -329,7 +329,7 @@ export function MenuCuenta({
                 cerrar(false);
                 alSalir();
               }}
-              className={`${claseItem} font-semibold text-slate-600`}
+              className={`${claseItem} font-semibold text-secundario`}
             >
               Salir
             </button>
@@ -337,7 +337,7 @@ export function MenuCuenta({
 
           {/* El copy explica qué significa el punto ámbar, sin apurar a nadie. */}
           {faltaContacto && (
-            <p className="border-t border-amber-100 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
+            <p className="border-t border-borde-suave bg-superficie-tenue px-4 py-2.5 text-xs text-secundario">
               Sin tu número, tus anuncios se ven igual pero nadie puede escribirte.
             </p>
           )}

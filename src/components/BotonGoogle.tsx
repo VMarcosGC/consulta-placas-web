@@ -131,7 +131,7 @@ export function BotonGoogle({
   return (
     <div ref={refMedida} className="w-full">
       {estado === "fallo" ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+        <p className="rounded-xl border border-error bg-error-tinte px-4 py-2.5 text-sm text-error">
           No pudimos cargar el ingreso con Google. Puedes entrar con tu contraseña.
         </p>
       ) : (

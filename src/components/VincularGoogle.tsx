@@ -68,9 +68,9 @@ export function VincularGoogle({
   }
 
   return (
-    <section className="sombra-tarjeta rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-      <h2 className="text-lg font-semibold text-slate-900">Entrar con Google</h2>
-      <p className="mt-1.5 text-sm text-slate-600">
+    <section className="sombra-tarjeta rounded-2xl border border-borde bg-superficie p-5 sm:p-6">
+      <h2 className="text-lg font-semibold text-tinta">Entrar con Google</h2>
+      <p className="mt-1.5 text-sm text-secundario">
         Si vinculas tu cuenta de Google, la próxima vez entras con un toque y no tienes
         que recordar tu contraseña. Tu correo, tus autos y tu saldo siguen siendo los
         mismos.
@@ -79,22 +79,22 @@ export function VincularGoogle({
       {!googleConfigurado() ? (
         // Ausente antes que roto: sin `NEXT_PUBLIC_GOOGLE_CLIENT_ID` no hay botón, y se
         // dice por qué en vez de dejar una tarjeta vacía.
-        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+        <p className="mt-4 rounded-xl border border-error bg-error-tinte px-4 py-2.5 text-sm text-error">
           Vincular con Google no está disponible en esta versión. Puedes seguir entrando
           con tu contraseña.
         </p>
       ) : listo ? (
-        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">
+        <p className="mt-4 rounded-xl border border-confirmado bg-confirmado-tinte px-4 py-2.5 text-sm font-medium text-confirmado-texto">
           Listo. Ya puedes entrar con Google usando este correo.
         </p>
       ) : (
         <div className="mt-4">
           <BotonGoogle texto="continue_with" alCredencial={vincular} ocupado={enviando} />
           {enviando && (
-            <p className="mt-3 text-center text-sm text-slate-500">Vinculando…</p>
+            <p className="mt-3 text-center text-sm text-secundario">Vinculando…</p>
           )}
           {error && (
-            <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+            <p className="mt-4 rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
               {error}
             </p>
           )}

@@ -22,13 +22,13 @@ import {
 } from "@/types/api";
 
 const BADGE: Record<EstadoModeracion, { texto: string; clase: string }> = {
-  pendiente: { texto: "⏳ En revisión", clase: "bg-amber-100 text-amber-800" },
-  aprobada: { texto: "✓ Publicada", clase: "bg-emerald-100 text-emerald-800" },
-  rechazada: { texto: "✕ Rechazada", clase: "bg-rose-100 text-rose-700" },
+  pendiente: { texto: "⏳ En revisión", clase: "bg-superficie-tenue text-secundario" },
+  aprobada: { texto: "✓ Publicada", clase: "bg-superficie-tenue text-secundario" },
+  rechazada: { texto: "✕ Rechazada", clase: "bg-error-tinte text-error" },
 };
 
 const inputCls =
-  "w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus-glow";
+  "w-full rounded-xl border border-borde-fuerte px-3 py-2 text-sm text-tinta focus-glow";
 
 // ── Formulario de edición inline ─────────────────────────────────────────────
 // Prellenado con lo que la referencia ya tiene. Al guardar llama actualizarReferencia
@@ -114,46 +114,46 @@ function FormularioEditar({
   }
 
   return (
-    <form onSubmit={guardar} className="mt-4 space-y-4 border-t border-slate-100 pt-4">
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+    <form onSubmit={guardar} className="mt-4 space-y-4 border-t border-borde-suave pt-4">
+      <div className="rounded-xl border border-borde bg-superficie-tenue p-3 text-sm text-secundario">
         <b>Al editar, tu referencia vuelve a revisión.</b> Si cambias el contenido, un
         administrador la aprueba de nuevo antes de que se muestre en el marketplace.
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">Marca</label>
+          <label className="mb-1 block text-sm font-semibold text-secundario">Marca</label>
           <input className={inputCls} value={marca} onChange={(e) => setMarca(e.target.value)} placeholder="Chevrolet" maxLength={80} />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">Modelo</label>
+          <label className="mb-1 block text-sm font-semibold text-secundario">Modelo</label>
           <input className={inputCls} value={modelo} onChange={(e) => setModelo(e.target.value)} placeholder="Sail" maxLength={120} />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">Año</label>
+          <label className="mb-1 block text-sm font-semibold text-secundario">Año</label>
           <input className={inputCls} type="number" min={1900} max={2100} value={anio} onChange={(e) => setAnio(e.target.value)} placeholder="2018" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">Precio (USD)</label>
+          <label className="mb-1 block text-sm font-semibold text-secundario">Precio (USD)</label>
           <input className={inputCls} type="number" min={1} step="any" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="12000" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">Ciudad</label>
+          <label className="mb-1 block text-sm font-semibold text-secundario">Ciudad</label>
           <input className={inputCls} value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Quito" maxLength={80} />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-semibold text-slate-700">Kilometraje</label>
+          <label className="mb-1 block text-sm font-semibold text-secundario">Kilometraje</label>
           <input className={inputCls} type="number" min={0} max={2000000} value={kilometraje} onChange={(e) => setKilometraje(e.target.value)} placeholder="85000" />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-semibold text-slate-700">Placa (opcional)</label>
+        <label className="mb-1 block text-sm font-semibold text-secundario">Placa (opcional)</label>
         <input className={`${inputCls} font-mono tracking-widest`} value={placa} onChange={(e) => setPlaca(e.target.value)} placeholder="ABC1234" />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-semibold text-slate-700">Descripción</label>
+        <label className="mb-1 block text-sm font-semibold text-secundario">Descripción</label>
         <textarea
           className={`${inputCls} min-h-24`}
           value={descripcion}
@@ -166,7 +166,7 @@ function FormularioEditar({
       <FotosReferencia fotos={fotos} onCambio={setFotos} />
 
       {error && (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
           {error}
         </p>
       )}
@@ -175,7 +175,7 @@ function FormularioEditar({
         <button
           type="submit"
           disabled={enviando}
-          className="rounded-full bg-brand-gradient px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-accion px-6 py-2.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {enviando ? "Guardando…" : "Guardar cambios"}
         </button>
@@ -183,7 +183,7 @@ function FormularioEditar({
           type="button"
           onClick={onCancelar}
           disabled={enviando}
-          className="rounded-full border border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+          className="rounded-full border border-borde-fuerte px-6 py-2.5 text-sm font-semibold text-secundario transition hover:bg-superficie-tenue disabled:opacity-50"
         >
           Cancelar
         </button>
@@ -247,41 +247,41 @@ export default function MisReferenciasPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
+      <Link href="/marketplace" className="text-sm text-secundario hover:text-tinta">
         ← Volver al marketplace
       </Link>
       <header className="mt-3 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-black text-slate-900">Mis referencias</h1>
-          <p className="mt-1 text-slate-500">
+          <h1 className="text-3xl font-black text-tinta">Mis referencias</h1>
+          <p className="mt-1 text-secundario">
             Anuncios externos que aportaste y su estado de revisión.
           </p>
         </div>
         <Link
           href="/marketplace/referenciar"
-          className="inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+          className="inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
         >
           + Referenciar otro
         </Link>
       </header>
 
       {error && (
-        <p className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="mt-6 rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
           {error}
         </p>
       )}
 
-      {cargando && <p className="mt-6 text-slate-500">Cargando…</p>}
+      {cargando && <p className="mt-6 text-secundario">Cargando…</p>}
 
       {!cargando && refs.length === 0 && (
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-          <p className="text-lg font-semibold text-slate-700">Todavía no referenciaste anuncios.</p>
-          <p className="mt-1 text-slate-500">
+        <div className="mt-6 rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
+          <p className="text-lg font-semibold text-secundario">Todavía no referenciaste anuncios.</p>
+          <p className="mt-1 text-secundario">
             Pega el link de un auto en venta de Facebook u otro portal.
           </p>
           <Link
             href="/marketplace/referenciar"
-            className="mt-4 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+            className="mt-4 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
           >
             Referenciar un anuncio
           </Link>
@@ -296,7 +296,7 @@ export default function MisReferenciasPage() {
           return (
             <article
               key={r.id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta"
+              className="rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -306,30 +306,30 @@ export default function MisReferenciasPage() {
                     </span>
                     {/* Mismo copy exacto que en el feed (M2.5): así el aportante ve tal cual
                         cómo se presenta su referencia al comprador. */}
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                    <span className="rounded-full bg-declarado-tinte px-2 py-0.5 text-xs font-semibold text-declarado-texto">
                       Referencia externa · datos no verificados
                     </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                    <span className="rounded-full bg-superficie-tenue px-2 py-0.5 text-xs font-semibold text-secundario">
                       {r.fuente}
                     </span>
                     {r.placa && (
-                      <span className="font-mono text-xs tracking-widest text-slate-500">{r.placa}</span>
+                      <span className="font-mono text-xs tracking-widest text-secundario">{r.placa}</span>
                     )}
                   </div>
-                  <p className="mt-1 font-bold text-slate-900">{titulo}</p>
-                  <p className="text-sm text-slate-600">
+                  <p className="mt-1 font-bold text-tinta">{titulo}</p>
+                  <p className="text-sm text-secundario">
                     {r.precio_usd != null ? `$${r.precio_usd.toLocaleString("es-EC")}` : "Precio no indicado"}
                   </p>
                   <a
                     href={r.url_externa}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1 block max-w-full truncate text-sm text-blue-600 hover:underline"
+                    className="mt-1 block max-w-full truncate text-sm text-marca hover:underline"
                   >
                     {r.url_externa}
                   </a>
                   {r.estado_moderacion === "rechazada" && (
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-secundario">
                       No pasó la revisión. Puedes editarla y corregir lo que haga falta, o
                       eliminarla.
                     </p>
@@ -338,13 +338,13 @@ export default function MisReferenciasPage() {
                 <div className="flex shrink-0 flex-wrap gap-2">
                   <button
                     onClick={() => setEditando(abierto ? null : r.id)}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    className="rounded-lg border border-borde-fuerte px-3 py-1.5 text-xs font-medium text-secundario hover:bg-superficie-tenue"
                   >
                     {abierto ? "Cerrar" : "Editar"}
                   </button>
                   <button
                     onClick={() => borrar(r.id)}
-                    className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                    className="rounded-lg border border-error px-3 py-1.5 text-xs font-medium text-error hover:bg-error-tinte"
                   >
                     Eliminar
                   </button>

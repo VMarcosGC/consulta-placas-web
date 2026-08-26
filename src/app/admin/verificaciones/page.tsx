@@ -76,12 +76,12 @@ export default function VerificacionesPage() {
   if (sinPermiso) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-10">
-          <p className="text-xl font-bold text-amber-800">Acceso restringido</p>
-          <p className="mt-2 text-slate-600">Esta sección es solo para administradores.</p>
+        <div className="rounded-2xl border border-borde bg-superficie-tenue p-10">
+          <p className="text-xl font-bold text-tinta">Acceso restringido</p>
+          <p className="mt-2 text-secundario">Esta sección es solo para administradores.</p>
           <Link
             href="/marketplace"
-            className="mt-6 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+            className="mt-6 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
           >
             Ir al marketplace
           </Link>
@@ -94,30 +94,30 @@ export default function VerificacionesPage() {
     <div className="mx-auto max-w-4xl px-6 py-10">
       <header className="mb-8 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900">Verificar premium</h1>
-          <p className="mt-1 text-slate-500">
+          <h1 className="text-3xl font-black text-tinta">Verificar premium</h1>
+          <p className="mt-1 text-secundario">
             Publicaciones premium esperando el sello “Verificado por la plataforma”.
           </p>
         </div>
         <button
           onClick={cargar}
-          className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          className="rounded-full border border-borde-fuerte px-4 py-2 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
         >
           ↻ Actualizar
         </button>
       </header>
 
-      {cargando && <p className="text-slate-500">Cargando…</p>}
+      {cargando && <p className="text-secundario">Cargando…</p>}
       {error && (
-        <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="mb-4 rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
           {error}
         </p>
       )}
 
       {!cargando && pendientes.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-          <p className="text-lg font-semibold text-slate-700">No hay nada por verificar 🎉</p>
-          <p className="mt-1 text-slate-500">Las nuevas publicaciones premium aparecerán acá.</p>
+        <div className="rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
+          <p className="text-lg font-semibold text-secundario">No hay nada por verificar 🎉</p>
+          <p className="mt-1 text-secundario">Las nuevas publicaciones premium aparecerán acá.</p>
         </div>
       )}
 
@@ -130,31 +130,31 @@ export default function VerificacionesPage() {
           return (
             <div
               key={p.id}
-              className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta sm:flex-row sm:items-center"
+              className="flex flex-col gap-4 rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta sm:flex-row sm:items-center"
             >
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-marca px-2 py-0.5 text-xs font-black text-white">
+                  <span className="rounded-full bg-marca px-2 py-0.5 text-xs font-black text-superficie">
                     ★ Premium
                   </span>
-                  <span className="font-mono text-xs tracking-widest text-slate-500">
+                  <span className="font-mono text-xs tracking-widest text-secundario">
                     {p.placa}
                   </span>
                 </div>
-                <p className="mt-1 text-lg font-bold text-slate-900">{titulo}</p>
-                <p className="text-sm text-slate-600">
+                <p className="mt-1 text-lg font-bold text-tinta">{titulo}</p>
+                <p className="text-sm text-secundario">
                   {`$${p.precio_usd.toLocaleString("es-EC")}`}
                 </p>
                 {/* Argumento de venta premium: historial documentado del garage. */}
                 {m && m.total > 0 ? (
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-secundario">
                     📋 {m.total} mantenimiento{m.total === 1 ? "" : "s"}
                     {m.ultimo_kilometraje != null
                       ? ` · último ${m.ultimo_kilometraje.toLocaleString("es-EC")} km`
                       : ""}
                   </p>
                 ) : (
-                  <p className="mt-1 text-xs text-amber-600">
+                  <p className="mt-1 text-xs text-secundario">
                     Sin historial de mantenimientos vinculado.
                   </p>
                 )}
@@ -163,14 +163,14 @@ export default function VerificacionesPage() {
                 <button
                   onClick={() => decidir(p.id, "verificado")}
                   disabled={ocupado}
-                  className="flex-1 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                  className="flex-1 rounded-full bg-confirmado px-4 py-2 text-sm font-semibold text-superficie hover:bg-confirmado disabled:opacity-50"
                 >
                   {ocupado ? "…" : "Verificar"}
                 </button>
                 <button
                   onClick={() => decidir(p.id, "rechazado")}
                   disabled={ocupado}
-                  className="flex-1 rounded-full border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                  className="flex-1 rounded-full border border-error px-4 py-2 text-sm font-semibold text-error hover:bg-error-tinte disabled:opacity-50"
                 >
                   Rechazar
                 </button>

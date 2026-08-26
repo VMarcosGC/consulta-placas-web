@@ -28,10 +28,10 @@ import { ApiError, EstadoVerificacion, PublicacionInterna } from "@/types/api";
 const TOKENS_VERIFICACION = 80;
 
 const VERIFICACION_BADGE: Record<EstadoVerificacion, { texto: string; clase: string }> = {
-  no_verificado: { texto: "Sin verificar", clase: "bg-slate-100 text-slate-600" },
-  pendiente: { texto: "En revisión", clase: "bg-sky-100 text-sky-800" },
-  verificado: { texto: "✓ Verificado", clase: "bg-emerald-100 text-emerald-800" },
-  rechazado: { texto: "Verificación rechazada", clase: "bg-rose-100 text-rose-800" },
+  no_verificado: { texto: "Sin verificar", clase: "bg-superficie-tenue text-secundario" },
+  pendiente: { texto: "En revisión", clase: "bg-marca-tinte text-marca-texto" },
+  verificado: { texto: "✓ Verificado", clase: "bg-superficie-tenue text-secundario" },
+  rechazado: { texto: "Verificación rechazada", clase: "bg-superficie-tenue text-secundario" },
 };
 
 export default function MisPublicacionesPage() {
@@ -132,17 +132,17 @@ export default function MisPublicacionesPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
-      <Link href="/marketplace" className="text-sm text-slate-500 hover:text-slate-900">
+      <Link href="/marketplace" className="text-sm text-secundario hover:text-tinta">
         ← Volver al marketplace
       </Link>
       <header className="mt-3 mb-8 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900">Mis publicaciones</h1>
-          <p className="mt-1 text-slate-500">Tus autos publicados y su estado de verificación.</p>
+          <h1 className="text-3xl font-black text-tinta">Mis publicaciones</h1>
+          <p className="mt-1 text-secundario">Tus autos publicados y su estado de verificación.</p>
         </div>
         <Link
           href="/marketplace/publicar"
-          className="rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+          className="rounded-full bg-accion px-4 py-2 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
         >
           + Publicar
         </Link>
@@ -152,19 +152,19 @@ export default function MisPublicacionesPage() {
           escribir, así que el estado se ve donde el vendedor administra sus anuncios. */}
       <AvisoContactoVendedor />
 
-      {cargando && <p className="text-slate-500">Cargando…</p>}
+      {cargando && <p className="text-secundario">Cargando…</p>}
       {error && (
-        <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="mb-4 rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
           {error}
         </p>
       )}
 
       {!cargando && pubs.length === 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center sombra-tarjeta">
-          <p className="text-lg font-semibold text-slate-700">Todavía no publicas ningún auto.</p>
+        <div className="rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
+          <p className="text-lg font-semibold text-secundario">Todavía no publicas ningún auto.</p>
           <Link
             href="/marketplace/publicar"
-            className="mt-4 inline-flex rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white"
+            className="mt-4 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
           >
             Publicar mi auto
           </Link>
@@ -189,22 +189,22 @@ export default function MisPublicacionesPage() {
           const listoParaPublicar = puedePublicar(pct);
           return (
             <div key={p.id} className="space-y-3">
-              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sombra-tarjeta sm:flex-row sm:items-center">
+              <div className="flex flex-col gap-4 rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta sm:flex-row sm:items-center">
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     {esPremium ? (
-                      <span className="rounded-full bg-marca px-2 py-0.5 text-xs font-black text-white">
+                      <span className="rounded-full bg-marca px-2 py-0.5 text-xs font-black text-superficie">
                         ★ Premium
                       </span>
                     ) : (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                      <span className="rounded-full bg-superficie-tenue px-2 py-0.5 text-xs font-semibold text-secundario">
                         Light
                       </span>
                     )}
-                    <span className="font-mono text-xs tracking-widest text-slate-500">{p.placa}</span>
+                    <span className="font-mono text-xs tracking-widest text-secundario">{p.placa}</span>
                     {/* Borrador: el vendedor debe saber de un vistazo que NADIE lo ve. */}
                     {esBorrador && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+                      <span className="rounded-full bg-superficie-tenue px-2 py-0.5 text-xs font-bold text-secundario">
                         Borrador · no publicado
                       </span>
                     )}
@@ -212,13 +212,13 @@ export default function MisPublicacionesPage() {
                       {badge.texto}
                     </span>
                     {!faltaFicha && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                      <span className="rounded-full bg-superficie-tenue px-2 py-0.5 text-xs font-semibold text-secundario">
                         ✓ Ficha completa
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-lg font-bold text-slate-900">{titulo}</p>
-                  <p className="text-sm text-slate-600">${p.precio_usd.toLocaleString("es-EC")}</p>
+                  <p className="mt-1 text-lg font-bold text-tinta">{titulo}</p>
+                  <p className="text-sm text-secundario">${p.precio_usd.toLocaleString("es-EC")}</p>
 
                   {/* CTA persistente (M2.5): mientras la ficha no esté al 100 %, el dueño
                       ve cuánto le falta y entra a completarla de un clic. No bloquea nada. */}
@@ -226,7 +226,7 @@ export default function MisPublicacionesPage() {
                     <button
                       type="button"
                       onClick={() => setFichaAbierta(p.id)}
-                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                      className="mt-2 inline-flex items-center gap-2 rounded-full border border-borde bg-superficie-tenue px-3 py-1.5 text-xs font-semibold text-secundario transition hover:bg-superficie-tenue"
                     >
                       Completa tu ficha ({pct} %)
                       <span aria-hidden>→</span>
@@ -242,8 +242,8 @@ export default function MisPublicacionesPage() {
                       onClick={() => setFotosAbierta(fotosVisible ? null : p.id)}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
                         fotosVisible
-                          ? "border-blue-400 bg-blue-50 text-blue-800"
-                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                          ? "border-marca bg-marca-tinte text-marca-texto"
+                          : "border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
                       }`}
                     >
                       📷 {fotosVisible ? "Cerrar fotos" : "Fotos"}
@@ -253,15 +253,15 @@ export default function MisPublicacionesPage() {
                       onClick={() => setFichaAbierta(fichaVisible ? null : p.id)}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
                         fichaVisible
-                          ? "border-blue-400 bg-blue-50 text-blue-800"
-                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                          ? "border-marca bg-marca-tinte text-marca-texto"
+                          : "border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
                       }`}
                     >
                       📋 {fichaVisible ? "Cerrar ficha" : "Ficha técnica"}
                     </button>
                     <Link
                       href={`/marketplace/${p.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-borde-fuerte bg-superficie px-3.5 py-1.5 text-xs font-semibold text-secundario transition hover:bg-superficie-tenue"
                     >
                       Ver anuncio →
                     </Link>
@@ -279,7 +279,7 @@ export default function MisPublicacionesPage() {
                           ? "Publicar este anuncio en el feed"
                           : `Te falta ${UMBRAL_FICHA_PUBLICACION - pct} % de ficha para publicar`
                       }
-                      className="flex-1 rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex-1 rounded-full bg-accion px-4 py-2 text-sm font-semibold text-superficie shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {ocupado
                         ? "…"
@@ -292,25 +292,25 @@ export default function MisPublicacionesPage() {
                     <button
                       onClick={() => verificar(p.id)}
                       disabled={ocupado}
-                      className="flex-1 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                      className="flex-1 rounded-full bg-confirmado px-4 py-2 text-sm font-semibold text-superficie hover:bg-confirmado disabled:opacity-50"
                     >
                       {ocupado ? "…" : `Solicitar verificación · ${TOKENS_VERIFICACION} tokens`}
                     </button>
                   )}
                   {esPremium && p.estado_verificacion === "pendiente" && (
-                    <span className="flex-1 rounded-full bg-sky-50 px-4 py-2 text-center text-sm font-medium text-sky-700">
+                    <span className="flex-1 rounded-full bg-marca-tinte px-4 py-2 text-center text-sm font-medium text-marca-texto">
                       En revisión…
                     </span>
                   )}
                   {!esPremium && (
-                    <span className="flex-1 rounded-full bg-slate-50 px-4 py-2 text-center text-xs text-slate-400">
+                    <span className="flex-1 rounded-full bg-superficie-tenue px-4 py-2 text-center text-xs text-secundario">
                       Hazla premium para verificar
                     </span>
                   )}
                   <button
                     onClick={() => borrar(p.id)}
                     disabled={ocupado}
-                    className="rounded-full border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                    className="rounded-full border border-error px-4 py-2 text-sm font-semibold text-error hover:bg-error-tinte disabled:opacity-50"
                   >
                     Eliminar
                   </button>

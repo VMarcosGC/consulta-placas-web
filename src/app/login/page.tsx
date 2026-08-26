@@ -16,12 +16,12 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-md px-6 py-16">
       <h1 className="text-3xl font-bold">Iniciar sesión</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-secundario">
         ¿No tienes cuenta?{" "}
-        <Link href="/registro" className="text-brand-gradient font-medium">Crear una</Link>
+        <Link href="/registro" className="text-marca font-medium">Crear una</Link>
       </p>
 
-      <Suspense fallback={<div className="mt-8 h-48 animate-pulse rounded-xl bg-slate-100" />}>
+      <Suspense fallback={<div className="mt-8 h-48 animate-pulse rounded-xl bg-superficie-tenue" />}>
         <LoginForm />
       </Suspense>
     </div>
@@ -91,14 +91,14 @@ function LoginForm() {
         <CampoTexto id={ID_EMAIL} label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" requerido />
         <CampoTexto label="Contraseña" type="password" value={password} onChange={setPassword} autoComplete="current-password" requerido />
         {error && (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          <p className="rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={enviando}
-          className="w-full rounded-xl bg-brand-gradient px-4 py-3 font-semibold text-white shadow-sm disabled:opacity-60"
+          className="w-full rounded-xl bg-accion px-4 py-3 font-semibold text-superficie shadow-sm disabled:opacity-60"
         >
           {enviando ? "Entrando..." : "Entrar"}
         </button>

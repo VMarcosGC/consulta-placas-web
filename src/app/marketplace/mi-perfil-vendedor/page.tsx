@@ -174,29 +174,29 @@ export default function MiPerfilVendedorPage() {
     <div className="mx-auto max-w-2xl px-6 py-10">
       <Link
         href="/marketplace/mis-publicaciones"
-        className="text-sm text-slate-500 hover:text-slate-900"
+        className="text-sm text-secundario hover:text-tinta"
       >
         ← Volver a mis publicaciones
       </Link>
 
       <header className="mt-3 mb-6">
-        <h1 className="text-3xl font-black text-slate-900">Mi contacto de vendedor</h1>
-        <p className="mt-1 text-slate-500">
+        <h1 className="text-3xl font-black text-tinta">Mi contacto de vendedor</h1>
+        <p className="mt-1 text-secundario">
           Así te encuentran los compradores interesados en tus autos.
         </p>
       </header>
 
-      {cargando && <p className="text-slate-500">Cargando tu perfil…</p>}
+      {cargando && <p className="text-secundario">Cargando tu perfil…</p>}
 
       {/* Fallo real de carga: NO se muestra el formulario, para no pisar lo guardado
           con un formulario que quizá arrancó vacío por un error de red. */}
       {errorCarga && !cargando && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 sombra-tarjeta">
-          <p className="text-sm text-rose-700">{errorCarga}</p>
+        <div className="rounded-2xl border border-error bg-error-tinte p-5 sombra-tarjeta">
+          <p className="text-sm text-error">{errorCarga}</p>
           <button
             type="button"
             onClick={reintentar}
-            className="mt-3 rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+            className="mt-3 rounded-full border border-error bg-superficie px-4 py-2 text-sm font-semibold text-error hover:bg-error-tinte"
           >
             Reintentar
           </button>
@@ -207,11 +207,11 @@ export default function MiPerfilVendedorPage() {
         <>
           {/* Onboarding: invitación, no advertencia. */}
           {faltaCompletar && (
-            <div className="mb-5 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-              <p className="text-sm font-semibold text-blue-900">
+            <div className="mb-5 rounded-2xl border border-marca bg-marca-tinte p-4">
+              <p className="text-sm font-semibold text-marca-texto">
                 Completa tu contacto para que los compradores puedan escribirte.
               </p>
-              <p className="mt-1 text-sm text-blue-800">
+              <p className="mt-1 text-sm text-marca-texto">
                 Mientras no cargues tu número, tus anuncios se ven igual, pero quien se
                 interese no tiene cómo comunicarse contigo.
               </p>
@@ -219,11 +219,11 @@ export default function MiPerfilVendedorPage() {
           )}
 
           {contacto && (
-            <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <p className="text-sm font-semibold text-emerald-900">
+            <div className="mb-5 rounded-2xl border border-confirmado bg-confirmado-tinte p-4">
+              <p className="text-sm font-semibold text-confirmado-texto">
                 Tu contacto está listo.
               </p>
-              <p className="mt-1 text-sm text-emerald-800">
+              <p className="mt-1 text-sm text-confirmado-texto">
                 Los compradores te verán como <b>{contacto.nombre}</b> y podrán escribirte
                 al {telefonoLegible(contacto.telefono)}.
               </p>
@@ -232,7 +232,7 @@ export default function MiPerfilVendedorPage() {
 
           <form
             onSubmit={guardar}
-            className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 sombra-tarjeta"
+            className="space-y-4 rounded-2xl border border-borde bg-superficie p-6 sombra-tarjeta"
           >
             <div>
               <CampoTexto
@@ -245,7 +245,7 @@ export default function MiPerfilVendedorPage() {
                 placeholder="Ej.: Marcos G."
                 autoComplete="off"
               />
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-secundario">
                 No usamos el nombre de tu cuenta: tú eliges cómo aparecer. Puede ser tu
                 nombre y la inicial de tu apellido.
               </p>
@@ -263,23 +263,23 @@ export default function MiPerfilVendedorPage() {
                 placeholder="0987654321"
                 autoComplete="tel"
               />
-              <p className="mt-1 text-xs text-slate-500">{AYUDA_TELEFONO}</p>
+              <p className="mt-1 text-xs text-secundario">{AYUDA_TELEFONO}</p>
             </div>
 
             {/* La regla del par, dicha antes de que el usuario choque con el 422. */}
-            <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
+            <p className="rounded-xl border border-borde bg-superficie-tenue px-4 py-2.5 text-xs text-secundario">
               Los dos datos van juntos: para publicar tu número necesitamos el nombre con el
               que quieres que te vean. Tu número <b>no aparece</b> en el listado ni en el
               anuncio: se muestra solo cuando un comprador pulsa <b>“Ver teléfono”</b>.
             </p>
 
             {error && (
-              <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm text-rose-700">
+              <p className="rounded-xl border border-error bg-error-tinte px-4 py-2.5 text-sm text-error">
                 {error}
               </p>
             )}
             {guardado && !error && (
-              <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+              <p className="rounded-xl border border-confirmado bg-confirmado-tinte px-4 py-2.5 text-sm text-confirmado-texto">
                 Guardamos tus datos.
               </p>
             )}
@@ -288,20 +288,20 @@ export default function MiPerfilVendedorPage() {
               <button
                 type="submit"
                 disabled={guardando}
-                className="rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
+                className="rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90 disabled:opacity-60"
               >
                 {guardando ? "Guardando…" : "Guardar contacto"}
               </button>
               <Link
                 href="/marketplace/mis-publicaciones"
-                className="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-full border border-borde-fuerte bg-superficie px-5 py-2.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
               >
                 Volver
               </Link>
             </div>
 
             {perfil?.telefono && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-secundario">
                 Si borras el número y guardas, tus anuncios dejan de mostrar contacto.
               </p>
             )}
