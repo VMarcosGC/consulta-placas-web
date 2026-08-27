@@ -17,11 +17,27 @@ import { consultarPerfil } from "@/lib/api";
 import { derivarResumen, fechaLegible } from "@/components/ResumenPlaca";
 import type { VehiculoConsolidado } from "@/types/api";
 
-function Linea({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
+// La etiqueta va en sans (es la interfaz); el valor de dato duro va en `font-mono`
+// cuando `mono` está activo, porque esto es un REGISTRO OFICIAL y no lo declara el
+// vendedor (DISENO.md §1/§3: la tipografía carga esa distinción). El encabezado de
+// la tarjeta y las etiquetas quedan sans.
+function Linea({
+  etiqueta,
+  children,
+  mono,
+}: {
+  etiqueta: string;
+  children: React.ReactNode;
+  mono?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-borde-suave py-2 last:border-b-0">
       <span className="text-sm text-secundario">{etiqueta}</span>
-      <span className="text-right text-sm font-semibold text-tinta">{children}</span>
+      <span
+        className={`text-right text-sm font-semibold text-tinta ${mono ? "font-mono" : ""}`}
+      >
+        {children}
+      </span>
     </div>
   );
 }
@@ -67,7 +83,7 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
     (!sinDatosOficiales && r.matriculaEtiqueta === "Sin dato" && r.municipalesEnProceso);
 
   return (
-    <section className="rounded-2xl border border-borde/70 bg-superficie p-5 sombra-tarjeta sm:p-6">
+    <section className="rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta sm:p-6">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-tinta">Datos oficiales</h2>
         <Insignia tono="info">Fuentes públicas</Insignia>
@@ -77,19 +93,29 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
       </p>
 
       {sinDatosOficiales ? (
-        <p className="text-sm text-secundario">
-          Aún no hay datos oficiales disponibles para esta placa. Consulta la placa para actualizarlos.
-        </p>
+        // El copy se enuncia desde el sistema, no como una falta del vendedor
+        // (DISENO.md §7): el diagnóstico primero, la acción aparte.
+        <div className="space-y-3">
+          <p className="text-sm text-secundario">
+            Todavía no consultamos las fuentes oficiales de esta placa.
+          </p>
+          <Link
+            href={`/consultar/${encodeURIComponent(placa)}`}
+            className="inline-flex text-sm font-semibold text-marca hover:underline"
+          >
+            Consultar ahora →
+          </Link>
+        </div>
       ) : enProceso ? (
         <p className="text-sm text-secundario">
-          Datos oficiales en proceso. Estamos consultando las fuentes públicas de esta placa.
+          Estamos consultando las fuentes oficiales de esta placa. Vuelve en un momento.
         </p>
       ) : (
         <div>
           <Linea etiqueta="Matrícula">
             <Insignia tono={r!.matriculaTono}>{r!.matriculaEtiqueta}</Insignia>
           </Linea>
-          <Linea etiqueta="Multas e infracciones">
+          <Linea etiqueta="Multas e infracciones" mono>
             {r!.municipalesEnProceso ? (
               <span className="text-secundario">Consultando…</span>
             ) : municipalesSinConsultar ? (
@@ -103,24 +129,31 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
             )}
           </Linea>
           {/* Con el detalle bloqueado no se muestra el monto (doble guarda —
-              `derivarResumen` ya lo anula). */}
+              `derivarResumen` ya lo anula). Es un número de un registro: mono y
+              con separador de miles es-EC. */}
           {!r!.detalleBloqueado && r!.montoMultas != null && (
-            <Linea etiqueta="Total a pagar">
-              <span className="text-atencion">${r!.montoMultas.toFixed(0)}</span>
+            <Linea etiqueta="Total a pagar" mono>
+              <span className="text-atencion">
+                ${r!.montoMultas.toLocaleString("es-EC", { maximumFractionDigits: 0 })}
+              </span>
             </Linea>
           )}
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <Link
-          href={`/consultar/${encodeURIComponent(placa)}`}
-          className="text-sm font-semibold text-marca hover:underline"
-        >
-          Ver detalle completo →
-        </Link>
-        {fecha && <span className="text-[11px] text-secundario">Consultado el {fecha}</span>}
-      </div>
+      {!sinDatosOficiales && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <Link
+            href={`/consultar/${encodeURIComponent(placa)}`}
+            className="text-sm font-semibold text-marca hover:underline"
+          >
+            Ver detalle completo →
+          </Link>
+          {fecha && (
+            <span className="font-mono text-[11px] text-secundario">Consultado el {fecha}</span>
+          )}
+        </div>
+      )}
     </section>
   );
 }

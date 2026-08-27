@@ -221,8 +221,10 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
 
       {!tieneAlgo ? (
         <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
-          <p className="text-secundario">
-            El vendedor aún no completó la ficha técnica de este vehículo.
+          <p className="font-medium text-tinta">Todavía sin ficha técnica</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-secundario">
+            El vendedor aún no cargó los detalles del motor, la carrocería ni los
+            interiores. Puedes pedírselos al contactarlo.
           </p>
         </div>
       ) : (
@@ -441,7 +443,20 @@ export default function PublicacionDetallePage() {
         ← Volver al marketplace
       </Link>
 
-      {cargando && <p className="mt-6 text-secundario">Cargando publicación…</p>}
+      {cargando && (
+        // Esqueleto con la forma real del detalle: galería, precio, título/placa y
+        // dos secciones. Sin spinner. `animate-pulse` es de Tailwind.
+        <div className="mt-6 animate-pulse space-y-6" aria-hidden>
+          <div className="aspect-[16/9] w-full rounded-2xl bg-superficie-tenue" />
+          <div className="space-y-3">
+            <div className="h-10 w-40 rounded-lg bg-superficie-tenue" />
+            <div className="h-6 w-2/3 rounded bg-superficie-tenue" />
+            <div className="h-4 w-32 rounded bg-superficie-tenue" />
+          </div>
+          <div className="h-40 rounded-2xl bg-superficie-tenue" />
+          <div className="h-32 rounded-2xl bg-superficie-tenue" />
+        </div>
+      )}
 
       {noEncontrada && !cargando && (
         <div className="mt-6 rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
@@ -469,7 +484,8 @@ export default function PublicacionDetallePage() {
             <Galeria fotos={pub.fotos} titulo={tituloVehiculo(pub)} />
           </div>
 
-          {/* 2. PRECIO + título + acciones: entra sin scroll en un celular. */}
+          {/* 2. PRECIO + título + acciones: entra sin scroll en un celular. Ritmo
+              vertical parejo: cada sub-bloque a la misma distancia del anterior. */}
           <header className="mt-5">
             <div className="flex flex-wrap items-center gap-1.5">
               {pub.plan === "premium" && (
@@ -483,33 +499,39 @@ export default function PublicacionDetallePage() {
               {esMia && viveEnGarage && <Insignia tono="info">🚗 Vive en tu garage</Insignia>}
             </div>
 
-            <p className="mt-3 text-4xl font-black leading-none text-tinta sm:text-5xl">
+            <p className="mt-4 text-4xl font-black leading-none text-tinta sm:text-5xl">
               {precioFmt(pub.precio_usd)}
             </p>
             <h1 className="mt-2 text-xl font-bold text-tinta sm:text-2xl">
               {tituloVehiculo(pub)}
             </h1>
-            <p className="mt-0.5 font-mono text-sm tracking-widest text-secundario">{pub.placa}</p>
+            {/* Identidad del auto solo si el título es personalizado: el título
+                derivado ("KIA K5 2022") ya dice marca/modelo/año, así que repetirlo
+                en la meta sería ruido. Con título custom sí la mostramos acá. */}
+            {pub.titulo && (pub.marca || pub.modelo || pub.anio != null) && (
+              <p className="mt-1 text-sm text-secundario">
+                {[pub.marca, pub.modelo, pub.anio != null ? String(pub.anio) : null]
+                  .filter(Boolean)
+                  .join(" ")}
+              </p>
+            )}
+            <p className="mt-1 font-mono text-sm tracking-widest text-secundario">{pub.placa}</p>
 
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-secundario">
-              {pub.marca && <span>Marca: <b className="text-secundario">{pub.marca}</b></span>}
-              {pub.modelo && <span>Modelo: <b className="text-secundario">{pub.modelo}</b></span>}
-              {pub.anio != null && <span>Año: <b className="text-secundario">{pub.anio}</b></span>}
-              {/* Dónde está el auto en venta. Es opcional: si el vendedor no la eligió,
-                  no se pinta la etiqueta (mejor ausente que "Ciudad: —"). */}
-              {pub.ciudad && <span>Ciudad: <b className="text-secundario">{pub.ciudad}</b></span>}
-              {/* Recorrido declarado por el vendedor. Igual que la ciudad, es opcional:
-                  si no lo declaró no se pinta la etiqueta. No es el mismo dato que el
-                  odómetro del último service (bloque "Historial documentado"). */}
-              {pub.kilometraje != null && (
-                <span>
-                  Kilometraje:{" "}
-                  <b className="text-secundario">
-                    {pub.kilometraje.toLocaleString("es-EC")} km
-                  </b>
-                </span>
-              )}
-            </div>
+            {/* Meta escaneable: km · ciudad, sin etiquetas ("Ciudad:"/"Kilometraje:")
+                que solo repetían la palabra. El año no va acá: ya está en el título
+                (o en la línea de identidad de arriba si el título es custom). */}
+            {(pub.kilometraje != null || pub.ciudad) && (
+              <p className="mt-3 text-sm text-secundario">
+                {[
+                  pub.kilometraje != null
+                    ? `${pub.kilometraje.toLocaleString("es-EC")} km`
+                    : null,
+                  pub.ciudad || null,
+                ]
+                  .filter(Boolean)
+                  .join("   ·   ")}
+              </p>
+            )}
 
             {/* Fila de acciones, visible sin scroll en celular (M2.7): "Verificar esta
                 placa" (acción de valor sobre la placa) y, para el comprador, "Contactar
@@ -577,8 +599,10 @@ export default function PublicacionDetallePage() {
                 <Insignia tono="neutro">Ficha incompleta</Insignia>
               </div>
               <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
-                <p className="text-secundario">
-                  El vendedor aún no completó la ficha técnica de este vehículo.
+                <p className="font-medium text-tinta">Todavía sin ficha técnica</p>
+                <p className="mx-auto mt-1 max-w-md text-sm text-secundario">
+                  El vendedor aún no cargó los detalles del motor, la carrocería ni los
+                  interiores. Puedes pedírselos al contactarlo.
                 </p>
               </div>
             </section>
