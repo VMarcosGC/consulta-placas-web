@@ -73,7 +73,7 @@ export default function MiCuentaPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-3xl font-bold">Mi cuenta</h1>
-      <p className="mt-2 text-sm text-secundario">Cómo entras a Revisa tu Carro EC.</p>
+      <p className="mt-2 text-sm text-secundario">Cómo entras a CarStore Ec.</p>
 
       {error && (
         <p className="mt-6 rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">

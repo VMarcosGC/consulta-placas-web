@@ -19,9 +19,10 @@ export function Footer() {
         <div>
           <div className="flex items-center gap-2 text-lg font-semibold text-tinta">
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-gradient text-superficie text-sm font-black shadow-sm">
-              RC
+              CS
             </span>
-            Revisa tu Carro <span className="text-secundario text-sm font-bold">EC</span>
+            Car<span className="text-brand-gradient">Store</span>
+            <span className="ml-1 text-secundario text-sm font-bold">Ec</span>
           </div>
           <p className="mt-3 text-sm text-secundario">
             Compra y vende autos en Ecuador con la ficha del vendedor y los datos oficiales
@@ -51,7 +52,7 @@ export function Footer() {
 
       <div className="border-t border-borde px-6 py-5">
         <p className="mx-auto max-w-6xl text-center text-xs text-secundario">
-          © {new Date().getFullYear()} Revisa tu Carro EC · Los datos provienen de fuentes públicas oficiales. Sin afiliación con las instituciones.
+          © {new Date().getFullYear()} CarStore Ec · Los datos provienen de fuentes públicas oficiales. Sin afiliación con las instituciones.
         </p>
       </div>
     </footer>

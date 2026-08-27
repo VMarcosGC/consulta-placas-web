@@ -31,7 +31,7 @@ async function consultarPerfil(placa: string): Promise<VehiculoConsolidado | nul
 export async function generateMetadata({ params }: Props) {
   const { placa } = await params;
   return {
-    title: `Placa ${placa.toUpperCase()} | Revisa tu Carro EC`,
+    title: `Placa ${placa.toUpperCase()} | CarStore Ec`,
     description: `Resultado oficial de la consulta para la placa ${placa.toUpperCase()} en ANT y AMT del Ecuador.`,
   };
 }

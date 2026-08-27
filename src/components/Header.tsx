@@ -73,22 +73,19 @@ export function Header() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-6 sm:px-6">
         <Link
           href="/"
-          aria-label="Revisa tu Carro EC — inicio"
+          aria-label="CarStore Ec — inicio"
           className="flex shrink items-center gap-2 text-base font-semibold text-tinta sm:text-lg"
         >
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand-gradient text-superficie text-sm font-black shadow-sm">
-            RC
+            CS
           </span>
-          {/* Bajo 400px queda solo el monograma. Medido: el nombre completo ocupa ~143px
-              y el conjunto logo + "Entrar" + "Crear cuenta" necesita 393px, así que a
-              320/360/375 no entra (antes se partía en dos líneas). El umbral es 400 y no
-              420 a propósito: el iPhone 12-15 y el Pixel 8 rondan los 390-393px y son el
-              equipo típico del público objetivo (§1) — a 400px conservan el nombre con
-              7px de holgura. El nombre accesible lo lleva el aria-label, así que nadie
-              lo pierde en pantallas más chicas. */}
+          {/* Bajo 400px queda solo el monograma "CS": es la vía segura para que la fila
+              (logo + "Entrar" + "Crear cuenta") entre sin partirse en gama baja (iPhone
+              12-15 y Pixel 8 rondan los 390-393px, el equipo típico del público §1). El
+              nombre accesible lo lleva el aria-label, así que no se pierde. */}
           <span className="hidden min-[400px]:inline">
-            Revisa tu <span className="text-brand-gradient">Carro</span>
-            <span className="ml-1 align-top text-[10px] font-bold text-secundario">EC</span>
+            Car<span className="text-brand-gradient">Store</span>
+            <span className="ml-1 align-top text-[10px] font-bold text-secundario">Ec</span>
           </span>
         </Link>
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ConsultaForm } from "@/components/ConsultaForm";
 
 export const metadata = {
-  title: "Consulta de placa | Revisa tu Carro EC",
+  title: "Consulta de placa | CarStore Ec",
   description:
     "Consulta matriculación e infracciones de una placa ecuatoriana en las fuentes públicas disponibles. Herramienta de apoyo del marketplace de autos.",
 };
