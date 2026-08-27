@@ -7,6 +7,7 @@ import { obtenerPerfil } from "@/lib/api";
 import type { Usuario } from "@/types/api";
 import { useRouter } from "next/navigation";
 import { MenuCuenta } from "./MenuCuenta";
+import { ThemeToggle } from "./ThemeToggle";
 
 // Suscripción al estado de sesión (un store externo: localStorage).
 // "storage" cubre cambios desde otra pestaña; "sesion-cambiada" los del mismo tab.
@@ -119,6 +120,8 @@ export function Header() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* Interruptor de tema: visible en todos los anchos y con o sin sesión. */}
+          <ThemeToggle className={`${claseIconoHeader} text-secundario`} />
           {logueado ? (
             <>
               {/* Favoritos: no hay página propia; los favoritos guardados se ven en la

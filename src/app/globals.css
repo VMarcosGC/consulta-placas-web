@@ -1,110 +1,209 @@
 @import "tailwindcss";
 
-/* ── Sistema de diseño — "Dirección C · App limpia" ────────────────────────
+/* ── Sistema de diseño — "Grafito" (claro + oscuro) ───────────────────────
    Fuente: ../consulta_placas_ec/docs/DISENO.md.
 
-   Marcos eligió (2026-08-27) evolucionar el look hacia una estética de
-   marketplace limpio y denso —casi blanco, neutros FRÍOS, píldoras oscuras
-   para lo secundario— con el acento de conversión en **verde esmeralda**
-   (`--accion`), no naranja. La versión anterior ("confianza clara") era
-   lienzo cálido + CTA naranja; se reemplazan los VALORES de los tokens y se
-   conservan sus NOMBRES, así que los componentes heredan el nuevo look sin
-   tocarlos uno por uno.
+   Marcos (2026-08-27): fuera el azul y fuera el verde esmeralda de CTA. El
+   look es un **marketplace casi monocromo en grafito**: neutros fríos de
+   casi-blanco a casi-negro, y la ACCIÓN es un sólido que INVIERTE con el tema
+   (casi-negro en claro, casi-blanco en oscuro). Sin color de marca cromático:
+   la identidad la lleva el propio grafito. El único guiño cálido es `--marca`
+   (un gris templado) que marca la placa, el dato oficial y el favorito —
+   distinto de `--tinta` sin ser un "color".
 
-   Lo que SOBREVIVE del sistema anterior:
-   - "Dos registros" (§1 de DISENO.md): lo declarado por el vendedor es
-     cálido/sans; lo oficial (ANT/AMT) es frío/monoespaciado. La placa y el
-     dato oficial siguen en `--marca` y en `--font-mono`.
-   - "Un color, un trabajo": si `--accion` aparece dos veces en una pantalla,
-     deja de significar "esto es lo que vas a tocar".
-   - `--marca` es identidad + registro oficial + favorito/enlace; NO es el CTA.
-     El CTA es `--accion` (esmeralda). Lo secundario es `--oscuro` (píldora). */
-@theme inline {
+   Reglas que SOBREVIVEN:
+   - "Dos registros" (§1 DISENO.md): lo declarado por el vendedor = sans; lo
+     oficial (ANT/AMT) = monoespaciado. La placa va en mono + `--marca`; la
+     distinción sobrevive en escala de grises (que es casi todo el sistema).
+   - "Un color, un trabajo": `--accion` es lo que vas a tocar. Los estados del
+     vehículo (verde/ámbar/vino) NUNCA son acciones.
+   - `--accion` y `--oscuro` son EL MISMO sólido inversor: en un sistema
+     monocromo el CTA y la píldora secundaria se distinguen por forma (relleno
+     vs contorno), no por color.
+
+   TEMATIZADO: se usa `@theme` (no `@theme inline`) para que las utilidades
+   compilen a `var(--color-*)` y el tema se pueda cambiar en runtime. Tres
+   estados: sistema (sin atributo), `[data-theme="light"]`, `[data-theme="dark"]`.
+   La paleta base de `@theme` es la CLARA; los bloques siguientes solo redefinen
+   los tokens que cambian. */
+@theme {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* ── Paleta ─────────────────────────────────────────────────────────────
-     Contrastes verificados sobre `--lienzo` (#FBFBFC) y `--superficie` (#FFF).
-     El texto de botón es blanco salvo que se diga otra cosa. */
+  /* ── Neutros fríos (grafito). De casi-blanco a casi-negro. ───────────── */
+  --color-lienzo: #f7f7f8;            /* fondo de página */
+  --color-superficie: #ffffff;       /* tarjetas */
+  --color-superficie-tenue: #eeeef0; /* relleno sutil, fondo de foto/placeholder */
+  --color-borde: #e5e6e9;            /* filete de tarjeta (decorativo) */
+  --color-borde-suave: #eef0f2;      /* divisor interno (decorativo) */
+  /* Borde de CONTROL DE FORMULARIO. WCAG 1.4.11 pide 3:1 contra el fondo:
+     da 3.1:1 sobre blanco. No lo aclares. */
+  --color-borde-fuerte: #9a9ca3;
+  --color-tinta: #16171a;            /* texto primario · 16.4:1 sobre lienzo */
+  --color-secundario: #5a5c63;       /* texto secundario · 5.7:1 lienzo · 5.1:1 tenue */
 
-  /* Identidad, registro oficial, enlaces y favorito guardado. Único azul. */
-  --color-marca: #2f3fc7;        /* 7.9:1 sobre blanco */
+  /* ── ACCIÓN (publicar, contactar, entrar) + píldora sólida secundaria.
+     Sólido grafito que INVIERTE con el tema. Texto encima: `--superficie`
+     (que también invierte), así el contraste sale correcto en ambos temas. */
+  --color-accion: #1c1d21;           /* casi-negro · 15.8:1 con blanco */
+  --color-accion-suave: #34353b;     /* hover */
+  --color-oscuro: #1c1d21;           /* alias del mismo sólido inversor */
+  --color-oscuro-suave: #34353b;
 
-  /* ACCIÓN DE CONVERSIÓN (publicar, contactar, entrar). Verde esmeralda: en
-     tendencia para CTAs de marketplace/fintech y claramente distinto del azul
-     de marca y del verde de estado. 5.3:1 con texto blanco → AA. */
-  --color-accion: #047857;
-  --color-accion-tinte: #e6f4ee;
-  --color-accion-texto: #1f6b4c;   /* texto verde sobre el tinte · 6.0:1 */
+  /* ── MARCA: identidad, placa, dato de registro oficial, favorito guardado.
+     Gris templado (leve calidez), NO un color. Se lee distinto de `--tinta`
+     sin introducir un tono. 8.0:1 sobre blanco. */
+  --color-marca: #46423b;
+  --color-marca-tinte: #edeae6;
+  --color-marca-texto: #423e37;      /* 8.7:1 sobre el tinte */
 
-  /* Secundario "sólido": la píldora oscura estilo tienda (filtro activo,
-     "añadir", acciones de segundo nivel). NO es un estado ni un mensaje. */
-  --color-oscuro: #1c1d22;         /* 15.9:1 con texto blanco */
-  --color-oscuro-suave: #2b2c33;   /* hover de la píldora oscura */
+  /* ── Estado "al día" del vehículo (matrícula vigente, sin multas). Verde
+     apagado. Nunca una acción. */
+  --color-confirmado: #3a7d5c;       /* 4.6:1 sobre blanco */
+  --color-confirmado-tinte: #e7f2ec;
+  --color-confirmado-texto: #235c40; /* 6.1:1 */
 
-  /* Estado "al día" del vehículo (matrícula vigente, sin multas). Nunca una
-     acción. Verde azulado, más apagado que `--accion` para no competir. */
-  --color-confirmado: #2f7d5b;   /* 4.7:1 sobre blanco */
+  /* ── Estado "pendiente" DEL VEHÍCULO (tiene una multa). Tabaco, baja
+     saturación — no compite con la acción. Nunca una acción. */
+  --color-atencion: #9a5a2a;         /* 5.0:1 sobre blanco */
+  --color-atencion-tinte: #f5eade;
+  --color-atencion-texto: #7a4318;   /* 7.3:1 */
 
-  /* Superficie de lo declarado por el vendedor (§1 "dos registros"). Tono
-     medio: sirve de fondo, no de texto (usa el par tinte/texto de abajo). */
-  --color-declarado: #b08d7c;
-
-  /* Estado "pendiente" DEL VEHÍCULO (tiene una multa). Nunca una acción. */
-  --color-atencion: #b5551f;     /* 5.0:1 sobre blanco */
-
-  /* Peor estado del vehículo: "requiere atención" y matrícula vencida.
+  /* ── Peor estado del vehículo ("requiere atención", matrícula vencida).
      Vino, no rojo: el rojo es un fallo NUESTRO. Nunca una acción. */
-  --color-critico: #8a2f43;      /* 8.2:1 sobre blanco */
+  --color-critico: #8a3346;          /* 8.0:1 sobre blanco */
+  --color-critico-tinte: #f4e7ea;
+  --color-critico-texto: #6f2739;    /* 8.6:1 */
 
-  /* Fallo de LA INTERFAZ (no pudimos cargar, formulario inválido). Nunca un
-     estado del vehículo, nunca una acción. */
-  --color-error: #d23b30;        /* 4.6:1 sobre blanco */
+  /* ── Superficie de lo declarado por el vendedor (§1 "dos registros").
+     Taupe cálido: fondo, no texto (usa el par tinte/texto). */
+  --color-declarado: #9a8570;
+  --color-declarado-tinte: #f1ece5;
+  --color-declarado-texto: #5f4b39;  /* 6.4:1 */
 
-  /* ACCIÓN destructiva (borrar, rechazar, quitar): contorno, nunca relleno. */
-  --color-destructivo: #a22820;       /* 6.9:1 sobre blanco */
-  --color-destructivo-tinte: #fbebea; /* solo hover del botón */
+  /* ── Fallo de LA INTERFAZ (no pudimos cargar, formulario inválido). El
+     único rojo verdadero. Nunca un estado del vehículo, nunca una acción. */
+  --color-error: #c23f33;            /* 4.7:1 sobre blanco */
+  --color-error-tinte: #fbeae8;
 
-  --color-lienzo: #fbfbfc;       /* fondo de página — casi blanco, sesgo frío mínimo */
-  --color-tinta: #17181c;        /* texto primario · 16.5:1 sobre lienzo */
-  --color-secundario: #5c5e68;   /* texto secundario · 5.5:1 blanco · 5.0:1 tenue */
+  /* ── ACCIÓN destructiva (borrar, rechazar): contorno, nunca relleno. */
+  --color-destructivo: #a5342b;       /* 6.6:1 sobre blanco */
+  --color-destructivo-tinte: #fbe9e7; /* solo hover */
 
-  /* ── Tintes y su texto. Todo texto sobre un tinte usa el tono oscuro de
-     SU familia, nunca negro ni gris genérico. ─────────────────────────── */
-  --color-confirmado-tinte: #e6f4ee;
-  --color-confirmado-texto: #1f6b4c;   /* 6.0:1 */
-  --color-atencion-tinte: #fbeadf;
-  --color-atencion-texto: #8a3e12;     /* 7.4:1 */
-  --color-marca-tinte: #e9ebfa;
-  --color-marca-texto: #2a3170;        /* 9.9:1 */
-  --color-declarado-tinte: #f3ebe5;
-  --color-declarado-texto: #6b4a3d;    /* 6.5:1 */
-  --color-critico-tinte: #f7e7ea;
-  --color-critico-texto: #7a2a3b;      /* 7.9:1 */
-  --color-error-tinte: #fcecea;
-
-  /* ── Neutros fríos ─────────────────────────────────────────────────────
-     Reemplazan a los neutros cálidos de "confianza clara". `slate`-adyacentes
-     pero elegidos, no heredados: un blanco-frío consistente con el lienzo. */
-  --color-superficie: #ffffff;        /* tarjetas */
-  --color-superficie-tenue: #f1f2f4;  /* relleno sutil, fondo de foto/placeholder */
-  --color-borde: #e9eaee;             /* filete de tarjeta (decorativo) */
-  --color-borde-suave: #f0f1f4;       /* divisor interno (decorativo) */
-  /* Borde de CONTROL DE FORMULARIO. WCAG 1.4.11 pide 3:1 contra el fondo
-     adyacente: da 3.05:1 sobre blanco. No lo aclares. */
-  --color-borde-fuerte: #999ca6;
-
-  /* ── Gradiente de marca = IDENTIDAD, SOLO en el logo (monograma circular y la
-     palabra "Store" del wordmark). No se expande. Cualquier CTA usa `--accion`.
-     Barrido teal → esmeralda → verde: coherente con el acento esmeralda del
-     sistema, en tendencia, y NO azul. Los tres tonos rondan el rango "600" para
-     que "Store" siga legible como texto sobre blanco (~4:1). ─────────────── */
-  --color-brand-from: #0d9488;   /* teal-600    */
-  --color-brand-via:  #059669;   /* emerald-600 */
-  --color-brand-to:   #16a34a;   /* green-600   */
+  /* ── Gradiente "de marca": retirado. El wordmark "CarStore Ec" es texto
+     plano en `--tinta`. Estas variables quedan apuntando a grafito por si
+     alguna clase las referencia; NO reintroducir un barrido de color. */
+  --color-brand-from: #2b2c31;
+  --color-brand-via: #46423b;
+  --color-brand-to: #16171a;
 }
 
-html { scroll-behavior: smooth; }
+/* ── Tema OSCURO por preferencia del sistema (sin elección explícita) ──────
+   `:not([data-theme="light"])` deja que una elección de "claro" gane sobre un
+   SO en oscuro. Solo se redefinen los tokens que cambian. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-lienzo: #111214;
+    --color-superficie: #1a1b1e;
+    --color-superficie-tenue: #26272b;
+    --color-borde: #2c2e33;
+    --color-borde-suave: #23252a;
+    --color-borde-fuerte: #6c6e76;
+    --color-tinta: #f2f2f3;
+    --color-secundario: #a2a4ac;
+
+    --color-accion: #ececee;
+    --color-accion-suave: #d5d5d9;
+    --color-oscuro: #ececee;
+    --color-oscuro-suave: #d5d5d9;
+
+    --color-marca: #b9b2a6;
+    --color-marca-tinte: #2a2722;
+    --color-marca-texto: #cfc7b8;
+
+    --color-confirmado: #4faf80;
+    --color-confirmado-tinte: #16281f;
+    --color-confirmado-texto: #82d2ac;
+
+    --color-atencion: #c98a4e;
+    --color-atencion-tinte: #2b2016;
+    --color-atencion-texto: #e2ab77;
+
+    --color-critico: #cc5c72;
+    --color-critico-tinte: #2a191e;
+    --color-critico-texto: #e89aab;
+
+    --color-declarado: #b09a82;
+    --color-declarado-tinte: #251f19;
+    --color-declarado-texto: #cdb79f;
+
+    --color-error: #e05b4f;
+    --color-error-tinte: #2b1815;
+
+    --color-destructivo: #e06a5f;
+    --color-destructivo-tinte: #2b1815;
+
+    --color-brand-from: #d5d5d9;
+    --color-brand-via: #b9b2a6;
+    --color-brand-to: #f2f2f3;
+  }
+}
+
+/* ── Tema OSCURO elegido explícitamente (gana sobre un SO en claro) ──────── */
+:root[data-theme="dark"] {
+  --color-lienzo: #111214;
+  --color-superficie: #1a1b1e;
+  --color-superficie-tenue: #26272b;
+  --color-borde: #2c2e33;
+  --color-borde-suave: #23252a;
+  --color-borde-fuerte: #6c6e76;
+  --color-tinta: #f2f2f3;
+  --color-secundario: #a2a4ac;
+
+  --color-accion: #ececee;
+  --color-accion-suave: #d5d5d9;
+  --color-oscuro: #ececee;
+  --color-oscuro-suave: #d5d5d9;
+
+  --color-marca: #b9b2a6;
+  --color-marca-tinte: #2a2722;
+  --color-marca-texto: #cfc7b8;
+
+  --color-confirmado: #4faf80;
+  --color-confirmado-tinte: #16281f;
+  --color-confirmado-texto: #82d2ac;
+
+  --color-atencion: #c98a4e;
+  --color-atencion-tinte: #2b2016;
+  --color-atencion-texto: #e2ab77;
+
+  --color-critico: #cc5c72;
+  --color-critico-tinte: #2a191e;
+  --color-critico-texto: #e89aab;
+
+  --color-declarado: #b09a82;
+  --color-declarado-tinte: #251f19;
+  --color-declarado-texto: #cdb79f;
+
+  --color-error: #e05b4f;
+  --color-error-tinte: #2b1815;
+
+  --color-destructivo: #e06a5f;
+  --color-destructivo-tinte: #2b1815;
+
+  --color-brand-from: #d5d5d9;
+  --color-brand-via: #b9b2a6;
+  --color-brand-to: #f2f2f3;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Que los controles nativos (scrollbars, date pickers, autofill) sigan el
+     tema. El tema efectivo lo fija `data-theme` o `prefers-color-scheme`. */
+  color-scheme: light dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 /* ── Barra de navegación inferior (solo celular) ───────────────────────────
    Un único lugar define su alto: lo usan `BarraNavegacionMovil` y
@@ -134,10 +233,10 @@ body {
 }
 
 /* ── Tipografía ───────────────────────────────────────────────────────────
-   Dos roles, y la distinción es SEMÁNTICA (§1):
-     · Sans (Geist) — todo lo declarado, la interfaz, el precio.
+   Dos roles, distinción SEMÁNTICA (§1):
+     · Sans (Geist) — lo declarado, la interfaz, el precio.
      · Mono (Geist Mono) — la placa y los datos de un registro oficial.
-   Escala: precio 26px/700 · título 15px/600 · cuerpo 12–14px/400 · placa
+   Escala: precio 26px/500 · título 15px/500 · cuerpo 12–14px/400 · placa
    11px con letter-spacing amplio · stats/labels en mono 10–11px. */
 
 /* La placa va en mono y en `--marca` porque es dato del registro oficial. */
@@ -149,45 +248,51 @@ body {
   color: var(--color-marca);
 }
 
-/* Texto con gradiente de marca: identidad, exclusivamente el logo. */
+/* El wordmark "CarStore Ec" es texto plano (el gradiente se retiró). Se
+   conservan las clases por si algún componente las referencia. */
 .text-brand-gradient {
-  background-image: linear-gradient(
-    90deg,
-    var(--color-brand-from),
-    var(--color-brand-via),
-    var(--color-brand-to)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-tinta);
 }
-
 .bg-brand-gradient {
-  background-image: linear-gradient(
-    100deg,
-    var(--color-brand-from),
-    var(--color-brand-via),
-    var(--color-brand-to)
+  background-color: var(--color-accion);
+}
+
+/* Glow del hero: una luz neutra de grafito, muy sutil, que se disuelve en el
+   lienzo. En oscuro sube un pelo la opacidad para que se note sobre negro. */
+.hero-glow {
+  background: radial-gradient(
+    55% 55% at 50% 0%,
+    color-mix(in oklab, var(--color-tinta) 6%, transparent) 0%,
+    transparent 70%
+  );
+}
+:root[data-theme="dark"] .hero-glow,
+:root:not([data-theme="light"]) .hero-glow {
+  background: radial-gradient(
+    55% 55% at 50% 0%,
+    color-mix(in oklab, var(--color-tinta) 11%, transparent) 0%,
+    transparent 70%
   );
 }
 
-/* Glow del hero: una luz plana de marca (teal), sutil. */
-.hero-glow {
-  background: radial-gradient(55% 55% at 50% 0%, rgba(13, 148, 136, 0.09) 0%, rgba(251, 251, 252, 0) 70%);
-}
-
-/* Anillo de foco accesible, en `--marca` (rgb 47 63 199). */
+/* Anillo de foco accesible, en `--marca` (gris templado) vía color-mix. */
 .focus-glow:focus {
   outline: none;
   box-shadow:
-    0 0 0 3px rgba(47, 63, 199, 0.22),
-    0 0 0 1px rgba(47, 63, 199, 0.6);
+    0 0 0 3px color-mix(in oklab, var(--color-marca) 30%, transparent),
+    0 0 0 1px var(--color-marca);
 }
 
-/* Sombra de tarjeta: nítida y fría (Dirección C). Menos difusa que la
-   anterior — el look "app limpia" separa por sombra corta, no por halo. */
+/* Sombra de tarjeta: corta y neutra. En oscuro una sombra casi no se ve, así
+   que se refuerza con un halo negro un poco más presente. */
 .sombra-tarjeta {
-  box-shadow: 0 1px 2px rgba(23, 24, 28, 0.06), 0 6px 16px -8px rgba(23, 24, 28, 0.14);
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-tinta) 6%, transparent),
+    0 6px 16px -8px color-mix(in oklab, var(--color-tinta) 14%, transparent);
+}
+:root[data-theme="dark"] .sombra-tarjeta,
+:root:not([data-theme="light"]) .sombra-tarjeta {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 20px -10px rgba(0, 0, 0, 0.55);
 }
 
 /* Aparición suave */
@@ -196,3 +301,8 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-up { animation: fade-in-up 0.4s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-fade-in-up { animation: none; }
+}

@@ -172,7 +172,7 @@ export function ListingInternaCard({
   }
   if (premium) {
     chips.push(
-      <span key="premium" className={`${chipBase} bg-marca font-black text-white`}>
+      <span key="premium" className={`${chipBase} bg-marca font-black text-superficie`}>
         ★ Premium
       </span>
     );
@@ -273,11 +273,13 @@ export function ListingReferenciadaCard({
             control={favoritos}
           />
         )}
-        {/* Cuántas fotos trae, para que se note que hay más al abrir el anuncio. */}
+        {/* Cuántas fotos trae, para que se note que hay más al abrir el anuncio.
+            Va sobre la FOTO (no sobre una superficie del tema), así que el negro
+            translúcido + texto blanco es correcto en claro y en oscuro; NO usar
+            `bg-tinta/*` acá porque `--tinta` invierte y en oscuro dejaría un chip
+            casi blanco con texto blanco encima de la imagen. */}
         {(pub.fotos?.length ?? 0) > 1 && (
-          // `bg-tinta/70` en vez de `bg-black/60`: el negro puro es el único gris que el
-          // sistema no tiene: todos los neutros son cálidos.
-          <span className="absolute bottom-2 right-2 rounded-full bg-tinta/70 px-2 py-0.5 text-[11px] font-semibold text-white">
+          <span className="absolute bottom-2 right-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
             📷 {pub.fotos!.length}
           </span>
         )}

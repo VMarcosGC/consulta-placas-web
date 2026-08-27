@@ -513,7 +513,7 @@ function ContenidoMarketplace() {
               type="submit"
               /* Píldora oscura, no `--accion`: buscar es navegación, no conversión —
                  misma familia que "Cargar más autos" (§2). */
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-oscuro px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-oscuro px-4 py-2 text-sm font-semibold text-superficie shadow-sm transition hover:bg-oscuro-suave"
             >
               Buscar
             </button>
@@ -539,7 +539,7 @@ function ContenidoMarketplace() {
                 // sólido"; el botón "Filtros" de acá al lado marca su estado activo igual.
                 className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
                   activa
-                    ? "bg-oscuro text-white"
+                    ? "bg-oscuro text-superficie"
                     : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
                 }`}
               >
@@ -553,16 +553,17 @@ function ContenidoMarketplace() {
             onClick={() => setPanelAbierto((v) => !v)}
             className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
               nAvanzados > 0
-                ? "border-oscuro bg-oscuro text-white"
+                ? "border-oscuro bg-oscuro text-superficie"
                 : "border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
             }`}
           >
             Filtros
             {nAvanzados > 0 && (
-              // Contador de filtros activos: metadato, no acción. Va SOBRE la píldora oscura
-              // del botón activo, así que blanco sólido con el número en oscuro: se lee como
-              // badge de notificación y no gasta `--accion` (§2).
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-[11px] font-black text-oscuro">
+              // Contador de filtros activos: metadato, no acción. Va SOBRE la píldora
+              // `--oscuro` (que INVIERTE con el tema), así que el badge usa el polo
+              // opuesto —`--superficie` de fondo, `--tinta` de número—: contrasta con la
+              // píldora en claro y en oscuro sin gastar `--accion` (§2).
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-superficie text-[11px] font-black text-tinta">
                 {nAvanzados}
               </span>
             )}
@@ -782,7 +783,7 @@ function ContenidoMarketplace() {
                     disabled={cargandoMas}
                     // Píldora OSCURA, no `--accion`: "cargar más" es navegación, no
                     // conversión. El esmeralda queda reservado para publicar/contactar (§2).
-                    className="rounded-full bg-oscuro px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-full bg-oscuro px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:bg-oscuro-suave disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {cargandoMas ? "Cargando…" : "Cargar más autos"}
                   </button>

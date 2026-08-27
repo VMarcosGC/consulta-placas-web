@@ -28,6 +28,14 @@ export const metadata: Metadata = {
   ],
 };
 
+// Se aplica el tema ANTES de pintar para no ver un flash del tema equivocado.
+// Lee `localStorage.tema` ("light"/"dark"); si no hay elección, no toca nada y
+// manda `prefers-color-scheme` (los tres estados del sistema de diseño). Envuelto
+// en try/catch: en navegación privada o con storage bloqueado, `localStorage`
+// puede lanzar. `data-theme` en <html> lo consumen los bloques `:root[data-theme=…]`
+// de globals.css.
+const SCRIPT_TEMA = `(function(){try{var t=localStorage.getItem('tema');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,8 +44,12 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      {/* No-flash del tema: corre antes de pintar el body. En App Router un
+          <script> como hijo directo de <html> se iza al <head>. */}
+      <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
       {/* `espacio-barra-movil` reserva abajo el alto de la barra de navegación de
           celular (fixed). Va en el body y no en el <main> porque el Footer queda
           debajo del main y también se taparía. Desde `md` no reserva nada. */}

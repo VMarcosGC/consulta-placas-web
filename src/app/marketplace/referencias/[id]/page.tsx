@@ -174,7 +174,7 @@ export default function ReferenciaDetallePage() {
           </p>
           <Link
             href="/marketplace"
-            className="mt-4 inline-flex rounded-full bg-oscuro px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-oscuro-suave"
+            className="mt-4 inline-flex rounded-full bg-oscuro px-5 py-2.5 text-sm font-semibold text-superficie transition hover:bg-oscuro-suave"
           >
             Ver otras publicaciones
           </Link>

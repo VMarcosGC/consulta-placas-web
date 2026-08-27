@@ -466,7 +466,7 @@ export default function PublicacionDetallePage() {
           <p className="mt-1 text-secundario">Puede que ya no esté disponible o se haya pausado.</p>
           <Link
             href="/marketplace"
-            className="mt-4 inline-flex rounded-full bg-oscuro px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-oscuro-suave"
+            className="mt-4 inline-flex rounded-full bg-oscuro px-5 py-2.5 text-sm font-semibold text-superficie transition hover:bg-oscuro-suave"
           >
             Ver otras publicaciones
           </Link>
@@ -555,7 +555,7 @@ export default function PublicacionDetallePage() {
               {!esMia && (
                 <a
                   href="#contacto-vendedor"
-                  className="rounded-full bg-oscuro px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave"
+                  className="rounded-full bg-oscuro px-6 py-3 text-center text-sm font-semibold text-superficie shadow-sm transition hover:bg-oscuro-suave"
                 >
                   Contactar al vendedor
                 </a>

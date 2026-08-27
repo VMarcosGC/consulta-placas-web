@@ -257,12 +257,13 @@ export function MenuCuenta({
       >
         <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full bg-marca text-[11px] font-black text-superficie">
           {inicial}
-          {/* Punto ámbar = "todavía no pueden escribirte". El texto va en el aria-label
-              del botón; acá es decoración. */}
+          {/* Punto = "todavía no pueden escribirte". El texto va en el aria-label
+              del botón; acá es decoración. El filete usa `--superficie` (no `white`)
+              para separarse del avatar igual en tema claro y oscuro. */}
           {faltaContacto && (
             <span
               aria-hidden
-              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-secundario"
+              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-superficie bg-secundario"
             />
           )}
         </span>
