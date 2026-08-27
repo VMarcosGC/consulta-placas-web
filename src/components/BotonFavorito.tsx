@@ -35,10 +35,17 @@ export function BotonFavorito({
         e.stopPropagation();
         control.alternar(placa, precioActual);
       }}
-      className={`absolute right-2 top-2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-lg leading-none shadow-sm ring-1 backdrop-blur transition disabled:opacity-60 ${
+      // Círculo flotante sobre la foto. Antes se leía como un cuadrado blanco hasta
+      // que el `backdrop-blur` componía: el borde `--borde` (1.1:1 sobre foto clara)
+      // no dibujaba la silueta. Ahora el anillo es `--borde-fuerte` (3:1, WCAG
+      // 1.4.11) y la sombra `md`, así que es un círculo nítido desde el primer
+      // frame, con o sin blur. 40px = área táctil mínima. El corazón lleno va en
+      // `--marca` (no `--error`: DISENO reserva el rojo para fallos de la interfaz;
+      // marca es el token de "activo/seleccionado", igual que los chips de filtro).
+      className={`absolute right-2 top-2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full text-lg leading-none shadow-md ring-1 backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:opacity-60 ${
         guardado
-          ? "bg-error text-superficie ring-error"
-          : "bg-superficie/90 text-secundario ring-borde hover:text-error"
+          ? "bg-marca text-superficie ring-marca"
+          : "bg-superficie/90 text-secundario ring-borde-fuerte hover:text-marca"
       }`}
     >
       <span aria-hidden>{guardado ? "♥" : "♡"}</span>

@@ -31,7 +31,6 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Insignia } from "@/components/BentoCard";
 import { BotonFavorito } from "@/components/BotonFavorito";
 import { fichaIncompleta } from "@/lib/ficha";
 import type { ControlFavoritos } from "@/lib/favoritos";
@@ -130,6 +129,42 @@ export function ListingInternaCard({
   const premium = pub.plan === "premium";
   const titulo = tituloVehiculo(pub);
 
+  // §4: la tarjeta lleva "una fila de chips y nada más". Se arma la lista en orden de
+  // prioridad —Verificado > Premium > Ficha— y se corta en DOS: nunca envuelve. Si la
+  // publicación es verificada Y premium van esos dos y se omite la ficha (el % ya se ve
+  // en el detalle). Chips compactos a 11px: en el caso vivo (Premium + Ficha) entran los
+  // dos en una línea a 166px; `flex-nowrap` + `overflow-hidden` es la última red.
+  const chipBase =
+    "inline-flex shrink-0 items-center rounded-full px-1.5 py-1 text-[11px] font-semibold leading-tight";
+  const chips: ReactNode[] = [];
+  if (pub.verificado) {
+    chips.push(
+      <span key="verificado" className={`${chipBase} bg-confirmado-tinte text-confirmado-texto`}>
+        ✓ Verificado
+      </span>
+    );
+  }
+  if (premium) {
+    chips.push(
+      <span key="premium" className={`${chipBase} bg-marca font-black text-white`}>
+        ★ Premium
+      </span>
+    );
+  }
+  if (chips.length < 2) {
+    chips.push(
+      fichaIncompleta(pub.completitud_ficha) ? (
+        <span key="ficha" className={`${chipBase} bg-superficie-tenue text-secundario`}>
+          Ficha incompleta
+        </span>
+      ) : (
+        <span key="ficha" className={`${chipBase} bg-marca-tinte text-marca-texto`}>
+          Ficha {pub.completitud_ficha ?? 0}%
+        </span>
+      )
+    );
+  }
+
   return (
     <Link
       href={`/marketplace/${pub.id}`}
@@ -148,7 +183,7 @@ export function ListingInternaCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
         {/* PRECIO — "¿me alcanza?". 26px/500 (§3). El peso baja de `font-black` a
             `font-medium`: a 26px el tamaño ya establece la jerarquía, y la negrita
             extra solo sumaba ruido. */}
@@ -169,25 +204,12 @@ export function ListingInternaCard({
           <p className="mt-1 texto-placa">{pub.placa}</p>
         </div>
 
-        {/* CHIPS — metadato, al final. Una fila y nada más. */}
-        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
-          {/* Premium en `--marca` PLANO (TASK-017). Antes llevaba el gradiente de
-              marca, que era uno de sus dos lugares permitidos; ahora el gradiente
-              vive SOLO en el logo. Motivo: el chip es METADATO de la publicación y
-              mientras cargara la identidad del producto no se podía responder si ese
-              gradiente decía "marca" o decía "estado". Plano además rinde mejor en
-              Android de gama baja, que es el argumento de §6. */}
-          {premium && (
-            <span className="inline-flex items-center rounded-full bg-marca px-2 py-0.5 text-[11px] font-black text-white">
-              ★ Premium
-            </span>
-          )}
-          {pub.verificado && <Insignia tono="ok">✓ Verificado</Insignia>}
-          {fichaIncompleta(pub.completitud_ficha) ? (
-            <Insignia tono="neutro">Ficha incompleta</Insignia>
-          ) : (
-            <Insignia tono="info">Ficha {pub.completitud_ficha ?? 0}%</Insignia>
-          )}
+        {/* CHIPS — metadato, al final (§4: una fila y NADA más). Como máximo dos,
+            en orden de prioridad, sin envolver. El chip Premium sigue en `--marca`
+            PLANO (TASK-017): el gradiente vive solo en el logo. La lista se arma
+            arriba en `chips`. */}
+        <div className="mt-auto flex flex-nowrap items-center gap-1 overflow-hidden pt-1">
+          {chips}
         </div>
       </div>
     </Link>
@@ -234,7 +256,7 @@ export function ListingReferenciadaCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
         {/* Misma jerarquía §4 que la interna: PRECIO → título → ciudad·km → placa. */}
         <p className="text-[26px] font-medium leading-none text-tinta">
           {precioFmt(pub.precio_usd)}
@@ -247,27 +269,40 @@ export function ListingReferenciadaCard({
           {pub.placa && <p className="mt-1 texto-placa">{pub.placa}</p>}
         </div>
 
-        {/* Descripción copiada del anuncio original (M2.8): 2 líneas, para que la tarjeta
-            informe sin estirarse. Sigue siendo dato no verificado. */}
+        {/* Descripción copiada del anuncio original (M2.8): UNA línea. El detalle
+            completo está al abrir la tarjeta; en el feed una segunda línea sólo
+            desnivelaba la grilla contra las publicaciones internas. */}
         {pub.descripcion && (
-          <p className="line-clamp-2 text-xs text-secundario">{pub.descripcion}</p>
+          <p className="line-clamp-1 text-xs text-secundario">{pub.descripcion}</p>
         )}
 
-        {/* Etiqueta obligatoria (M2.5), copy exacto: la referencia la aporta un usuario y
-            NO la raspamos ni la validamos. */}
-        <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
-          {/* Pasa de `alerta` (ámbar) a `declarado` (cálido). El copy es el mismo, exacto
-              y obligatorio (M2.5), pero el tono estaba diciendo otra cosa: esta etiqueta
-              no advierte de un problema del auto, describe DE DÓNDE VIENE el dato — lo
-              aporta un usuario y no lo raspamos ni lo validamos. Esa es justo la
-              distinción declarado/oficial de §1, que hasta ahora era invisible porque
-              ambos registros se pintaban igual. En ámbar se leía como "cuidado con este
-              auto". */}
-          <Insignia tono="declarado">Referencia externa · datos no verificados</Insignia>
-          {/* Sin "↗": este clic NO sale del sitio, abre el detalle local. */}
-          <span className="text-[11px] font-semibold text-secundario group-hover:text-marca">
-            Ver detalle · {pub.fuente}
-          </span>
+        {/* Zona inferior — a la misma altura que la fila de chips de la interna, para
+            que la grilla unificada de la portada no baile. DOS líneas de texto
+            pequeño, sin rellenos de chip:
+            1) Procedencia — copy EXACTO y obligatorio (M2.5). Antes era un chip
+               `declarado` que envolvía a dos líneas; ahora una sola línea, mismo
+               tono cálido `declarado` de §1 (NUNCA ámbar). El texto completo queda
+               en el DOM (lo leen los lectores de pantalla) y en `title`; sólo se
+               recorta en pantalla.
+            2) "Ver detalle · {fuente}" con flecha "→" (no "↗": el clic abre el
+               detalle LOCAL, no sale del sitio). La fuente se trunca si es larga. */}
+        <div className="mt-auto flex flex-col pt-1 text-[11px] leading-tight">
+          <p className="flex items-center gap-1 text-declarado-texto">
+            <span aria-hidden>ⓘ</span>
+            <span className="truncate" title="Referencia externa · datos no verificados">
+              Referencia externa · datos no verificados
+            </span>
+          </p>
+          <p className="flex items-center gap-1 font-semibold text-secundario group-hover:text-marca">
+            <span className="shrink-0">Ver detalle</span>
+            <span aria-hidden className="shrink-0 opacity-60">
+              ·
+            </span>
+            <span className="min-w-0 truncate">{pub.fuente}</span>
+            <span aria-hidden className="shrink-0">
+              →
+            </span>
+          </p>
         </div>
       </div>
     </Link>
