@@ -9,6 +9,7 @@
 // lenguaje agresivo.
 
 import Link from "next/link";
+import { DistribucionGeografica } from "@/components/DistribucionGeografica";
 
 export default function Home() {
   return (
@@ -17,6 +18,9 @@ export default function Home() {
     <div className="espacio-barra-movil">
       <HeroSection />
       <ResumenSection />
+      {/* "¿Dónde están los autos?" — conteo por provincia/región con enlace directo
+          al marketplace filtrado. No se renderiza si no hay stock ubicado. */}
+      <DistribucionGeografica />
     </div>
   );
 }

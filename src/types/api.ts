@@ -716,6 +716,32 @@ export interface FiltrosBusqueda {
   precio_max?: number;
   anio_min?: number;
   anio_max?: number;
+  // Ubicación del auto en venta, derivada de `ciudad` en el backend (geografia.py).
+  // Si van los dos, el backend los interseca. Valor fuera de catálogo → 422.
+  provincia?: string;
+  region?: string;
+}
+
+// ── Distribución geográfica (portada: "¿dónde están los autos?") ──────────────
+// Mirror de DistribucionGeograficaSalida (src/modules/marketplace/schemas.py).
+// Conteo de publicaciones activas por región y provincia. `total - con_ubicacion`
+// = publicaciones sin una ciudad reconocida (no se listan por provincia).
+
+export interface ProvinciaDistribucion {
+  provincia: string;
+  total: number;
+}
+
+export interface RegionDistribucion {
+  region: string;
+  total: number;
+  provincias: ProvinciaDistribucion[];
+}
+
+export interface DistribucionGeografica {
+  total: number;
+  con_ubicacion: number;
+  regiones: RegionDistribucion[];
 }
 
 // ── Vendedor y contacto comprador-vendedor (TASK-001 / M5) ───────────────────

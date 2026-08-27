@@ -40,6 +40,7 @@ import {
   montoOpcion,
   opcionesAnio,
 } from "@/lib/busqueda";
+import { PROVINCIAS } from "@/lib/geografia";
 import {
   BANDAS_PRECIO,
   enBanda,
@@ -460,6 +461,9 @@ function ContenidoMarketplace() {
     pills.push({ clave: "anio_min", texto: `Desde ${filtros.anio_min}` });
   if (filtros.anio_max != null)
     pills.push({ clave: "anio_max", texto: `Hasta ${filtros.anio_max}` });
+  if (filtros.region) pills.push({ clave: "region", texto: `Región: ${filtros.region}` });
+  if (filtros.provincia)
+    pills.push({ clave: "provincia", texto: filtros.provincia });
 
   function quitarPill(claveFiltro: keyof FiltrosBusqueda) {
     if (claveFiltro === "q") setTexto("");
@@ -665,6 +669,21 @@ function ContenidoMarketplace() {
                 ))}
               </Selector>
             </div>
+
+            {/* Ubicación. Al elegir provincia se limpia una región previa (el backend
+                interseca; para el comprador es más claro "una cosa a la vez"). */}
+            <Selector
+              etiqueta="Provincia"
+              valor={filtros.provincia ?? ""}
+              onChange={(v) => actualizarUrl({ provincia: v || null, region: null })}
+            >
+              <option value="">Todo el país</option>
+              {PROVINCIAS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </Selector>
 
             {busquedaActiva && (
               <div className="flex items-end sm:col-span-2 lg:col-span-3">

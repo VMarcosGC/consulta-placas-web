@@ -5,6 +5,7 @@ import {
   ApiError,
   CloudinaryError,
   ContactoVendedorSalida,
+  DistribucionGeografica,
   Favorito,
   FavoritoCrear,
   FeedMarketplace,
@@ -251,9 +252,16 @@ export function buscarPublicaciones(filtros: FiltrosBusqueda, cursor?: string) {
   poner("precio_max", filtros.precio_max);
   poner("anio_min", filtros.anio_min);
   poner("anio_max", filtros.anio_max);
+  poner("provincia", filtros.provincia);
+  poner("region", filtros.region);
   poner("cursor", cursor);
   const qs = params.toString();
   return fetchAPI<ResultadoBusqueda>(`/marketplace/buscar${qs ? `?${qs}` : ""}`);
+}
+
+// Distribución geográfica de publicaciones activas (portada). Pública, sin sesión.
+export function obtenerDistribucionGeografica() {
+  return fetchAPI<DistribucionGeografica>("/marketplace/distribucion");
 }
 
 // Publica un vehículo. El `plan` (light / premium) se acepta igual, pero publicar es

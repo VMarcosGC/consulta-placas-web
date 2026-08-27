@@ -34,6 +34,8 @@ const CLAVES_AVANZADAS = [
   "precio_max",
   "anio_min",
   "anio_max",
+  "provincia",
+  "region",
 ] as const;
 
 function leerNumero(sp: URLSearchParams, clave: string): number | undefined {
@@ -58,6 +60,11 @@ function leerEnum<T extends string>(
 // vez de romper.
 export function leerFiltros(sp: URLSearchParams): FiltrosBusqueda {
   const q = sp.get("q")?.trim();
+  // `provincia` / `region` van como texto: el catálogo válido lo tiene el backend
+  // (geografia.py) y un valor raro devuelve 422 con las opciones. Acá solo se recorta
+  // para no mandar un querystring gigante manipulado a mano.
+  const provincia = sp.get("provincia")?.trim();
+  const region = sp.get("region")?.trim();
   return {
     q: q ? q.slice(0, 80) : undefined, // el backend valida máx. 80; recortamos por las dudas
     tipo: leerEnum<TipoCarroceria>(sp, "tipo", TIPOS),
@@ -67,6 +74,8 @@ export function leerFiltros(sp: URLSearchParams): FiltrosBusqueda {
     precio_max: leerNumero(sp, "precio_max"),
     anio_min: leerNumero(sp, "anio_min"),
     anio_max: leerNumero(sp, "anio_max"),
+    provincia: provincia ? provincia.slice(0, 60) : undefined,
+    region: region ? region.slice(0, 20) : undefined,
   };
 }
 
@@ -94,6 +103,8 @@ export function claveFiltros(f: FiltrosBusqueda): string {
     f.precio_max ?? "",
     f.anio_min ?? "",
     f.anio_max ?? "",
+    f.provincia ?? "",
+    f.region ?? "",
   ].join("|");
 }
 
