@@ -16,11 +16,15 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Insignia } from "@/components/BentoCard";
 import { obtenerReferenciaDetalle } from "@/lib/api";
+import { precioNum } from "@/lib/precio";
 import { ApiError, PublicacionReferenciada } from "@/types/api";
 
-function precioFmt(v: number | null): string {
-  if (v == null) return "Consultar";
-  return `$${v.toLocaleString("es-EC", { maximumFractionDigits: 0 })}`;
+// `v` llega tipado `number` pero el backend lo manda como string decimal; se
+// normaliza con `precioNum` antes de formatear (ver src/lib/precio.ts).
+function precioFmt(v: number | string | null | undefined): string {
+  const n = precioNum(v);
+  if (n == null) return "Consultar";
+  return `$${n.toLocaleString("es-EC", { maximumFractionDigits: 0 })}`;
 }
 
 function tituloVehiculo(p: PublicacionReferenciada): string {

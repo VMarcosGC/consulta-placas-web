@@ -2,6 +2,7 @@
 // No transforman datos del backend: solo indexan la lista que ya vino y calculan la
 // diferencia de precio que pinta el badge. El estado vive en src/hooks/usarFavoritos.ts.
 
+import { precioNum } from "@/lib/precio";
 import type { Favorito } from "@/types/api";
 
 // Contrato que una tarjeta necesita para pintar y operar su ♡. Se pasa como una sola
@@ -24,17 +25,16 @@ export function indexarPorPlaca(favoritos: Favorito[]): Map<string, Favorito> {
 // Cuánto bajó el precio desde que el usuario lo guardó, o null si no aplica.
 // Reglas: sin precio guardado o sin precio actual → null (badge silencioso). Una SUBIDA
 // nunca se anuncia (no es una buena noticia para el comprador y ensucia la lista).
-// `precio_al_guardar` llega del backend como Numeric; se normaliza con Number por si
-// el serializador lo entrega como texto.
+// Tanto `precio_al_guardar` como el precio actual llegan del backend como string
+// decimal; se normalizan en el borde con `precioNum` (ver src/lib/precio.ts).
 export function bajaDePrecio(
   favorito: Favorito | undefined,
-  precioActual: number | null | undefined
+  precioActual: number | string | null | undefined
 ): number | null {
-  if (!favorito || favorito.precio_al_guardar == null) return null;
-  if (precioActual == null) return null;
-  const guardado = Number(favorito.precio_al_guardar);
-  const actual = Number(precioActual);
-  if (!Number.isFinite(guardado) || !Number.isFinite(actual)) return null;
+  if (!favorito) return null;
+  const guardado = precioNum(favorito.precio_al_guardar);
+  const actual = precioNum(precioActual);
+  if (guardado == null || actual == null) return null;
   const diferencia = guardado - actual;
   return diferencia > 0 ? diferencia : null;
 }

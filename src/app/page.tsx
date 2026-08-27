@@ -9,7 +9,9 @@ import { DestacadosMarket } from "@/components/DestacadosMarket";
 
 export default function Home() {
   return (
-    <div>
+    // `espacio-barra-movil`: reserva abajo el alto de la barra de navegación de celular
+    // (fixed) para que el último bloque no quede tapado. 0 desde `md`.
+    <div className="espacio-barra-movil">
       <HeroSection />
       <DestacadosMarket />
       <ValoresSection />
@@ -28,21 +30,28 @@ function HeroSection() {
     <section className="relative overflow-hidden">
       {/* Glow de fondo claro */}
       <div aria-hidden className="hero-glow pointer-events-none absolute inset-0 -z-10" />
-      <div className="mx-auto max-w-4xl px-6 pt-20 pb-16 text-center sm:pt-28">
+      {/* Padding vertical más bajo en móvil: antes el hero ocupaba todo el primer
+          scroll y no asomaba nada del feed de "Autos en venta". Desktop casi igual. */}
+      <div className="mx-auto max-w-4xl px-6 pt-10 pb-10 text-center sm:pt-24 sm:pb-16">
         <span className="inline-flex items-center gap-2 rounded-full border border-borde bg-superficie px-3 py-1 text-xs font-medium text-secundario shadow-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-confirmado animate-pulse" />
           Ficha técnica declarada + datos oficiales de la placa
         </span>
-        <h1 className="mt-6 text-5xl sm:text-7xl font-black tracking-tight leading-[1.05] text-tinta">
+        <h1 className="mt-5 text-4xl sm:mt-6 sm:text-7xl font-black tracking-tight leading-[1.05] text-tinta">
           Compra y vende autos<br />
           con <span className="text-marca">transparencia</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-secundario">
+        {/* Subtítulo corto en móvil (2-3 líneas); el texto completo queda para desktop. */}
+        <p className="mx-auto mt-5 max-w-2xl text-lg text-secundario sm:hidden">
+          Cada anuncio junta la ficha del vendedor con los datos oficiales de la placa. Así
+          sabes qué estás viendo antes de ir a verlo.
+        </p>
+        <p className="mx-auto mt-6 hidden max-w-2xl text-lg text-secundario sm:block">
           Cada anuncio muestra la ficha técnica que declara el vendedor y, junto a ella, los
           datos oficiales de la placa: matrícula e infracciones. Así sabes qué estás viendo
           antes de ir a verlo.
         </p>
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row">
           <Link
             href="/marketplace"
             className="w-full rounded-full bg-accion px-8 py-3.5 text-center text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 sm:w-auto"

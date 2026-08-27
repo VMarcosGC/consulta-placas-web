@@ -35,6 +35,7 @@ import { Insignia } from "@/components/BentoCard";
 import { BotonFavorito } from "@/components/BotonFavorito";
 import { fichaIncompleta } from "@/lib/ficha";
 import type { ControlFavoritos } from "@/lib/favoritos";
+import { precioNum } from "@/lib/precio";
 import type { PublicacionInterna, PublicacionReferenciada } from "@/types/api";
 
 // Extras opcionales del carril comprador (MC1). Son opcionales a propósito: donde la
@@ -45,9 +46,12 @@ interface ExtrasComprador {
   distintivo?: ReactNode;
 }
 
-function precioFmt(v: number | null): string {
-  if (v == null) return "Consultar";
-  return `$${v.toLocaleString("es-EC", { maximumFractionDigits: 0 })}`;
+// `v` llega tipado `number` pero el backend lo manda como string decimal; se
+// normaliza con `precioNum` antes de formatear (ver src/lib/precio.ts).
+function precioFmt(v: number | string | null | undefined): string {
+  const n = precioNum(v);
+  if (n == null) return "Consultar";
+  return `$${n.toLocaleString("es-EC", { maximumFractionDigits: 0 })}`;
 }
 
 function tituloVehiculo(

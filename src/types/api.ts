@@ -191,6 +191,8 @@ export interface Favorito {
   // Precio del anuncio en el momento de guardarlo (Numeric en el backend). Es lo que
   // habilita el badge de baja de precio: se compara contra el precio actual del feed.
   // null = se guardó sin referencia de precio → sin badge, silencioso.
+  // OJO: el backend lo serializa como string decimal; se normaliza con `precioNum()`
+  // en el borde (src/lib/precio.ts), igual que `PublicacionInterna.precio_usd`.
   precio_al_guardar: number | null;
   creado_en: string;
 }
@@ -417,6 +419,8 @@ export interface PublicacionInterna {
   // último service (derivado del garage, solo premium); este es lo que el vendedor
   // declara hoy, en cualquier plan.
   kilometraje?: number | null;
+  // El backend lo serializa como string decimal ("22000.00"); se tipa `number` para
+  // calzar con el contrato y se normaliza con `precioNum()` en el borde (src/lib/precio.ts).
   precio_usd: number;
   plan: PlanPublicacion;
   estado: EstadoPublicacion;
@@ -443,6 +447,8 @@ export interface PublicacionReferenciada {
   marca: string | null;
   modelo: string | null;
   anio: number | null;
+  // Igual que en `PublicacionInterna`: el backend lo manda como string decimal (o null),
+  // se normaliza con `precioNum()` en el borde (src/lib/precio.ts).
   precio_usd: number | null;
   fuente: string;
   url_externa: string;

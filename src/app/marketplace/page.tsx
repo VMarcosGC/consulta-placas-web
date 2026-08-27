@@ -49,9 +49,30 @@ import {
   type Banda,
 } from "@/lib/marketplace";
 import { ApiError } from "@/types/api";
-import type { FeedMarketplace, FiltrosBusqueda, ItemBusqueda } from "@/types/api";
+import type {
+  FeedMarketplace,
+  FiltrosBusqueda,
+  ItemBusqueda,
+  PublicacionInterna,
+  PublicacionReferenciada,
+} from "@/types/api";
 
 const FEED_VACIO: FeedMarketplace = { premium: [], estandar: [], referenciadas: [] };
+
+// Con poco stock la portada curada (7 bloques de MC1) se ve rota: "★ Destacados" cae a
+// una sola tarjeta y quedan cientos de píxeles vacíos. Bajo este umbral se muestra UNA
+// sola grilla con todo el stock; a partir de él vuelven los bloques curados tal cual.
+const UMBRAL_PORTADA_CURADA = 8;
+
+// El carrusel "★ Destacados" solo tiene sentido como carrusel con 2+ premium. Con 0-1,
+// esa única publicación premium ya aparece en la grilla (curada o unificada).
+const MIN_PREMIUM_CARRUSEL = 2;
+
+// Entrada de la grilla unificada: interna o referenciada, con su discriminador para
+// elegir la tarjeta (mismo criterio que la grilla de búsqueda).
+type EntradaStock =
+  | { tipo: "interna"; pub: PublicacionInterna }
+  | { tipo: "referenciada"; pub: PublicacionReferenciada };
 
 // Cuántos chips de marca se muestran: más que esto y el bloque deja de ser navegable
 // de un vistazo en un celular.
@@ -338,15 +359,66 @@ function ContenidoMarketplace() {
   const transparentes = useMemo(() => internas.filter(esTransparente), [internas]);
   const recientes = useMemo(() => porMasReciente(internas), [internas]);
 
+  // Stock total y modo de portada. Bajo el umbral se muestra una sola grilla con todo
+  // (internas + referenciadas), no los 7 bloques curados de MC1.
+  const totalStock = internas.length + referenciadas.length;
+  const portadaCurada = totalStock >= UMBRAL_PORTADA_CURADA;
+
+  // Grilla unificada (solo en modo poco stock): internas + referenciadas en una lista,
+  // de lo más reciente a lo más antiguo. Las premium se distinguen solas por su `ring-2`.
+  const stockUnificado = useMemo<EntradaStock[]>(() => {
+    const entradas: EntradaStock[] = [
+      ...internas.map((pub) => ({ tipo: "interna" as const, pub })),
+      ...referenciadas.map((pub) => ({ tipo: "referenciada" as const, pub })),
+    ];
+    return entradas.sort(
+      (a, b) => new Date(b.pub.creado_en).getTime() - new Date(a.pub.creado_en).getTime()
+    );
+  }, [internas, referenciadas]);
+
   // El badge "↓ Bajó $X" sigue al auto guardado por toda la portada (destacados, recientes,
   // resultados de búsqueda), no solo en "Tus favoritos". `distintivo` es prop de ListingCard.
-  function distintivoBaja(placa: string | null | undefined, precioActual: number | null) {
+  // `precioActual` llega tipado `number` pero el backend lo manda como string decimal;
+  // `bajaDePrecio` lo normaliza (ver src/lib/precio.ts).
+  function distintivoBaja(
+    placa: string | null | undefined,
+    precioActual: number | string | null | undefined
+  ) {
     const baja = bajaDePrecio(mapa.get((placa ?? "").toUpperCase()), precioActual);
     return baja != null ? <BadgeBaja monto={baja} /> : null;
   }
 
   const feedVacio =
     !cargandoFeed && internas.length === 0 && referenciadas.length === 0 && !errorFeed;
+
+  // Accesos del vendedor. El comprador entra a ver autos, no a gestionar los suyos:
+  // esta fila va DESPUÉS de la primera grilla, nunca antes. Publicar también vive en el
+  // Header y en la barra de navegación de celular.
+  const accionesVendedor = (
+    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-borde bg-superficie-tenue/70 p-4">
+      <p className="mr-1 w-full text-sm font-semibold text-tinta sm:w-auto">
+        ¿Vendes tu auto?
+      </p>
+      <Link
+        href="/marketplace/publicar"
+        className="inline-flex items-center justify-center rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
+      >
+        + Publicar mi auto
+      </Link>
+      <Link
+        href="/marketplace/mis-publicaciones"
+        className="inline-flex items-center justify-center rounded-full border border-borde-fuerte bg-superficie px-4 py-2.5 text-sm font-semibold text-secundario shadow-sm hover:bg-superficie-tenue"
+      >
+        Mis publicaciones
+      </Link>
+      <Link
+        href="/marketplace/mis-referencias"
+        className="inline-flex items-center justify-center rounded-full px-3 py-2.5 text-sm font-semibold text-secundario hover:text-tinta"
+      >
+        Mis referencias
+      </Link>
+    </div>
+  );
 
   // ── Estado de la grilla de búsqueda ─────────────────────────────────────────
   const resultadosListos = busqueda.clave === clave;
@@ -378,6 +450,9 @@ function ContenidoMarketplace() {
   const aniosAnio = opcionesAnio();
 
   return (
+    // `espacio-barra-movil`: reserva abajo el alto de la barra de navegación de celular
+    // (fixed) para que la última tarjeta / el CTA no queden tapados. 0 desde `md`.
+    <div className="espacio-barra-movil">
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <header className="mb-6">
         <h1 className="text-2xl font-black text-tinta sm:text-3xl">
@@ -393,7 +468,7 @@ function ContenidoMarketplace() {
       <div className="mb-8">
         <form onSubmit={enviarTexto}>
           <label htmlFor="buscador-autos" className="sr-only">
-            ¿Qué auto buscas?
+            ¿Qué auto buscas? Marca, modelo o placa
           </label>
           <div className="relative">
             <span
@@ -407,7 +482,7 @@ function ContenidoMarketplace() {
               type="search"
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
-              placeholder="¿Qué auto buscas? Marca, modelo o placa"
+              placeholder="¿Qué auto buscas?"
               className="w-full rounded-2xl border border-borde-fuerte bg-superficie py-4 pl-12 pr-28 text-base text-tinta shadow-sm outline-none placeholder:text-secundario focus:border-marca focus:ring-2 focus:ring-marca/25"
             />
             <button
@@ -578,27 +653,8 @@ function ContenidoMarketplace() {
         )}
       </div>
 
-      {/* Entradas del vendedor: publicar y referenciar. No se pierden en el rediseño. */}
-      <div className="mb-8 flex flex-wrap items-center gap-2">
-        <Link
-          href="/marketplace/publicar"
-          className="inline-flex items-center justify-center rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
-        >
-          + Publicar mi auto
-        </Link>
-        <Link
-          href="/marketplace/mis-publicaciones"
-          className="inline-flex items-center justify-center rounded-full border border-borde-fuerte bg-superficie px-4 py-2.5 text-sm font-semibold text-secundario shadow-sm hover:bg-superficie-tenue"
-        >
-          Mis publicaciones
-        </Link>
-        <Link
-          href="/marketplace/mis-referencias"
-          className="inline-flex items-center justify-center rounded-full px-3 py-2.5 text-sm font-semibold text-secundario hover:text-tinta"
-        >
-          Mis referencias
-        </Link>
-      </div>
+      {/* Los accesos del vendedor (`accionesVendedor`) ya NO van aquí arriba: se
+          renderizan después de la primera grilla de autos (punto C). */}
 
       {errorFeed && !busquedaActiva && (
         <p className="rounded-xl border border-error bg-error-tinte p-4 text-error">
@@ -708,27 +764,29 @@ function ContenidoMarketplace() {
         </section>
       )}
 
-      {/* ── Bloques curados (solo sin búsqueda activa) ──────────────────────── */}
+      {/* ── Portada del comprador (solo sin búsqueda activa) ────────────────── */}
       {!busquedaActiva && (
         <>
           {cargandoFeed && <p className="text-secundario">Cargando publicaciones…</p>}
 
           {feedVacio && (
-            <div className="rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
-              <p className="text-lg font-semibold text-secundario">
-                Todavía no hay publicaciones.
+            <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
+              <p className="text-lg font-semibold text-tinta">
+                Todavía no hay autos publicados
               </p>
-              <p className="mt-1 text-secundario">Sé el primero en publicar tu vehículo.</p>
+              <p className="mx-auto mt-1 max-w-md text-secundario">
+                Sé el primero en publicar tu auto. Es gratis y aparece al instante.
+              </p>
               <Link
                 href="/marketplace/publicar"
-                className="mt-4 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
+                className="mt-4 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
               >
-                Publicar ahora
+                Publicar mi auto
               </Link>
             </div>
           )}
 
-          {/* 2. Tus favoritos — retención pasiva, va arriba de todo. */}
+          {/* Tus favoritos — retención pasiva, va arriba de todo EN AMBOS MODOS. */}
           {haySesion &&
             favoritosInternos.length + favoritosReferenciados.length > 0 && (
               <Bloque
@@ -756,118 +814,168 @@ function ContenidoMarketplace() {
               </Bloque>
             )}
 
-          {/* 3. Destacados premium — carrusel horizontal con scroll-snap (sin librerías). */}
-          {feed.premium.length > 0 && (
-            <Bloque
-              titulo="★ Destacados"
-              descripcion="Publicaciones premium, con historial documentado."
-            >
-              <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-                {feed.premium.map((p) => (
-                  <div key={p.id} className="w-56 shrink-0 snap-start sm:w-64">
-                    <ListingInternaCard
-                      pub={p}
-                      favoritos={control}
-                      distintivo={distintivoBaja(p.placa, p.precio_usd)}
-                    />
+          {/* ── MODO POCO STOCK (< UMBRAL): una sola grilla con TODO el stock ──
+              Internas + referenciadas juntas, de lo más reciente a lo más antiguo.
+              Las premium se distinguen solas por su `ring-2`. Sin bloques curados:
+              con este volumen "★ Destacados" sería una tarjeta y ~400px de vacío. */}
+          {!portadaCurada && totalStock > 0 && (
+            <>
+              <Bloque
+                titulo={
+                  totalStock === 1 ? "1 auto en venta" : `${totalStock} autos en venta`
+                }
+                descripcion="Todo lo publicado ahora mismo, de lo más reciente a lo más antiguo."
+              >
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  {stockUnificado.map((e) =>
+                    e.tipo === "interna" ? (
+                      <ListingInternaCard
+                        key={`i-${e.pub.id}`}
+                        pub={e.pub}
+                        favoritos={control}
+                        distintivo={distintivoBaja(e.pub.placa, e.pub.precio_usd)}
+                      />
+                    ) : (
+                      <ListingReferenciadaCard
+                        key={`r-${e.pub.id}`}
+                        pub={e.pub}
+                        favoritos={control}
+                        distintivo={distintivoBaja(e.pub.placa, e.pub.precio_usd)}
+                      />
+                    )
+                  )}
+                </div>
+              </Bloque>
+
+              {/* Accesos del vendedor: después de la primera (y única) grilla. */}
+              {accionesVendedor}
+            </>
+          )}
+
+          {/* ── MODO PORTADA CURADA (>= UMBRAL): los bloques MC1 tal cual ────── */}
+          {portadaCurada && (
+            <>
+              {/* Destacados premium — carrusel horizontal (sin librerías). Solo tiene
+                  sentido como carrusel con 2+ premium; con 0-1 esa publicación ya cae
+                  en "Verificados" / "Recién publicados". */}
+              {feed.premium.length >= MIN_PREMIUM_CARRUSEL && (
+                <Bloque
+                  titulo="★ Destacados"
+                  descripcion="Publicaciones premium, con historial documentado."
+                >
+                  <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+                    {feed.premium.map((p) => (
+                      <div key={p.id} className="w-56 shrink-0 snap-start sm:w-64">
+                        <ListingInternaCard
+                          pub={p}
+                          favoritos={control}
+                          distintivo={distintivoBaja(p.placa, p.precio_usd)}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </Bloque>
-          )}
+                </Bloque>
+              )}
 
-          {/* 4. Verificados y transparentes — nuestro diferenciador. */}
-          {transparentes.length > 0 && (
-            <Bloque
-              titulo="✓ Verificados y transparentes"
-              descripcion="Con sello de la plataforma o con la ficha técnica casi completa."
-            >
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {transparentes.slice(0, MAX_POR_BLOQUE).map((p) => (
-                  <ListingInternaCard
-                    key={p.id}
-                    pub={p}
-                    favoritos={control}
-                    distintivo={distintivoBaja(p.placa, p.precio_usd)}
+              {/* Verificados y transparentes — nuestro diferenciador. */}
+              {transparentes.length > 0 && (
+                <Bloque
+                  titulo="✓ Verificados y transparentes"
+                  descripcion="Con sello de la plataforma o con la ficha técnica casi completa."
+                >
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                    {transparentes.slice(0, MAX_POR_BLOQUE).map((p) => (
+                      <ListingInternaCard
+                        key={p.id}
+                        pub={p}
+                        favoritos={control}
+                        distintivo={distintivoBaja(p.placa, p.precio_usd)}
+                      />
+                    ))}
+                  </div>
+                  <NotaTope mostrados={MAX_POR_BLOQUE} total={transparentes.length} />
+                </Bloque>
+              )}
+
+              {/* Explora por marca — chips derivados del stock real. */}
+              {marcas.length > 0 && (
+                <Bloque titulo="Explora por marca" descripcion="Marcas con autos publicados ahora.">
+                  <div className="flex flex-wrap gap-2">
+                    {marcas.map(({ marca, total }) => (
+                      <button
+                        key={marca}
+                        type="button"
+                        onClick={() => buscarMarca(marca)}
+                        className="rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario shadow-sm transition hover:border-marca hover:text-marca-texto"
+                      >
+                        {marca} <span className="text-secundario">({total})</span>
+                      </button>
+                    ))}
+                  </div>
+                </Bloque>
+              )}
+
+              {/* Recién publicados. */}
+              {recientes.length > 0 && (
+                <Bloque titulo="Recién publicados" descripcion="Lo último que entró al mercado.">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                    {recientes.slice(0, MAX_POR_BLOQUE).map((p) => (
+                      <ListingInternaCard
+                        key={p.id}
+                        pub={p}
+                        favoritos={control}
+                        distintivo={distintivoBaja(p.placa, p.precio_usd)}
+                      />
+                    ))}
+                  </div>
+                  <NotaTope
+                    mostrados={MAX_POR_BLOQUE}
+                    total={recientes.length}
+                    criterio="más recientes"
                   />
-                ))}
-              </div>
-              <NotaTope mostrados={MAX_POR_BLOQUE} total={transparentes.length} />
-            </Bloque>
-          )}
+                </Bloque>
+              )}
 
-          {/* 5. Explora por marca — chips derivados del stock real, alimentan el buscador. */}
-          {marcas.length > 0 && (
-            <Bloque titulo="Explora por marca" descripcion="Marcas con autos publicados ahora.">
-              <div className="flex flex-wrap gap-2">
-                {marcas.map(({ marca, total }) => (
-                  <button
-                    key={marca}
-                    type="button"
-                    onClick={() => buscarMarca(marca)}
-                    className="rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario shadow-sm transition hover:border-marca hover:text-marca-texto"
-                  >
-                    {marca} <span className="text-secundario">({total})</span>
-                  </button>
-                ))}
-              </div>
-            </Bloque>
-          )}
+              {/* Accesos del vendedor: después de la primera grilla de autos. */}
+              {accionesVendedor}
 
-          {/* 6. Recién publicados. */}
-          {recientes.length > 0 && (
-            <Bloque titulo="Recién publicados" descripcion="Lo último que entró al mercado.">
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {recientes.slice(0, MAX_POR_BLOQUE).map((p) => (
-                  <ListingInternaCard
-                    key={p.id}
-                    pub={p}
-                    favoritos={control}
-                    distintivo={distintivoBaja(p.placa, p.precio_usd)}
-                  />
-                ))}
-              </div>
-              <NotaTope
-                mostrados={MAX_POR_BLOQUE}
-                total={recientes.length}
-                criterio="más recientes"
-              />
-            </Bloque>
-          )}
+              {/* Por presupuesto — el comprador real compra por bolsillo. */}
+              {bandasConStock.length > 0 && (
+                <Bloque titulo="Por presupuesto" descripcion="Elige tu rango y mira solo lo que te alcanza.">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {bandasConStock.map(({ banda: b, total }) => (
+                      <button
+                        key={b.clave}
+                        type="button"
+                        onClick={() => aplicarBanda(b)}
+                        className="rounded-2xl border border-borde bg-superficie p-5 text-left sombra-tarjeta transition hover:border-marca"
+                      >
+                        <p className="text-base font-bold text-tinta">{b.etiqueta}</p>
+                        <p className="mt-1 text-sm text-secundario">
+                          {total === 1 ? "1 auto disponible" : `${total} autos disponibles`}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </Bloque>
+              )}
 
-          {/* 7. Por presupuesto — el comprador real compra por bolsillo. Alimenta el filtro. */}
-          {bandasConStock.length > 0 && (
-            <Bloque titulo="Por presupuesto" descripcion="Elige tu rango y mira solo lo que te alcanza.">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {bandasConStock.map(({ banda: b, total }) => (
-                  <button
-                    key={b.clave}
-                    type="button"
-                    onClick={() => aplicarBanda(b)}
-                    className="rounded-2xl border border-borde bg-superficie p-5 text-left sombra-tarjeta transition hover:border-marca"
-                  >
-                    <p className="text-base font-bold text-tinta">{b.etiqueta}</p>
-                    <p className="mt-1 text-sm text-secundario">
-                      {total === 1 ? "1 auto disponible" : `${total} autos disponibles`}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </Bloque>
-          )}
-
-          {/* 8. Referencias externas — al pie, con su etiqueta de "no verificados". */}
-          {referenciadas.length > 0 && (
-            <Bloque
-              titulo="Referencias externas"
-              descripcion="Anuncios de otros portales aportados por usuarios. La plataforma no los verifica."
-            >
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {referenciadas.map((p) => (
-                  <ListingReferenciadaCard key={p.id} pub={p} favoritos={control} />
-                ))}
-              </div>
-            </Bloque>
+              {/* Referencias externas — al pie, con su etiqueta de "no verificados".
+                  En modo poco stock NO se repite: las referenciadas ya salen en la
+                  grilla unificada de arriba. */}
+              {referenciadas.length > 0 && (
+                <Bloque
+                  titulo="Referencias externas"
+                  descripcion="Anuncios de otros portales aportados por usuarios. La plataforma no los verifica."
+                >
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                    {referenciadas.map((p) => (
+                      <ListingReferenciadaCard key={p.id} pub={p} favoritos={control} />
+                    ))}
+                  </div>
+                </Bloque>
+              )}
+            </>
           )}
         </>
       )}
@@ -894,6 +1002,7 @@ function ContenidoMarketplace() {
 
       {/* Anónimo que tocó un ♡: invitación amable, nunca un 401 ni una redirección. */}
       {invitacion && <InvitacionFavorito onCerrar={cerrarInvitacion} />}
+    </div>
     </div>
   );
 }

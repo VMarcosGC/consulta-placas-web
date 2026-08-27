@@ -5,6 +5,7 @@
 // real con query params y paginación es MC2 — cuando exista, este filtro en cliente se
 // reemplaza por el del backend y estos helpers se caen solos.
 
+import { precioNum } from "@/lib/precio";
 import { CIUDADES_PUBLICACION } from "@/types/api";
 import type { CiudadPublicacion, PublicacionInterna } from "@/types/api";
 
@@ -68,10 +69,14 @@ export const BANDAS_PRECIO: Banda[] = [
   { clave: "desde_20k", etiqueta: "Más de $20.000", min: 20000, max: null },
 ];
 
-export function enBanda(precio: number | null | undefined, banda: Banda): boolean {
-  if (precio == null) return false; // "Consultar precio" no entra en ninguna banda
-  const valor = Number(precio);
-  if (!Number.isFinite(valor)) return false;
+export function enBanda(
+  precio: number | string | null | undefined,
+  banda: Banda
+): boolean {
+  // El backend manda `precio_usd` como string decimal; se normaliza en el borde
+  // (ver src/lib/precio.ts). "Consultar precio" (null) no entra en ninguna banda.
+  const valor = precioNum(precio);
+  if (valor == null) return false;
   if (banda.min != null && valor < banda.min) return false;
   if (banda.max != null && valor >= banda.max) return false;
   return true;
