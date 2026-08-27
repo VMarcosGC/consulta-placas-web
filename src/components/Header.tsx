@@ -76,7 +76,7 @@ export function Header() {
           aria-label="CarStore Ec — inicio"
           className="flex shrink items-center gap-2 text-base font-semibold text-tinta sm:text-lg"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-brand-gradient text-superficie text-sm font-black shadow-sm">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-gradient text-superficie text-[13px] font-black tracking-tight shadow-sm">
             CS
           </span>
           {/* Bajo 400px queda solo el monograma "CS": es la vía segura para que la fila

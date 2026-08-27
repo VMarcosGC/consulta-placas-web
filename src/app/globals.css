@@ -94,11 +94,14 @@
      adyacente: da 3.05:1 sobre blanco. No lo aclares. */
   --color-borde-fuerte: #999ca6;
 
-  /* ── Gradiente de marca = IDENTIDAD, SOLO en el logo (monograma y wordmark).
-     No se expande. Cualquier CTA usa `--accion`. ────────────────────────── */
-  --color-brand-from: #2563eb;   /* blue-600 */
-  --color-brand-via:  #0ea5e9;   /* sky-500  */
-  --color-brand-to:   #06b6d4;   /* cyan-500 */
+  /* ── Gradiente de marca = IDENTIDAD, SOLO en el logo (monograma circular y la
+     palabra "Store" del wordmark). No se expande. Cualquier CTA usa `--accion`.
+     Barrido teal → esmeralda → verde: coherente con el acento esmeralda del
+     sistema, en tendencia, y NO azul. Los tres tonos rondan el rango "600" para
+     que "Store" siga legible como texto sobre blanco (~4:1). ─────────────── */
+  --color-brand-from: #0d9488;   /* teal-600    */
+  --color-brand-via:  #059669;   /* emerald-600 */
+  --color-brand-to:   #16a34a;   /* green-600   */
 }
 
 html { scroll-behavior: smooth; }
@@ -168,9 +171,9 @@ body {
   );
 }
 
-/* Glow del hero: una luz plana de marca, sutil. */
+/* Glow del hero: una luz plana de marca (teal), sutil. */
 .hero-glow {
-  background: radial-gradient(55% 55% at 50% 0%, rgba(47, 63, 199, 0.10) 0%, rgba(251, 251, 252, 0) 70%);
+  background: radial-gradient(55% 55% at 50% 0%, rgba(13, 148, 136, 0.09) 0%, rgba(251, 251, 252, 0) 70%);
 }
 
 /* Anillo de foco accesible, en `--marca` (rgb 47 63 199). */

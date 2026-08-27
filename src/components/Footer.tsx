@@ -18,7 +18,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 text-lg font-semibold text-tinta">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-gradient text-superficie text-sm font-black shadow-sm">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-gradient text-superficie text-[13px] font-black tracking-tight shadow-sm">
               CS
             </span>
             Car<span className="text-brand-gradient">Store</span>
