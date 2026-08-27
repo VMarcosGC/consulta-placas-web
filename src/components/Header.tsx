@@ -71,21 +71,21 @@ export function Header() {
       {/* Padding y gap más chicos en celular: a 360px el logo y el menú de la cuenta
           tienen que entrar en la misma fila sin encimarse. */}
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-6 sm:px-6">
+        {/* Marca solo tipográfica (sin monograma): el nombre y, debajo, una leyenda
+            corta. La leyenda se oculta bajo `sm` para que la fila del header entre sin
+            crecer en celular; "CarStore Ec" solo ocupa ~90px, así que cabe junto a
+            "Entrar" + "Crear cuenta" incluso a 320px. */}
         <Link
           href="/"
           aria-label="CarStore Ec — inicio"
-          className="flex shrink items-center gap-2 text-base font-semibold text-tinta sm:text-lg"
+          className="flex shrink flex-col justify-center leading-none"
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-gradient text-superficie text-[13px] font-black tracking-tight shadow-sm">
-            CS
-          </span>
-          {/* Bajo 400px queda solo el monograma "CS": es la vía segura para que la fila
-              (logo + "Entrar" + "Crear cuenta") entre sin partirse en gama baja (iPhone
-              12-15 y Pixel 8 rondan los 390-393px, el equipo típico del público §1). El
-              nombre accesible lo lleva el aria-label, así que no se pierde. */}
-          <span className="hidden min-[400px]:inline">
-            Car<span className="text-brand-gradient">Store</span>
+          <span className="text-base font-bold tracking-tight text-tinta sm:text-lg">
+            CarStore
             <span className="ml-1 align-top text-[10px] font-bold text-secundario">Ec</span>
+          </span>
+          <span className="mt-0.5 hidden text-[11px] font-medium text-secundario sm:block">
+            Tu garage local para comprar y vender
           </span>
         </Link>
 

@@ -17,13 +17,13 @@ export function Footer() {
     <footer className="mt-24 border-t border-borde bg-superficie">
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-3">
         <div>
-          <div className="flex items-center gap-2 text-lg font-semibold text-tinta">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-gradient text-superficie text-[13px] font-black tracking-tight shadow-sm">
-              CS
-            </span>
-            Car<span className="text-brand-gradient">Store</span>
-            <span className="ml-1 text-secundario text-sm font-bold">Ec</span>
+          <div className="text-lg font-bold tracking-tight text-tinta">
+            CarStore
+            <span className="ml-1 align-top text-xs font-bold text-secundario">Ec</span>
           </div>
+          <p className="mt-0.5 text-sm font-medium text-secundario">
+            Tu garage local para comprar y vender
+          </p>
           <p className="mt-3 text-sm text-secundario">
             Compra y vende autos en Ecuador con la ficha del vendedor y los datos oficiales
             de la placa a la vista.
