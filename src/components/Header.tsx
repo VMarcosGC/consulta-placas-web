@@ -89,14 +89,13 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Market primero (M2.6): el producto es el market de autos; la consulta de placa
-            es una herramienta de apoyo y por eso va después. */}
+        {/* El producto es el market de autos. La consulta de placa quedó en stand-by
+            (pendiente de resolver la fuente de datos), así que no está en la nav. */}
         <div className="hidden md:flex items-center gap-6 text-sm text-secundario">
           <Link href="/marketplace" className="font-semibold text-tinta hover:text-tinta">
             Marketplace
           </Link>
           <Link href="/marketplace/publicar" className="hover:text-tinta">Publicar</Link>
-          <Link href="/consultar" className="hover:text-tinta">Consulta de placa</Link>
           {logueado && (
             <Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link>
           )}

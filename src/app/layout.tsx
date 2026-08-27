@@ -16,18 +16,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CarStore Ec — Compra y vende autos con transparencia",
+  title: "CarStore Ec — Compra y vende autos en Ecuador",
   description:
-    "Marketplace de autos del Ecuador. Cada anuncio muestra la ficha técnica declarada por el vendedor junto a los datos oficiales de la placa: matriculación e infracciones. Publicar es gratis.",
+    "Marketplace de autos del Ecuador. Cada anuncio trae la ficha técnica que declara el vendedor: motor, carrocería, interiores y fotos. Publicar es gratis.",
   keywords: [
     "comprar auto Ecuador",
     "vender auto Ecuador",
     "autos usados Ecuador",
     "marketplace vehículos Ecuador",
     "CarStore Ec",
-    "consultar placa Ecuador",
-    "multas AMT",
-    "ANT matriculación",
   ],
 };
 

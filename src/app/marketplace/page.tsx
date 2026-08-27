@@ -483,8 +483,8 @@ function ContenidoMarketplace() {
           <p className="mt-1.5 font-mono text-xs text-secundario">{lineaEstadistica}</p>
         )}
         <p className="mt-1 text-sm text-secundario sm:text-base">
-          Cada anuncio muestra la ficha técnica del vendedor y los datos oficiales de su
-          placa. También hay referencias de portales externos, sin verificar.
+          Cada anuncio trae la ficha técnica que declara el vendedor. También hay
+          referencias de portales externos, sin verificar.
         </p>
       </header>
 

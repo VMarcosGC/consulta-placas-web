@@ -1,16 +1,17 @@
 // Barra de navegación inferior — SOLO celular (bajo `md`).
 //
 // POR QUÉ EXISTE: la navegación del Header es `hidden md:flex`, así que bajo 768px no
-// había NINGUNA forma de llegar a Marketplace, Publicar ni Consulta de placa salvo
-// adivinando la URL o volviendo al inicio por el logo. El público del producto navega en
-// celulares de gama baja (AGENTS.md §1): para ellos el sitio era prácticamente un
-// callejón sin salida.
+// había NINGUNA forma de llegar a Marketplace ni a Publicar salvo adivinando la URL. El
+// público del producto navega en celulares de gama baja (AGENTS.md §1): para ellos el
+// sitio era prácticamente un callejón sin salida.
 //
 // DECISIONES QUE NO SE PUEDEN PERDER AL TOCAR ESTE ARCHIVO:
 //
-//  1. **Tres entradas.** Marketplace, Publicar y Consulta son los flujos primarios. Con
-//     una cuarta entrada las etiquetas no entran a 320px; el resto vive en el menú de la
-//     cuenta del Header.
+//  1. **Tres entradas.** Inicio, Marketplace y Publicar son los flujos primarios. La
+//     "Consulta de placa" quedó en stand-by (pendiente de resolver la fuente de datos) y
+//     salió de la barra; Inicio tomó su lugar porque en celular el logo era su único
+//     acceso. Con una cuarta entrada las etiquetas no entran a 320px; el resto vive en el
+//     menú de la cuenta del Header.
 //  2. **Destinos `<Link>`, no `div` con onClick.** Se abren en pestaña nueva, se navegan
 //     con teclado y el prefetch de Next funciona.
 //  3. **La ruta activa se marca dos veces**: en color (para quien ve) y con
@@ -66,7 +67,7 @@ function IconoPublicar({ className }: PropsIcono) {
   );
 }
 
-function IconoLupa({ className }: PropsIcono) {
+function IconoInicio({ className }: PropsIcono) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -78,8 +79,9 @@ function IconoLupa({ className }: PropsIcono) {
       className={className}
       aria-hidden
     >
-      <circle cx="10.8" cy="10.8" r="6" />
-      <path d="m20 20-4.7-4.7" />
+      <path d="M3.5 10.5 12 3.5l8.5 7" />
+      <path d="M5.5 9.5v10h13v-10" />
+      <path d="M10 19.5v-5h4v5" />
     </svg>
   );
 }
@@ -98,6 +100,13 @@ type Entrada = {
 
 const ENTRADAS: Entrada[] = [
   {
+    href: "/",
+    etiqueta: "Inicio",
+    etiquetaAccesible: "Inicio",
+    icono: IconoInicio,
+    esActiva: (ruta) => ruta === "/",
+  },
+  {
     href: "/marketplace",
     etiqueta: "Marketplace",
     etiquetaAccesible: "Marketplace, autos en venta",
@@ -112,13 +121,6 @@ const ENTRADAS: Entrada[] = [
     etiquetaAccesible: "Publicar mi auto",
     icono: IconoPublicar,
     esActiva: (ruta) => ruta.startsWith(RUTA_PUBLICAR),
-  },
-  {
-    href: "/consultar",
-    etiqueta: "Consulta",
-    etiquetaAccesible: "Consulta de placa",
-    icono: IconoLupa,
-    esActiva: (ruta) => ruta === "/consultar" || ruta.startsWith("/consultar/"),
   },
 ];
 

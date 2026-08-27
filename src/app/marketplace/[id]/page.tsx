@@ -1,10 +1,11 @@
 // Detalle público de una publicación — rediseño mobile-first (M2.7).
 //
-// Jerarquía de lectura: FOTO → PRECIO/título/CTA → ficha técnica → datos oficiales → extras.
+// Jerarquía de lectura: FOTO → PRECIO/título/CTA → ficha técnica → extras → contacto.
 //   - Galería arriba, con swipe horizontal en móvil (scroll-snap, sin librerías).
 //   - Bloque de precio + título + acciones visible sin scroll en un celular.
 //   - Ficha técnica en tarjetas por bloque, cada una con su ícono.
-//   - "Datos oficiales" va en versión MINI (3-4 líneas) con enlace a la consulta completa.
+//   - "Datos oficiales" (matrícula/multas de la placa) está en stand-by hasta resolver
+//     de dónde salen esos datos de forma estable; por eso el detalle no la muestra.
 //
 // Regla del proyecto: el frontend NO transforma datos; solo lee y pinta lo que el backend
 // consolida. Los estados/booleanos declarativos llevan "declarado por el vendedor" porque
@@ -17,7 +18,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { BentoCard, Insignia } from "@/components/BentoCard";
 import { ContactoVendedor } from "@/components/ContactoVendedor";
-import { DatosOficialesMini } from "@/components/DatosOficialesMini";
 import {
   listarMisPublicaciones,
   listarVehiculos,
@@ -533,24 +533,16 @@ export default function PublicacionDetallePage() {
               </p>
             )}
 
-            {/* Fila de acciones, visible sin scroll en celular (M2.7): "Verificar esta
-                placa" —navegación a la herramienta de consulta, píldora oscura, NO es
-                conversión— y, para el comprador, "Contactar al vendedor", que ancla a la
-                sección de contacto del final. Así el único `--accion` (esmeralda) de la
-                pantalla queda para "Ver teléfono". La revelación del teléfono vive al
-                final, después de la evidencia (ficha + datos oficiales) — decisión de
-                Marcos, 2026-08-27. El dueño ve "Editar mi anuncio" en lugar del ancla. */}
+            {/* Fila de acciones, visible sin scroll en celular (M2.7). Para el comprador,
+                "Contactar al vendedor" ancla a la sección de contacto del final: la
+                revelación del teléfono vive después de la evidencia (la ficha). El único
+                `--accion` de la pantalla es "Ver teléfono". El dueño ve "Editar mi
+                anuncio". (La consulta de placa / datos oficiales quedó en stand-by.) */}
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <Link
-                href={`/consultar/${encodeURIComponent(pub.placa)}`}
-                className="rounded-full bg-oscuro px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave"
-              >
-                Verificar esta placa
-              </Link>
               {!esMia && (
                 <a
                   href="#contacto-vendedor"
-                  className="rounded-full border border-borde-fuerte bg-superficie px-6 py-3 text-center text-sm font-semibold text-secundario transition hover:bg-superficie-tenue"
+                  className="rounded-full bg-oscuro px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave"
                 >
                   Contactar al vendedor
                 </a>
@@ -609,12 +601,11 @@ export default function PublicacionDetallePage() {
             </section>
           )}
 
-          {/* 4. DATOS OFICIALES (mini): la contracara, con enlace al detalle completo. */}
-          <div className="mt-8">
-            <DatosOficialesMini placa={pub.placa} />
-          </div>
+          {/* La sección "Datos oficiales" (matrícula / multas desde ANT-AMT) quedó en
+              stand-by: pendiente de resolver de dónde salen los datos de forma estable.
+              Cuando vuelva, va acá, después de la ficha. */}
 
-          {/* 5. EXTRAS: historial documentado (argumento premium). */}
+          {/* EXTRAS: historial documentado (argumento premium). */}
           {pub.mantenimientos && pub.mantenimientos.total > 0 && (
             <div className="mt-6 rounded-2xl border border-marca bg-marca-tinte/60 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-marca">
@@ -639,8 +630,8 @@ export default function PublicacionDetallePage() {
             </div>
           )}
 
-          {/* 6. CONTACTO: el último paso de la decisión, después de la evidencia (ficha +
-              datos oficiales). El botón compacto del encabezado ancla aquí. El teléfono NO
+          {/* 6. CONTACTO: el último paso de la decisión, después de la evidencia (la
+              ficha). El botón compacto del encabezado ancla aquí. El teléfono NO
               viaja en el detalle: se revela bajo acción explícita (ver ContactoVendedor).
               scroll-mt-24 deja aire para el header sticky al anclar. */}
           <section id="contacto-vendedor" className="mt-8 scroll-mt-24">

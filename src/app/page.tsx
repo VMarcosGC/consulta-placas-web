@@ -1,9 +1,14 @@
-// Página inicial: NO es un feed de autos (eso vive en /marketplace). Es un resumen de
-// lo que hay en la web —comprar, vender, garage, consulta de placa— con vínculos
-// directos a cada cosa. Español de Ecuador (tuteo), tono no agresivo.
+// Página inicial: NO es un feed de autos (eso vive en /marketplace). Es un resumen
+// de lo que hay en la web —comprar, vender, garage— con UN enlace directo a cada área.
+//
+// Sin dobles interacciones: el hero no lleva botones; la navegación del inicio son las
+// tres tarjetas de abajo, una por destino y sin repetirse entre sí.
+//
+// La consulta de placa / datos oficiales quedó en stand-by (pendiente de resolver de
+// dónde salen los datos), así que no aparece acá. Español de Ecuador (tuteo), sin
+// lenguaje agresivo.
 
 import Link from "next/link";
-import { ConsultaForm } from "@/components/ConsultaForm";
 
 export default function Home() {
   return (
@@ -11,12 +16,7 @@ export default function Home() {
     // (fixed) para que el último bloque no quede tapado. 0 desde `md`.
     <div className="espacio-barra-movil">
       <HeroSection />
-      <ValoresSection />
-      <HerramientasSection />
-      {/* Sin bloque de precios acá. La monetización está SUSPENDIDA en toda la superficie
-          del producto (AGENTS.md §1.0.3): no hay página de precios, ni tokens, ni planes
-          de pago. */}
-      <CtaSection />
+      <ResumenSection />
     </div>
   );
 }
@@ -24,137 +24,74 @@ export default function Home() {
 function HeroSection() {
   return (
     <section className="relative overflow-hidden">
-      {/* Glow de fondo claro */}
       <div aria-hidden className="hero-glow pointer-events-none absolute inset-0 -z-10" />
-      {/* Padding vertical más bajo en móvil: antes el hero ocupaba todo el primer
-          scroll y no asomaba nada del feed de "Autos en venta". Desktop casi igual. */}
-      <div className="mx-auto max-w-4xl px-6 pt-10 pb-10 text-center sm:pt-24 sm:pb-16">
+      <div className="mx-auto max-w-3xl px-6 pt-12 pb-10 text-center sm:pt-24 sm:pb-14">
         <span className="inline-flex items-center gap-2 rounded-full border border-borde bg-superficie px-3 py-1 text-xs font-medium text-secundario shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-confirmado animate-pulse" />
-          Ficha del vendedor + datos oficiales de la placa
+          <span className="h-1.5 w-1.5 rounded-full bg-confirmado" />
+          Cada anuncio con su ficha técnica
         </span>
-        <h1 className="mt-5 text-4xl sm:mt-6 sm:text-6xl font-black tracking-tight leading-[1.05] text-tinta">
+        <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-tinta sm:mt-6 sm:text-6xl">
           Compra y vende autos en Ecuador
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-secundario">
-          Un solo lugar para ver anuncios, publicar el tuyo y revisar el historial de una
-          placa. Cada auto viene con lo que declara el vendedor y con sus datos oficiales.
+          Un solo lugar para ver anuncios y publicar el tuyo. Cada auto viene con la
+          ficha técnica que declara el vendedor.
         </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row">
-          <Link
-            href="/marketplace"
-            className="w-full rounded-full bg-accion px-8 py-3.5 text-center text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 sm:w-auto"
-          >
-            Ver autos en venta
-          </Link>
-          <Link
-            href="/marketplace/publicar"
-            className="w-full rounded-full border border-borde-fuerte bg-superficie px-8 py-3.5 text-center text-sm font-semibold text-secundario shadow-sm transition hover:bg-superficie-tenue sm:w-auto"
-          >
-            Publica tu auto
-          </Link>
-        </div>
-        <p className="mt-4 text-xs text-secundario">
-          Publicar es gratis. Ver los anuncios no necesita cuenta.
+        <p className="mt-5 text-xs text-secundario">
+          Publicar es gratis · Ver los anuncios no necesita cuenta
         </p>
       </div>
     </section>
   );
 }
 
-function ValoresSection() {
-  const items = [
+// Resumen de lo que hay en la web: una tarjeta por área, cada una con enlace directo.
+// Es la navegación principal del inicio, por eso el hero no repite estos accesos.
+function ResumenSection() {
+  const areas = [
     {
-      titulo: "Ficha técnica completa",
-      texto: "Motor y suspensión, carrocería e interiores. El vendedor declara lo que sabe y el anuncio muestra qué tan completa está su ficha.",
-      emoji: "📋",
+      titulo: "Ver autos en venta",
+      texto:
+        "Explora el marketplace. Busca por marca, precio o ciudad y filtra por lo que te importa.",
+      emoji: "🚗",
       href: "/marketplace",
     },
     {
-      titulo: "Datos oficiales de la placa",
-      texto: "Junto a lo declarado, el anuncio muestra matrícula e infracciones consultadas en las fuentes públicas (ANT, AMT).",
-      emoji: "🔍",
-      href: "/consultar",
+      titulo: "Publicar mi auto",
+      texto:
+        "Datos básicos, ficha técnica y fotos. Es gratis y tu anuncio aparece al instante.",
+      emoji: "📢",
+      href: "/marketplace/publicar",
     },
     {
-      titulo: "Tu garage privado",
-      texto: "Kilometraje, mantenimientos y dueños históricos. Un historial documentado es tu mejor argumento al vender.",
+      titulo: "Mi garage",
+      texto:
+        "Kilometraje, mantenimientos y dueños históricos. Un historial documentado vende mejor.",
       emoji: "🔧",
       href: "/mi-garage",
     },
   ];
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
-      <div className="grid gap-6 sm:grid-cols-3">
-        {items.map((it) => (
+    <section className="mx-auto max-w-5xl px-6 pb-24">
+      <div className="grid gap-4 sm:grid-cols-3">
+        {areas.map((a) => (
           <Link
-            key={it.titulo}
-            href={it.href}
-            className="group sombra-tarjeta block rounded-3xl border border-borde bg-superficie p-6 transition hover:-translate-y-0.5 hover:border-marca"
+            key={a.titulo}
+            href={a.href}
+            className="group sombra-tarjeta flex flex-col rounded-3xl border border-borde bg-superficie p-6 transition hover:-translate-y-0.5 hover:border-borde-fuerte"
           >
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-superficie-tenue text-2xl">
-              {it.emoji}
+              {a.emoji}
             </div>
             <h3 className="text-lg font-semibold text-tinta">
-              {it.titulo}
-              <span className="ml-1 text-secundario transition group-hover:text-marca">→</span>
+              {a.titulo}
+              <span className="ml-1 inline-block text-secundario transition group-hover:translate-x-0.5 group-hover:text-tinta">
+                →
+              </span>
             </h3>
-            <p className="mt-2 text-sm text-secundario">{it.texto}</p>
+            <p className="mt-2 text-sm text-secundario">{a.texto}</p>
           </Link>
         ))}
-      </div>
-    </section>
-  );
-}
-
-// Consulta por placa: ahora es una HERRAMIENTA de apoyo al market, no la promesa principal.
-// Sigue accesible y completa en /consultar; acá solo pierde protagonismo.
-function HerramientasSection() {
-  return (
-    <section className="mx-auto max-w-4xl px-6 py-16">
-      <div className="rounded-3xl border border-borde bg-superficie p-8 sombra-tarjeta sm:p-10">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-secundario">
-          Herramientas
-        </span>
-        <h2 className="mt-2 text-2xl font-bold text-tinta sm:text-3xl">
-          Consulta el historial de una placa
-        </h2>
-        <p className="mt-2 max-w-2xl text-secundario">
-          ¿Te interesa un auto que viste en otro lado? Consulta su placa: matriculación e
-          infracciones de las fuentes públicas disponibles. Los datos básicos son gratis y
-          no necesitas cuenta.
-        </p>
-        <div className="mt-6 max-w-md">
-          <ConsultaForm tamanio="compacto" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CtaSection() {
-  return (
-    <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-      <h2 className="text-3xl sm:text-4xl font-bold text-tinta">
-        ¿Vendes tu auto?
-      </h2>
-      <p className="mt-3 text-secundario">
-        Publicar es gratis. Mientras más completa la ficha, más confianza genera tu anuncio
-        — y completarla tampoco cuesta nada.
-      </p>
-      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <Link
-          href="/marketplace/publicar"
-          className="w-full rounded-full bg-accion px-8 py-3.5 text-center text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 sm:w-auto"
-        >
-          Publicar mi auto
-        </Link>
-        <Link
-          href="/marketplace"
-          className="w-full rounded-full border border-borde-fuerte bg-superficie px-8 py-3.5 text-center text-sm font-semibold text-secundario shadow-sm transition hover:bg-superficie-tenue sm:w-auto"
-        >
-          Ver autos en venta
-        </Link>
       </div>
     </section>
   );
