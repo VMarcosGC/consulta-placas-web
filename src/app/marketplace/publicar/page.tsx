@@ -9,7 +9,8 @@
 //
 // Puede posponer con "Completar después" (nunca lo bloqueamos), pero queda con el CTA
 // persistente "Completa tu ficha (N %)" en Mis publicaciones. Requiere sesión.
-// El plan Premium consume tokens (el backend cobra y responde 402 si el saldo no alcanza).
+// Publicar es gratis en cualquier plan: la monetización está suspendida (AGENTS.md §1.0.3).
+// El plan (light / premium) se elige y se envía igual; el backend lo acepta sin cobro.
 
 "use client";
 
@@ -106,7 +107,7 @@ function Stepper({ paso }: { paso: Paso }) {
 function PasoDatos({
   onCreada,
 }: {
-  onCreada: (id: number, plan: PlanPublicacion) => void;
+  onCreada: (id: number) => void;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -249,19 +250,14 @@ function PasoDatos({
       });
 
       // Corazón del wizard: en vez de mandarlo al feed, lo llevamos a la ficha.
-      onCreada(pub.id, plan);
+      onCreada(pub.id);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401) {
           router.push("/login?next=/marketplace/publicar");
           return;
         }
-        if (err.status === 402) {
-          // Saldo insuficiente para Premium: mensaje descriptivo del backend.
-          setError(`${err.message}. Puedes publicar en plan Light (gratis) o recargar tokens.`);
-        } else {
-          setError(err.message || "No pudimos crear la publicación.");
-        }
+        setError(err.message || "No pudimos crear la publicación.");
       } else {
         setError("No pudimos crear la publicación.");
       }
@@ -471,20 +467,13 @@ function PasoDatos({
             <span className="absolute right-0 top-0 rounded-bl-lg bg-marca px-2 py-0.5 text-[10px] font-black text-superficie">
               ★ PREMIUM
             </span>
-            <p className="font-bold text-tinta">Premium · con tokens</p>
+            <p className="font-bold text-tinta">Premium · Gratis</p>
             <p className="mt-1 text-xs text-secundario">
-              Destacado arriba, etiqueta «Verificado» y argumentos de venta.
+              Destaca tu anuncio arriba del feed y habilita el sello «Verificado por la
+              plataforma» (lo revisa un administrador).
             </p>
           </button>
         </div>
-        {plan === "premium" && (
-          <p className="mt-2 text-xs text-marca">
-            El plan Premium descuenta tokens de tu billetera al publicar.{" "}
-            <Link href="/precios" className="font-semibold underline">
-              Ver precios
-            </Link>
-          </p>
-        )}
       </div>
 
       {error && (
@@ -514,8 +503,6 @@ export default function PublicarPage() {
   const [paso, setPaso] = useState<Paso>(1);
   const [publicacionId, setPublicacionId] = useState<number | null>(null);
   const [completitud, setCompletitud] = useState(0);
-  // Plan elegido en el paso 1, para avisar del cobro antes de pulsar "Publicar".
-  const [plan, setPlan] = useState<PlanPublicacion>("light");
   const [publicando, setPublicando] = useState(false);
   const [errorPublicar, setErrorPublicar] = useState<string | null>(null);
 
@@ -523,8 +510,8 @@ export default function PublicarPage() {
     if (!tieneSesion()) router.push("/login?next=/marketplace/publicar");
   }, [router]);
 
-  // Publica el borrador (borrador → activa). El backend revalida el umbral y, si el plan
-  // es premium, cobra los tokens AQUÍ (no al crear el borrador).
+  // Publica el borrador (borrador → activa). El backend revalida el umbral de ficha.
+  // Publicar es gratis en cualquier plan.
   async function publicar() {
     if (publicacionId == null) return;
     setPublicando(true);
@@ -534,14 +521,8 @@ export default function PublicarPage() {
       router.push(`/marketplace/${publicacionId}`);
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 402) {
-          setErrorPublicar(
-            `${err.message}. Puedes pasar el anuncio a plan Light o recargar tokens.`
-          );
-        } else {
-          // El 422 del umbral ya trae copy es-EC accionable desde el backend.
-          setErrorPublicar(err.message || "No pudimos publicar el anuncio.");
-        }
+        // El 422 del umbral ya trae copy es-EC accionable desde el backend.
+        setErrorPublicar(err.message || "No pudimos publicar el anuncio.");
       } else {
         setErrorPublicar("No pudimos publicar el anuncio.");
       }
@@ -565,16 +546,9 @@ export default function PublicarPage() {
           </p>
           <p className="mt-0.5 text-sm text-secundario">
             {listoParaPublicar
-              ? "Al publicarlo aparecerá en el feed y cualquiera podrá verlo."
+              ? "Al publicarlo aparecerá en el feed y cualquiera podrá verlo. Es gratis."
               : `Necesitas al menos ${UMBRAL_FICHA_PUBLICACION} % para que el anuncio le sirva a un comprador.`}
           </p>
-          {/* El premium se cobra AL PUBLICAR (no al crear el borrador): hay que decirlo
-              antes de pulsar, no dejar que se entere con un 402. */}
-          {plan === "premium" && (
-            <p className="mt-1 text-xs font-medium text-marca">
-              Al publicar se descuentan los tokens del plan Premium de tu billetera.
-            </p>
-          )}
         </div>
         <button
           type="button"
@@ -606,8 +580,8 @@ export default function PublicarPage() {
       </Link>
       <h1 className="mt-3 text-3xl font-black text-tinta">Publicar mi auto</h1>
       <p className="mt-1 text-secundario">
-        Tres pasos. Mientras más completa la ficha, más confianza genera tu anuncio —
-        y no cuesta tokens.
+        Tres pasos, y es gratis. Mientras más completa la ficha, más confianza genera tu
+        anuncio.
       </p>
 
       <Stepper paso={paso} />
@@ -619,9 +593,8 @@ export default function PublicarPage() {
           fallback={<p className="mt-8 text-sm text-secundario">Cargando formulario…</p>}
         >
           <PasoDatos
-            onCreada={(id, planElegido) => {
+            onCreada={(id) => {
               setPublicacionId(id);
-              setPlan(planElegido);
               setPaso(2);
             }}
           />

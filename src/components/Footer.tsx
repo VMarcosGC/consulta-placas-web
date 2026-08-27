@@ -35,7 +35,6 @@ export function Footer() {
             <li><Link href="/marketplace" className="hover:text-tinta">Autos en venta</Link></li>
             <li><Link href="/marketplace/publicar" className="hover:text-tinta">Publicar mi auto</Link></li>
             <li><Link href="/consultar" className="hover:text-tinta">Consulta de placa</Link></li>
-            <li><Link href="/precios" className="hover:text-tinta">Precios</Link></li>
             <li><Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link></li>
           </ul>
         </div>

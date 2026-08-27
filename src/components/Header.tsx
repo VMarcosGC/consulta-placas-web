@@ -31,18 +31,20 @@ export function Header() {
 
   // Datos del usuario logueado (nombre para mostrarlo, es_admin para moderación).
   // Se resuelve consultando /auth/me y se reevalúa al cambiar la sesión.
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [usuarioCargado, setUsuarioCargado] = useState<Usuario | null>(null);
+  // Sin sesión no hay a quién mostrar: el valor guardado se ignora hasta el próximo
+  // login (así el efecto nunca hace setState de forma síncrona al cerrar sesión).
+  const usuario = logueado ? usuarioCargado : null;
   useEffect(() => {
+    if (!logueado) return;
     let activo = true;
-    if (!logueado) {
-      setUsuario(null);
-      return () => {
-        activo = false;
-      };
-    }
     obtenerPerfil()
-      .then((u) => activo && setUsuario(u))
-      .catch(() => activo && setUsuario(null));
+      .then((u) => {
+        if (activo) setUsuarioCargado(u);
+      })
+      .catch(() => {
+        if (activo) setUsuarioCargado(null);
+      });
     return () => {
       activo = false;
     };
@@ -57,8 +59,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-borde bg-superficie/85 backdrop-blur-xl">
-      {/* Padding y gap más chicos en celular: a 360px el logo, el saldo y el menú de la
-          cuenta tienen que entrar en la misma fila sin encimarse. */}
+      {/* Padding y gap más chicos en celular: a 360px el logo y el menú de la cuenta
+          tienen que entrar en la misma fila sin encimarse. */}
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-6 sm:px-6">
         <Link
           href="/"
@@ -89,7 +91,6 @@ export function Header() {
           </Link>
           <Link href="/marketplace/publicar" className="hover:text-tinta">Publicar</Link>
           <Link href="/consultar" className="hover:text-tinta">Consulta de placa</Link>
-          <Link href="/precios" className="hover:text-tinta">Precios</Link>
           {logueado && (
             <Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link>
           )}
@@ -115,17 +116,6 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {logueado ? (
             <>
-              {/* Saldo de tokens: visible para que el usuario sepa con qué cuenta para desbloquear. */}
-              {typeof usuario?.saldo_tokens === "number" && (
-                <Link
-                  href="/precios"
-                  className="inline-flex items-center gap-1 rounded-full bg-superficie-tenue px-2.5 py-1.5 text-sm font-bold text-secundario transition hover:opacity-90"
-                  title="Tus tokens — toca para ver precios"
-                >
-                  <span aria-hidden>🪙</span>
-                  {usuario.saldo_tokens}
-                </Link>
-              )}
               {/* Menú de la cuenta: única entrada a "Mis publicaciones" y "Mi contacto",
                   que no tenían enlace propio en el Header. Visible en todos los anchos
                   (en celular queda solo el círculo con la inicial). */}

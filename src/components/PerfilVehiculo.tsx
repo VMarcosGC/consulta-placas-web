@@ -4,7 +4,10 @@
 //   1. Arriba, una sola tarjeta-resumen "de un vistazo" (ResumenPlaca): máximo 6 datos.
 //   2. Todo el detalle (desglose por fuente, citación por citación, matriculación,
 //      identificadores, tablero de fuentes) vive en ACORDEONES CERRADOS por default.
-//   3. La sección de desbloqueos con tokens queda visible: es una acción, no un párrafo.
+//
+// La consulta por placa es una herramienta gratuita: muestra lo que el backend entrega
+// sin ninguna capa de pago (características públicas, estado de matrícula, multas de
+// ANT/AMT desde caché, enlaces oficiales).
 //
 // Las fuentes en stand-by (SRI/FGE por captcha) se ocultan por completo según
 // `NEXT_PUBLIC_FUENTES_INACTIVAS` (ver src/lib/fuentes.ts).
@@ -14,12 +17,9 @@
 
 import { useEffect, useState } from "react";
 import { consultarPerfil, reintentarFuente } from "@/lib/api";
-import { tieneSesion } from "@/lib/auth";
 import { Insignia, type TonoInsignia } from "@/components/BentoCard";
 import { Acordeon } from "@/components/Acordeon";
 import { ResumenPlaca, derivarResumen } from "@/components/ResumenPlaca";
-import { ProductoConsultaCard } from "@/components/ProductoConsultaCard";
-import { ReporteCompraSeguraCard } from "@/components/ReporteCompraSeguraCard";
 import {
   estadoDeFuente,
   hayFuentesEnProceso,
@@ -32,13 +32,6 @@ import {
   type MultaDetalle,
   type VehiculoConsolidado,
 } from "@/types/api";
-
-// Callback que reemplaza el perfil tras un desbloqueo (lo provee el componente raíz).
-type AlDesbloquear = (perfil: VehiculoConsolidado) => void;
-
-// Productos que se ofrecen en "Completa tu revisión del vehículo" (orden de aparición).
-const PRODUCTOS_REVISION = ["identificadores_tecnicos", "titular_validado", "multas_con_montos"];
-const CODIGO_BUNDLE = "reporte_compra_segura";
 
 const INTERVALO_POLLING_MS = 4000;
 
@@ -111,50 +104,6 @@ function Dato({
   );
 }
 
-// ── Desbloqueos con tokens (visible: es acción, no detalle) ──────────────────
-
-function CompletaTuRevision({
-  perfil,
-  onUnlocked,
-}: {
-  perfil: VehiculoConsolidado;
-  onUnlocked: AlDesbloquear;
-}) {
-  const porCodigo = (codigo: string) => perfil.productos?.find((p) => p.codigo === codigo);
-  const pendientes = PRODUCTOS_REVISION.map(porCodigo).filter(
-    (p): p is NonNullable<typeof p> => !!p && p.disponible && !p.desbloqueado
-  );
-  const bundle = porCodigo(CODIGO_BUNDLE);
-  const mostrarBundle = !!bundle && bundle.disponible && !bundle.desbloqueado;
-
-  if (pendientes.length === 0 && !mostrarBundle) return null;
-
-  return (
-    <section className="rounded-3xl border border-borde/70 bg-superficie p-6 sm:p-8 sombra-tarjeta">
-      <h2 className="text-lg font-bold text-tinta">Completa tu revisión del vehículo</h2>
-      <p className="mb-5 mt-1 text-sm text-secundario">
-        Desbloquea solo lo que necesitas. Pagas con tokens — los datos de arriba son gratis.
-      </p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {pendientes.map((p) => (
-          <ProductoConsultaCard
-            key={p.codigo}
-            placa={perfil.placa}
-            producto={p}
-            perfil={perfil}
-            onUnlocked={onUnlocked}
-          />
-        ))}
-      </div>
-      {mostrarBundle && (
-        <div className="mt-4">
-          <ReporteCompraSeguraCard placa={perfil.placa} producto={bundle} onUnlocked={onUnlocked} />
-        </div>
-      )}
-    </section>
-  );
-}
-
 // ── Cuerpos del detalle (van DENTRO de los acordeones) ───────────────────────
 
 function PildoraCategoria({ cat }: { cat: CategoriaMulta }) {
@@ -211,14 +160,14 @@ function CuerpoMultas({
   onReintentar: () => void;
   reintentando: boolean;
 }) {
-  // Bloqueado: el teaser solo dice si hay pendientes (gratis); el detalle con montos se
-  // desbloquea en "Completa tu revisión del vehículo" (producto `multas_con_montos`).
+  // El backend puede entregar solo el veredicto (sin el desglose con montos por fuente).
+  // En ese caso mostramos el teaser sí/no, que es lo que hay disponible.
   if (perfil.multas_bloqueado) {
     return (
       <p className="text-sm text-secundario">
         {perfil.tiene_pendientes
-          ? "Este vehículo tiene multas o infracciones registradas. Desbloquea el detalle con montos por fuente más arriba."
-          : "Sin multas ni infracciones pendientes. Desbloquea el detalle completo si quieres confirmarlo."}
+          ? "Este vehículo tiene multas o infracciones registradas."
+          : "Sin multas ni infracciones pendientes."}
       </p>
     );
   }
@@ -481,24 +430,6 @@ export function PerfilVehiculo({ inicial }: Props) {
     return () => clearTimeout(t);
   }, [perfil, cargando]);
 
-  // El perfil inicial llega del server SIN sesión (teaser). Si hay sesión en el cliente,
-  // re-consultamos CON token para aplicar los microdesbloqueos ya pagados de esta placa.
-  useEffect(() => {
-    if (!tieneSesion()) return;
-    let activo = true;
-    (async () => {
-      try {
-        const p = await consultarPerfil(inicial.placa);
-        if (activo) setPerfil(p);
-      } catch {
-        // Silencioso: si falla, queda el teaser.
-      }
-    })();
-    return () => {
-      activo = false;
-    };
-  }, [inicial.placa]);
-
   async function reintentarAmt() {
     setReintentando(true);
     setPerfil((prev) => marcarFuenteEnProceso(prev, "AMT"));
@@ -545,10 +476,7 @@ export function PerfilVehiculo({ inicial }: Props) {
       {/* 1. De un vistazo: casi siempre, esto es todo lo que el usuario necesita leer. */}
       <ResumenPlaca placa={perfil.placa} perfil={perfil} cargando={cargando} />
 
-      {/* 2. Acción (desbloqueos con tokens): visible, no es "detalle". */}
-      <CompletaTuRevision perfil={perfil} onUnlocked={setPerfil} />
-
-      {/* 3. Detalle: TODO plegado y cerrado por default. */}
+      {/* 2. Detalle: TODO plegado y cerrado por default. */}
       <Acordeon
         titulo="Ver detalle de multas"
         resumen={<Insignia tono={resumenMultas.tono}>{resumenMultas.texto}</Insignia>}

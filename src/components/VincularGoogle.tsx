@@ -72,8 +72,7 @@ export function VincularGoogle({
       <h2 className="text-lg font-semibold text-tinta">Entrar con Google</h2>
       <p className="mt-1.5 text-sm text-secundario">
         Si vinculas tu cuenta de Google, la próxima vez entras con un toque y no tienes
-        que recordar tu contraseña. Tu correo, tus autos y tu saldo siguen siendo los
-        mismos.
+        que recordar tu contraseña. Tu correo y tus autos siguen siendo los mismos.
       </p>
 
       {!googleConfigurado() ? (

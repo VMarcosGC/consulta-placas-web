@@ -99,8 +99,8 @@ async function fetchAPI<T>(
 // únicos lugares donde el usuario pidió la consulta explícitamente.
 
 // Perfil consolidado orientado a la entidad (secciones temáticas + estado_fuentes).
-// Auth OPCIONAL: si hay token, se envía para que el backend revele los microdesbloqueos
-// que el usuario ya pagó para esta placa. Sin token → teaser (todo gateado).
+// Auth OPCIONAL: si hay token, se envía tal cual (el backend decide qué revela). La
+// consulta por placa es gratuita: sin token igual devuelve las secciones públicas.
 export function consultarPerfil(
   placa: string,
   opciones: { soloCache?: boolean } = {}
@@ -110,17 +110,6 @@ export function consultarPerfil(
   return fetchAPI<VehiculoConsolidado>(
     `/consultar/${encodeURIComponent(placa)}/perfil${query}`,
     token ? { headers: { Authorization: `Bearer ${token}` } } : {}
-  );
-}
-
-// Desbloquea un producto del catálogo para esta placa (cobra tokens). Requiere sesión.
-// Devuelve el perfil ya con la sección revelada. 402 si no alcanza el saldo; 409 si el
-// dato no está disponible para esa placa.
-export function desbloquearProducto(placa: string, codigo: string) {
-  return fetchAPI<VehiculoConsolidado>(
-    `/consultar/${encodeURIComponent(placa)}/desbloquear/${codigo}`,
-    { method: "POST" },
-    true
   );
 }
 
@@ -266,7 +255,8 @@ export function buscarPublicaciones(filtros: FiltrosBusqueda, cursor?: string) {
   return fetchAPI<ResultadoBusqueda>(`/marketplace/buscar${qs ? `?${qs}` : ""}`);
 }
 
-// Publica un vehículo. plan="premium" debita tokens (402 si no alcanza el saldo).
+// Publica un vehículo. El `plan` (light / premium) se acepta igual, pero publicar es
+// gratis: la monetización está suspendida (AGENTS.md §1.0.3).
 export function crearPublicacion(datos: PublicacionCrear) {
   return fetchAPI<PublicacionInterna>(
     "/marketplace/publicaciones",
@@ -298,7 +288,7 @@ export function obtenerMiPublicacionDetalle(id: number) {
 }
 
 // Publica un borrador (borrador → activa). El backend valida el umbral de ficha
-// (422 con copy es-EC si no llega) y es donde se cobra el plan premium.
+// (422 con copy es-EC si no llega). Publicar es gratis en cualquier plan.
 export function publicarBorrador(id: number) {
   return fetchAPI<PublicacionInterna>(
     `/marketplace/publicaciones/${id}`,
@@ -401,7 +391,7 @@ export function eliminarPublicacion(id: number) {
 }
 
 // El dueño solicita la verificación "Verificado por la plataforma" de su publicación
-// premium (cobra tokens). 402 si no alcanza; 422 si la publicación no es premium.
+// premium. Es gratis (monetización suspendida); 422 si la publicación no es premium.
 export function solicitarVerificacion(id: number) {
   return fetchAPI<PublicacionInterna>(
     `/marketplace/publicaciones/${id}/solicitar-verificacion`,

@@ -8,8 +8,9 @@
 //
 // DECISIONES QUE NO SE PUEDEN PERDER AL TOCAR ESTE ARCHIVO:
 //
-//  1. **Tres entradas, no cuatro.** Precios queda fuera a propósito: el saldo de tokens
-//     del Header ya enlaza ahí. Con cuatro entradas las etiquetas no entran a 320px.
+//  1. **Tres entradas.** Marketplace, Publicar y Consulta son los flujos primarios. Con
+//     una cuarta entrada las etiquetas no entran a 320px; el resto vive en el menú de la
+//     cuenta del Header.
 //  2. **Destinos `<Link>`, no `div` con onClick.** Se abren en pestaña nueva, se navegan
 //     con teclado y el prefetch de Next funciona.
 //  3. **La ruta activa se marca dos veces**: en color (para quien ve) y con

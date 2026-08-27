@@ -14,19 +14,10 @@ export default function Home() {
       <DestacadosMarket />
       <ValoresSection />
       <HerramientasSection />
-      {/* Sin bloque de precios acá (TASK-017 fase 2). Dos motivos:
-
-          1. SECUENCIA. Cada bloque debe responder la pregunta que el anterior deja
-             abierta. Después del hero la pregunta es "muéstrame los autos", no
-             "cuánto cuesta un token": el visitante todavía no vio un solo carro.
-
-          2. VERACIDAD. La monetización está SUSPENDIDA (AGENTS.md §1.0.3): todos los
-             precios del catálogo están en 0 y no hay proveedor de pago activo. Un
-             bloque de planes en la portada ofrece una compra que no existe.
-
-          /precios sigue en el menú y ahora dice de frente que hoy no se cobra. Cuando
-          la monetización se reactive, esto se decide de nuevo — no se revierte por
-          costumbre. */}
+      {/* Sin bloque de precios acá. La monetización está SUSPENDIDA en toda la superficie
+          del producto (AGENTS.md §1.0.3): no hay página de precios, ni tokens, ni planes
+          de pago. Cuando se reactive, dónde va el costo se decide de nuevo — no se
+          revierte por costumbre. */}
       <CtaSection />
     </div>
   );
@@ -151,7 +142,7 @@ function CtaSection() {
       </h2>
       <p className="mt-3 text-secundario">
         Publicar es gratis. Mientras más completa la ficha, más confianza genera tu anuncio
-        — y completarla no cuesta tokens.
+        — y completarla tampoco cuesta nada.
       </p>
       <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <Link

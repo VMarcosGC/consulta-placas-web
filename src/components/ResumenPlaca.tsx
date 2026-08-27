@@ -19,7 +19,7 @@ export interface ResumenDerivado {
   /** null cuando el municipio sigue consultando: no se puede afirmar el veredicto. */
   multasPendientes: number | null;
   montoMultas: number | null;
-  /** El detalle con montos es microdesbloqueo de pago; sin él solo hay veredicto sí/no. */
+  /** El backend no siempre entrega el desglose con montos; sin él solo hay veredicto sí/no. */
   detalleBloqueado: boolean;
   tienePendientes: boolean;
   municipalesEnProceso: boolean;
@@ -71,8 +71,8 @@ export function derivarResumen(perfil: VehiculoConsolidado): ResumenDerivado {
     matriculaEtiqueta,
     matriculaTono,
     multasPendientes: municipalesEnProceso ? null : pendientes,
-    // Guarda explícita: con el detalle bloqueado (microdesbloqueo de pago) NUNCA se expone
-    // un monto. Hoy el backend ya vacía `multas_detalle`, pero no dependemos de eso.
+    // Guarda explícita: si el backend marcó el detalle como bloqueado NUNCA se expone un
+    // monto, aunque `multas_detalle` viniera con algo.
     montoMultas: perfil.multas_bloqueado || monto <= 0 ? null : monto,
     detalleBloqueado: perfil.multas_bloqueado,
     tienePendientes: perfil.tiene_pendientes,
@@ -124,8 +124,8 @@ export function ResumenPlaca({
           ? { clase: "bg-superficie-tenue text-secundario", texto: "Sin dato municipal" }
           : { clase: "bg-confirmado text-superficie", texto: "Al día" };
 
-  // Qué mostrar en "Multas": el conteo si se conoce, el veredicto si está bloqueado por
-  // tokens, o un neutro mientras el municipio responde.
+  // Qué mostrar en "Multas": el conteo si se conoce, el veredicto sí/no si el backend no
+  // entregó el desglose, o un neutro mientras el municipio responde.
   const valorMultas = r.municipalesEnProceso
     ? "—"
     : r.detalleBloqueado

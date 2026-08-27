@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -23,40 +23,52 @@ export default function VerificacionesPage() {
   const [error, setError] = useState<string | null>(null);
   // id en proceso → para deshabilitar sus botones mientras se decide.
   const [procesando, setProcesando] = useState<number | null>(null);
+  // Nonce para re-disparar la carga desde el botón "Actualizar" (mismo patrón que
+  // MenuCuenta): el efecto es el único que hace setState y solo tras el await, como
+  // pide react-hooks/set-state-in-effect.
+  const [recarga, setRecarga] = useState(0);
 
-  const cargar = useCallback(async () => {
+  function actualizar() {
     setCargando(true);
-    setError(null);
-    try {
-      const lista = await listarPublicacionesPendientesVerificacion();
-      setPendientes(lista);
-      setSinPermiso(false);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 401) {
-          router.push("/login?next=/admin/verificaciones");
-          return;
-        }
-        if (err.status === 403) {
-          setSinPermiso(true);
-        } else {
-          setError(err.message || "No pudimos cargar la cola de verificación.");
-        }
-      } else {
-        setError("No pudimos cargar la cola de verificación.");
-      }
-    } finally {
-      setCargando(false);
-    }
-  }, [router]);
+    setRecarga((n) => n + 1);
+  }
 
   useEffect(() => {
     if (!tieneSesion()) {
       router.push("/login?next=/admin/verificaciones");
       return;
     }
-    cargar();
-  }, [router, cargar]);
+    let activo = true;
+    (async () => {
+      try {
+        const lista = await listarPublicacionesPendientesVerificacion();
+        if (!activo) return;
+        setPendientes(lista);
+        setSinPermiso(false);
+        setError(null);
+      } catch (err) {
+        if (!activo) return;
+        if (err instanceof ApiError) {
+          if (err.status === 401) {
+            router.push("/login?next=/admin/verificaciones");
+            return;
+          }
+          if (err.status === 403) {
+            setSinPermiso(true);
+          } else {
+            setError(err.message || "No pudimos cargar la cola de verificación.");
+          }
+        } else {
+          setError("No pudimos cargar la cola de verificación.");
+        }
+      } finally {
+        if (activo) setCargando(false);
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [router, recarga]);
 
   async function decidir(id: number, decision: "verificado" | "rechazado") {
     setProcesando(id);
@@ -100,7 +112,7 @@ export default function VerificacionesPage() {
           </p>
         </div>
         <button
-          onClick={cargar}
+          onClick={actualizar}
           className="rounded-full border border-borde-fuerte px-4 py-2 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
         >
           ↻ Actualizar

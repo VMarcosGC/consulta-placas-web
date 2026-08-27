@@ -128,6 +128,9 @@ export interface Usuario {
   id: number;
   email: string;
   nombre: string | null;
+  // El backend sigue exponiendo el saldo (billetera dormida, AGENTS.md §1.0.3), pero
+  // el frontend ya no muestra tokens en ninguna parte. Se mantiene en el mirror para
+  // no divergir del contrato.
   saldo_tokens?: number;
   // True si el email está en ADMIN_EMAILS (lo expone /auth/me). Habilita moderación.
   es_admin?: boolean;
@@ -266,8 +269,8 @@ export interface MultaDetalle {
 }
 
 export interface Identificacion {
-  // bloqueado=true → solo *_ofuscado; tras pagar tokens (POST .../desbloquear) llegan
-  // los campos en claro (vin/numero_motor/numero_chasis) y bloqueado=false.
+  // bloqueado=true → el backend solo entrega *_ofuscado (VIN/motor/chasis nunca en
+  // claro para terceros, §7). El frontend pinta lo que llegue.
   bloqueado: boolean;
   vin: string | null;
   numero_motor: string | null;
@@ -313,6 +316,10 @@ export interface Titular {
   mensaje: string | null;
 }
 
+// Catálogo de microdesbloqueos de la consulta por placa. El backend sigue enviando
+// `productos` en el perfil, pero la UI de desbloqueo con tokens se retiró
+// (monetización suspendida, AGENTS.md §1.0.3). Se conserva en el mirror para no
+// divergir del contrato; ningún componente lo consume hoy.
 export interface ProductoEstado {
   codigo: string;
   nombre: string;
@@ -335,6 +342,7 @@ export interface VehiculoConsolidado {
   multas_bloqueado: boolean;
   novedades_legales: NovedadLegal[];
   estado_fuentes: EstadoFuenteItem[];
+  // Ver nota en ProductoEstado: el backend lo manda pero el frontend no lo pinta.
   productos: ProductoEstado[];
   tiene_pendientes: boolean;
 }

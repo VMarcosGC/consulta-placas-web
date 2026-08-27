@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { listarReferenciasPendientes, moderarReferencia } from "@/lib/api";
@@ -20,40 +20,52 @@ export default function ModeracionPage() {
   const [error, setError] = useState<string | null>(null);
   // id en proceso → para deshabilitar sus botones mientras se modera.
   const [procesando, setProcesando] = useState<number | null>(null);
+  // Nonce para re-disparar la carga desde el botón "Actualizar" (mismo patrón que
+  // MenuCuenta): el efecto es el único que hace setState y solo tras el await, como
+  // pide react-hooks/set-state-in-effect.
+  const [recarga, setRecarga] = useState(0);
 
-  const cargar = useCallback(async () => {
+  function actualizar() {
     setCargando(true);
-    setError(null);
-    try {
-      const lista = await listarReferenciasPendientes();
-      setPendientes(lista);
-      setSinPermiso(false);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 401) {
-          router.push("/login?next=/admin/moderacion");
-          return;
-        }
-        if (err.status === 403) {
-          setSinPermiso(true);
-        } else {
-          setError(err.message || "No pudimos cargar la cola de moderación.");
-        }
-      } else {
-        setError("No pudimos cargar la cola de moderación.");
-      }
-    } finally {
-      setCargando(false);
-    }
-  }, [router]);
+    setRecarga((n) => n + 1);
+  }
 
   useEffect(() => {
     if (!tieneSesion()) {
       router.push("/login?next=/admin/moderacion");
       return;
     }
-    cargar();
-  }, [router, cargar]);
+    let activo = true;
+    (async () => {
+      try {
+        const lista = await listarReferenciasPendientes();
+        if (!activo) return;
+        setPendientes(lista);
+        setSinPermiso(false);
+        setError(null);
+      } catch (err) {
+        if (!activo) return;
+        if (err instanceof ApiError) {
+          if (err.status === 401) {
+            router.push("/login?next=/admin/moderacion");
+            return;
+          }
+          if (err.status === 403) {
+            setSinPermiso(true);
+          } else {
+            setError(err.message || "No pudimos cargar la cola de moderación.");
+          }
+        } else {
+          setError("No pudimos cargar la cola de moderación.");
+        }
+      } finally {
+        if (activo) setCargando(false);
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [router, recarga]);
 
   async function decidir(id: number, decision: "aprobada" | "rechazada") {
     setProcesando(id);
@@ -99,7 +111,7 @@ export default function ModeracionPage() {
           </p>
         </div>
         <button
-          onClick={cargar}
+          onClick={actualizar}
           className="rounded-full border border-borde-fuerte px-4 py-2 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
         >
           ↻ Actualizar

@@ -1,10 +1,10 @@
 // Mis publicaciones del marketplace. El dueño ve sus autos publicados, su estado de
 // verificación, y puede SOLICITAR la verificación "Verificado por la plataforma"
-// (cobra tokens) o eliminar la publicación. Requiere sesión.
+// (gratis; la revisa un administrador) o eliminar la publicación. Requiere sesión.
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -23,9 +23,6 @@ import {
   puedePublicar,
 } from "@/lib/ficha";
 import { ApiError, EstadoVerificacion, PublicacionInterna } from "@/types/api";
-
-// Costo referencial (lo cobra el backend; aquí solo para el rótulo del botón).
-const TOKENS_VERIFICACION = 80;
 
 // Estados de una decisión de la plataforma sobre lo que el vendedor envió.
 //
@@ -59,29 +56,36 @@ export default function MisPublicacionesPage() {
   // listado para que el CTA "Completa tu ficha" baje en vivo sin recargar la página.
   const [completitudes, setCompletitudes] = useState<Record<number, number>>({});
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    setError(null);
-    try {
-      setPubs(await listarMisPublicaciones());
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        router.push("/login?next=/marketplace/mis-publicaciones");
-        return;
-      }
-      setError("No pudimos cargar tus publicaciones. Intenta recargar.");
-    } finally {
-      setCargando(false);
-    }
-  }, [router]);
-
+  // Patrón lint-safe (react-hooks/set-state-in-effect): el setState cae SIEMPRE después
+  // del await, nunca de forma síncrona dentro del efecto. Ver src/app/marketplace/page.tsx.
   useEffect(() => {
     if (!tieneSesion()) {
       router.push("/login?next=/marketplace/mis-publicaciones");
       return;
     }
-    cargar();
-  }, [router, cargar]);
+    let activo = true;
+    (async () => {
+      try {
+        const lista = await listarMisPublicaciones();
+        if (activo) {
+          setPubs(lista);
+          setError(null);
+        }
+      } catch (err) {
+        if (!activo) return;
+        if (err instanceof ApiError && err.status === 401) {
+          router.push("/login?next=/marketplace/mis-publicaciones");
+          return;
+        }
+        setError("No pudimos cargar tus publicaciones. Intenta recargar.");
+      } finally {
+        if (activo) setCargando(false);
+      }
+    })();
+    return () => {
+      activo = false;
+    };
+  }, [router]);
 
   async function verificar(id: number) {
     setProcesando(id);
@@ -91,11 +95,7 @@ export default function MisPublicacionesPage() {
       setPubs((prev) => prev.map((p) => (p.id === id ? actualizada : p)));
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 402) {
-          setError("No te alcanzan los tokens para la verificación. Recarga para continuar.");
-        } else {
-          setError(err.message);
-        }
+        setError(err.message);
       } else {
         setError("No se pudo solicitar la verificación.");
       }
@@ -104,8 +104,8 @@ export default function MisPublicacionesPage() {
     }
   }
 
-  // Publica un borrador. El backend revalida el umbral (422 con copy accionable) y, si
-  // el plan es premium, cobra los tokens aquí — no al crear el borrador.
+  // Publica un borrador. El backend revalida el umbral de ficha (422 con copy
+  // accionable). Publicar es gratis en cualquier plan.
   async function publicar(id: number) {
     setProcesando(id);
     setError(null);
@@ -114,13 +114,7 @@ export default function MisPublicacionesPage() {
       setPubs((prev) => prev.map((p) => (p.id === id ? actualizada : p)));
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 402) {
-          setError(
-            `${err.message}. Puedes pasar el anuncio a plan Light o recargar tokens.`
-          );
-        } else {
-          setError(err.message || "No pudimos publicar el anuncio.");
-        }
+        setError(err.message || "No pudimos publicar el anuncio.");
       } else {
         setError("No pudimos publicar el anuncio.");
       }
@@ -306,7 +300,7 @@ export default function MisPublicacionesPage() {
                       disabled={ocupado}
                       className="flex-1 rounded-full bg-marca px-4 py-2 text-sm font-semibold text-superficie transition hover:opacity-90 disabled:opacity-50"
                     >
-                      {ocupado ? "…" : `Solicitar verificación · ${TOKENS_VERIFICACION} tokens`}
+                      {ocupado ? "…" : "Solicitar verificación"}
                     </button>
                   )}
                   {esPremium && p.estado_verificacion === "pendiente" && (

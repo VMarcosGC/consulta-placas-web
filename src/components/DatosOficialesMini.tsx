@@ -5,8 +5,8 @@
 // (desglose por fuente, citación por citación) vive en /consultar/{placa}.
 //
 // Es la contracara de la ficha: esto NO lo declara el vendedor.
-// Respeta el stand-by de fuentes y NO revela lo que es microdesbloqueo de pago:
-// con `multas_bloqueado` (el caso anónimo) solo se muestra el veredicto sí/no.
+// Respeta el stand-by de fuentes. Si el backend no entrega el desglose con montos
+// (`multas_bloqueado`), solo se muestra el veredicto sí/no.
 
 "use client";
 
@@ -102,8 +102,8 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
               <span className="text-confirmado">Al día</span>
             )}
           </Linea>
-          {/* El monto es microdesbloqueo de pago: con el detalle bloqueado no se muestra
-              (doble guarda — `derivarResumen` ya lo anula). */}
+          {/* Con el detalle bloqueado no se muestra el monto (doble guarda —
+              `derivarResumen` ya lo anula). */}
           {!r!.detalleBloqueado && r!.montoMultas != null && (
             <Linea etiqueta="Total a pagar">
               <span className="text-atencion">${r!.montoMultas.toFixed(0)}</span>
