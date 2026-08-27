@@ -522,6 +522,30 @@ export interface PublicacionCrear {
   vehiculo_id?: number;
 }
 
+// Edición parcial de una publicación interna (M2.11). Mirror de
+// `PublicacionInternaActualizar` (src/modules/marketplace/schemas.py).
+//
+// Semántica que el backend implementa con `model_fields_set` (igual que la ficha y el
+// perfil de vendedor): para `titulo`, `descripcion`, `ciudad` y `kilometraje` se
+// distingue OMITIR la clave de enviarla en `null`. Omitir → el backend no la toca;
+// enviarla en `null` → la BORRA (el vendedor la tecleó por error y la quiere en blanco).
+// Por eso el llamador arma el objeto SOLO con los campos que el vendedor cambió ("campos
+// sucios"): mandar los cinco siempre pisaría con `null` lo que no se quiso borrar.
+//
+// `precio_usd` NO admite `null` (el backend lo valida con `gt=0`): solo se reemplaza —
+// por eso va `?: number` y no `?: number | null`, a diferencia de los cuatro de arriba.
+// `plan` y `estado` existen en el contrato (mismo criterio: reemplazo, sin `null`); el
+// formulario de "editar datos" no los envía, pero `publicarBorrador` usa `estado`.
+export interface PublicacionActualizar {
+  titulo?: string | null;
+  descripcion?: string | null;
+  ciudad?: CiudadPublicacion | null;
+  kilometraje?: number | null;
+  precio_usd?: number;
+  plan?: PlanPublicacion;
+  estado?: EstadoPublicacion;
+}
+
 // ── Ficha técnica de la publicación (market de autos) ────────────────────────
 // Mirror de los schemas de src/modules/marketplace/schemas.py (bloque §Ficha).
 // 3 bloques (motor_suspensión / carrocería / interiores) + extras. Todos los campos

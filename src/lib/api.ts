@@ -16,6 +16,7 @@ import {
   FotoSalida,
   FuenteRespuesta,
   GoogleLoginEntrada,
+  PublicacionActualizar,
   PublicacionCrear,
   PublicacionDetalle,
   PublicacionInterna,
@@ -287,14 +288,29 @@ export function obtenerMiPublicacionDetalle(id: number) {
   );
 }
 
-// Publica un borrador (borrador → activa). El backend valida el umbral de ficha
-// (422 con copy es-EC si no llega). Publicar es gratis en cualquier plan.
-export function publicarBorrador(id: number) {
+// Edita los datos básicos de una publicación propia (M2.11): título, descripción,
+// ciudad, kilometraje y precio. También asciende/baja el plan y cambia el estado.
+// Solo el dueño (404 indistinto si no es suya). Es gratis (§1.0.3).
+//
+// Semántica de "vaciar un campo" (`model_fields_set` en el backend): para `titulo`,
+// `descripcion`, `ciudad` y `kilometraje`, OMITIR la clave la deja intacta y enviarla
+// en `null` la BORRA. `JSON.stringify` ya descarta las claves `undefined` y conserva las
+// `null`, así que el llamador solo tiene que poblar los campos que el vendedor tocó.
+// Códigos del contrato: 401 → login · 404 → genérico · 422 → `detail` accionable del
+// backend (ciudad fuera de catálogo, kilometraje fuera de rango).
+export function actualizarPublicacion(id: number, datos: PublicacionActualizar) {
   return fetchAPI<PublicacionInterna>(
     `/marketplace/publicaciones/${id}`,
-    { method: "PATCH", body: JSON.stringify({ estado: "activa" }) },
+    { method: "PATCH", body: JSON.stringify(datos) },
     true
   );
+}
+
+// Publica un borrador (borrador → activa). El backend valida el umbral de ficha
+// (422 con copy es-EC si no llega). Publicar es gratis en cualquier plan. Es un caso
+// particular de `actualizarPublicacion`: lo único que cambia es el estado.
+export function publicarBorrador(id: number) {
+  return actualizarPublicacion(id, { estado: "activa" });
 }
 
 // Actualiza la ficha técnica (solo el dueño). Guardado parcial: se envía SOLO el

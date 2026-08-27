@@ -1,6 +1,8 @@
-// Mis publicaciones del marketplace. El dueño ve sus autos publicados, su estado de
-// verificación, y puede SOLICITAR la verificación "Verificado por la plataforma"
-// (gratis; la revisa un administrador) o eliminar la publicación. Requiere sesión.
+// Mis publicaciones del marketplace. El dueño ve sus autos publicados y su estado de
+// verificación, y puede: editar los datos básicos (título, descripción, ciudad,
+// kilometraje, precio — M2.11), editar la ficha técnica y las fotos, SOLICITAR la
+// verificación "Verificado por la plataforma" (gratis; la revisa un administrador),
+// publicar un borrador o eliminar la publicación. Requiere sesión.
 
 "use client";
 
@@ -8,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  actualizarPublicacion,
   eliminarPublicacion,
   listarMisPublicaciones,
   publicarBorrador,
@@ -22,7 +25,14 @@ import {
   fichaPendiente,
   puedePublicar,
 } from "@/lib/ficha";
-import { ApiError, EstadoVerificacion, PublicacionInterna } from "@/types/api";
+import {
+  ApiError,
+  CIUDADES_PUBLICACION,
+  CiudadPublicacion,
+  EstadoVerificacion,
+  PublicacionActualizar,
+  PublicacionInterna,
+} from "@/types/api";
 
 // Estados de una decisión de la plataforma sobre lo que el vendedor envió.
 //
@@ -43,6 +53,268 @@ const VERIFICACION_BADGE: Record<EstadoVerificacion, { texto: string; clase: str
   rechazado: { texto: "Verificación rechazada", clase: "bg-error-tinte text-error" },
 };
 
+// ── Editar datos básicos de la publicación (M2.11) ──────────────────────────
+// Hueco que cierra: una vez creada la publicación, `mis-publicaciones` solo dejaba
+// editar ficha, fotos y estado. Si el vendedor se equivocó en el título, la
+// descripción, la ciudad, el kilometraje o el precio, no tenía cómo corregirlo.
+// El backend ya lo soporta con `PATCH /marketplace/publicaciones/{id}`.
+
+// Espejo del `le=2_000_000` de `PublicacionInternaActualizar` (mismo valor que usa el
+// wizard en `publicar/page.tsx`): pasarse devuelve 422 del backend.
+const KILOMETRAJE_MAXIMO = 2_000_000;
+
+const inputCls =
+  "w-full rounded-xl border border-borde-fuerte px-3 py-2 text-sm text-tinta focus-glow";
+
+// ¿Este texto libre es una de las 12 ciudades del catálogo? Si no, el <select> arranca
+// en "Sin especificar" y — clave — ese valor NO se considera "cambiado", así que un
+// valor viejo fuera de catálogo nunca se borra solo al guardar sin tocar la ciudad.
+function ciudadInicialDe(valor: string | null | undefined): CiudadPublicacion | "" {
+  if (valor && (CIUDADES_PUBLICACION as readonly string[]).includes(valor)) {
+    return valor as CiudadPublicacion;
+  }
+  return "";
+}
+
+// Formulario inline expandible, prellenado con lo que la publicación ya tiene. Se monta
+// solo cuando está abierto (montaje condicional en el listado), así el snapshot inicial
+// siempre sale de props frescas. Al guardar devuelve al padre la versión del backend.
+function FormularioDatos({
+  publicacion,
+  onGuardada,
+  onCancelar,
+}: {
+  publicacion: PublicacionInterna;
+  onGuardada: (nueva: PublicacionInterna) => void;
+  onCancelar: () => void;
+}) {
+  const router = useRouter();
+
+  // Snapshot inicial = exactamente lo que el vendedor ve al abrir. Comparar contra este
+  // snapshot es lo que decide qué campos viajan ("campos sucios"): lo que no cambió no
+  // se incluye y el backend no lo toca.
+  const tituloInicial = publicacion.titulo ?? "";
+  const descripcionInicial = publicacion.descripcion ?? "";
+  const ciudadInicial = ciudadInicialDe(publicacion.ciudad);
+  const kilometrajeInicial =
+    publicacion.kilometraje != null ? String(publicacion.kilometraje) : "";
+  const precioInicial = String(publicacion.precio_usd);
+
+  const [titulo, setTitulo] = useState(tituloInicial);
+  const [descripcion, setDescripcion] = useState(descripcionInicial);
+  const [ciudad, setCiudad] = useState<CiudadPublicacion | "">(ciudadInicial);
+  const [kilometraje, setKilometraje] = useState(kilometrajeInicial);
+  const [precio, setPrecio] = useState(precioInicial);
+
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const campoId = (nombre: string) => `${nombre}-pub-${publicacion.id}`;
+
+  async function guardar(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    // Precio: obligatorio y > 0 (el backend lo exige con `gt=0`). Se valida en cliente
+    // para explicarlo en es-EC en vez de mostrar el 422 crudo de Pydantic.
+    const precioNum = Number(precio.trim());
+    if (!Number.isFinite(precioNum) || precioNum <= 0) {
+      setError("Ingresa un precio válido mayor a 0.");
+      return;
+    }
+
+    // Kilometraje: opcional. Si el vendedor escribió algo, se valida con los mismos
+    // límites del backend (entero 0 … 2 000 000). Vacío = lo quiere dejar en blanco.
+    const kmTexto = kilometraje.trim();
+    let kmNum: number | null = null;
+    if (kmTexto !== "") {
+      const n = Number(kmTexto);
+      if (!Number.isInteger(n) || n < 0 || n > KILOMETRAJE_MAXIMO) {
+        setError(
+          `Ingresa el kilometraje como un número entero entre 0 y ${KILOMETRAJE_MAXIMO.toLocaleString(
+            "es-EC"
+          )} km, o déjalo vacío.`
+        );
+        return;
+      }
+      kmNum = n;
+    }
+
+    // Campos sucios: solo viaja lo que cambió respecto del snapshot. Para los cuatro
+    // opcionales, "cambió y quedó vacío" viaja como `null` (borrar); "cambió y tiene
+    // valor" viaja con el valor. `undefined` = no se incluye → el backend no lo toca.
+    const datos: PublicacionActualizar = {};
+    const tituloLimpio = titulo.trim();
+    if (tituloLimpio !== tituloInicial) datos.titulo = tituloLimpio || null;
+    const descLimpia = descripcion.trim();
+    if (descLimpia !== descripcionInicial) datos.descripcion = descLimpia || null;
+    if (ciudad !== ciudadInicial) datos.ciudad = ciudad || null;
+    if (kmTexto !== kilometrajeInicial) datos.kilometraje = kmNum;
+    if (precio.trim() !== precioInicial) datos.precio_usd = precioNum;
+
+    if (Object.keys(datos).length === 0) {
+      onCancelar(); // nada que guardar: cerrar sin pegarle al backend
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      const nueva = await actualizarPublicacion(publicacion.id, datos);
+      onGuardada(nueva);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          router.push("/login?next=/marketplace/mis-publicaciones");
+          return;
+        }
+        if (err.status === 404) {
+          setError(
+            "No encontramos esta publicación o ya no está disponible. Recarga la página."
+          );
+        } else {
+          // 422: el backend manda el `detail` accionable (ciudad fuera de catálogo,
+          // kilometraje fuera de rango). Se muestra tal cual.
+          setError(err.message || "No pudimos guardar los cambios.");
+        }
+      } else {
+        setError("No pudimos guardar los cambios. Revisa tu conexión e intenta de nuevo.");
+      }
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={guardar}
+      className="space-y-4 rounded-2xl border border-borde bg-superficie p-4 sm:p-5 sombra-tarjeta"
+    >
+      <p className="text-sm font-bold text-tinta">Editar datos del anuncio</p>
+
+      <div>
+        <label htmlFor={campoId("titulo")} className="mb-1 block text-sm font-semibold text-secundario">
+          Título (opcional)
+        </label>
+        <input
+          id={campoId("titulo")}
+          className={inputCls}
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
+          placeholder="Chevrolet Sail 2018 — único dueño"
+          maxLength={160}
+        />
+        <p className="mt-1 text-xs text-secundario">
+          Si lo dejas vacío, se quita el título y el anuncio usa marca, modelo y año.
+        </p>
+      </div>
+
+      <div>
+        <label
+          htmlFor={campoId("descripcion")}
+          className="mb-1 block text-sm font-semibold text-secundario"
+        >
+          Descripción (opcional)
+        </label>
+        <textarea
+          id={campoId("descripcion")}
+          className={`${inputCls} min-h-24`}
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+          maxLength={2000}
+          placeholder="Estado del auto, extras, motivo de venta…"
+        />
+        <p className="mt-1 text-xs text-secundario">Si la dejas vacía, se quita la descripción.</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label
+            htmlFor={campoId("ciudad")}
+            className="mb-1 block text-sm font-semibold text-secundario"
+          >
+            Ciudad donde está el auto (opcional)
+          </label>
+          <select
+            id={campoId("ciudad")}
+            className={inputCls}
+            value={ciudad}
+            onChange={(e) => setCiudad(e.target.value as CiudadPublicacion | "")}
+          >
+            <option value="">— Sin especificar —</option>
+            {CIUDADES_PUBLICACION.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label
+            htmlFor={campoId("kilometraje")}
+            className="mb-1 block text-sm font-semibold text-secundario"
+          >
+            Kilometraje (opcional)
+          </label>
+          <input
+            id={campoId("kilometraje")}
+            className={inputCls}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={KILOMETRAJE_MAXIMO}
+            step={1}
+            value={kilometraje}
+            onChange={(e) => setKilometraje(e.target.value)}
+            placeholder="85000"
+          />
+          <p className="mt-1 text-xs text-secundario">Déjalo vacío si prefieres no indicarlo.</p>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor={campoId("precio")} className="mb-1 block text-sm font-semibold text-secundario">
+          Precio (USD)
+        </label>
+        <input
+          id={campoId("precio")}
+          className={inputCls}
+          type="number"
+          min={1}
+          step="any"
+          value={precio}
+          onChange={(e) => setPrecio(e.target.value)}
+          placeholder="12000"
+          required
+        />
+      </div>
+
+      {error && (
+        <p className="rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
+          {error}
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="submit"
+          disabled={enviando}
+          className="rounded-full bg-accion px-6 py-2.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {enviando ? "Guardando…" : "Guardar cambios"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancelar}
+          disabled={enviando}
+          className="rounded-full border border-borde-fuerte px-6 py-2.5 text-sm font-semibold text-secundario transition hover:bg-superficie-tenue disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function MisPublicacionesPage() {
   const router = useRouter();
   const [pubs, setPubs] = useState<PublicacionInterna[]>([]);
@@ -52,6 +324,8 @@ export default function MisPublicacionesPage() {
   // Id de la publicación cuya ficha técnica está abierta para editar (null = ninguna).
   const [fichaAbierta, setFichaAbierta] = useState<number | null>(null);
   const [fotosAbierta, setFotosAbierta] = useState<number | null>(null);
+  // Id de la publicación con el formulario de datos básicos abierto (M2.11).
+  const [datosAbierta, setDatosAbierta] = useState<number | null>(null);
   // % de ficha recién guardado por el editor, por publicación. Pisa al valor que trajo el
   // listado para que el CTA "Completa tu ficha" baje en vivo sin recargar la página.
   const [completitudes, setCompletitudes] = useState<Record<number, number>>({});
@@ -189,6 +463,7 @@ export default function MisPublicacionesPage() {
             (p.estado_verificacion === "no_verificado" || p.estado_verificacion === "rechazado");
           const fichaVisible = fichaAbierta === p.id;
           const fotosVisible = fotosAbierta === p.id;
+          const datosVisible = datosAbierta === p.id;
           const pct = completitudes[p.id] ?? p.completitud_ficha ?? 0;
           const faltaFicha = fichaPendiente(pct);
           const esBorrador = p.estado === "borrador";
@@ -265,6 +540,19 @@ export default function MisPublicacionesPage() {
                     >
                       📋 {fichaVisible ? "Cerrar ficha" : "Ficha técnica"}
                     </button>
+                    {/* Editar datos básicos (M2.11): título, descripción, ciudad,
+                        kilometraje y precio. Se puede en cualquier estado. */}
+                    <button
+                      type="button"
+                      onClick={() => setDatosAbierta(datosVisible ? null : p.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                        datosVisible
+                          ? "border-marca bg-marca-tinte text-marca-texto"
+                          : "border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
+                      }`}
+                    >
+                      ✎ {datosVisible ? "Cerrar edición" : "Editar datos"}
+                    </button>
                     <Link
                       href={`/marketplace/${p.id}`}
                       className="inline-flex items-center gap-1.5 rounded-full border border-borde-fuerte bg-superficie px-3.5 py-1.5 text-xs font-semibold text-secundario transition hover:bg-superficie-tenue"
@@ -331,6 +619,16 @@ export default function MisPublicacionesPage() {
                 />
               )}
               {fotosVisible && <GaleriaFotosEditor publicacionId={p.id} />}
+              {datosVisible && (
+                <FormularioDatos
+                  publicacion={p}
+                  onGuardada={(nueva) => {
+                    setPubs((prev) => prev.map((x) => (x.id === nueva.id ? nueva : x)));
+                    setDatosAbierta(null);
+                  }}
+                  onCancelar={() => setDatosAbierta(null)}
+                />
+              )}
             </div>
           );
         })}
