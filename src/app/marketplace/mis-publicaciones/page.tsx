@@ -14,8 +14,10 @@ import {
   eliminarPublicacion,
   listarMisPublicaciones,
   publicarBorrador,
+  renovarPublicacion,
   solicitarVerificacion,
 } from "@/lib/api";
+import { antiguedadDe } from "@/lib/antiguedad";
 import { tieneSesion } from "@/lib/auth";
 import { cargarPerfilVendedor } from "@/lib/vendedor";
 import { AvisoContactoVendedor } from "@/components/AvisoContactoVendedor";
@@ -419,6 +421,25 @@ export default function MisPublicacionesPage() {
     }
   }
 
+  // Renueva un anuncio que perdió vigencia (3 semanas sin cambios): lo vuelve a subir
+  // al frente del feed. Gratis. El backend valida que esté activo y ya vencido (422).
+  async function renovar(id: number) {
+    setProcesando(id);
+    setError(null);
+    try {
+      const actualizada = await renovarPublicacion(id);
+      setPubs((prev) => prev.map((p) => (p.id === id ? actualizada : p)));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || "No pudimos renovar el anuncio.");
+      } else {
+        setError("No pudimos renovar el anuncio.");
+      }
+    } finally {
+      setProcesando(null);
+    }
+  }
+
   async function borrar(id: number) {
     if (!confirm("¿Eliminar esta publicación?")) return;
     setProcesando(id);
@@ -499,6 +520,9 @@ export default function MisPublicacionesPage() {
           const faltaFicha = fichaPendiente(pct);
           const esBorrador = p.estado === "borrador";
           const listoParaPublicar = puedePublicar(pct);
+          // Antigüedad (migración 0026). `puede_renovar` lo decide el backend
+          // (activa + ya vencida); acá solo se pinta el botón donde corresponde.
+          const ant = antiguedadDe(p);
           return (
             <div key={p.id} className="space-y-3">
               <div className="flex flex-col gap-4 rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta sm:flex-row sm:items-center">
@@ -531,6 +555,17 @@ export default function MisPublicacionesPage() {
                   </div>
                   <p className="mt-1 text-lg font-bold text-tinta">{titulo}</p>
                   <p className="text-sm text-secundario">${p.precio_usd.toLocaleString("es-EC")}</p>
+                  {ant && (
+                    <p className="mt-1 text-xs text-secundario">
+                      {ant.texto}
+                      {ant.vencido && (
+                        <span className="font-semibold text-tinta">
+                          {" "}
+                          · sin renovar, bajó en el listado
+                        </span>
+                      )}
+                    </p>
+                  )}
 
                   {/* CTA persistente (M2.5): mientras la ficha no esté al 100 %, el dueño
                       ve cuánto le falta y entra a completarla de un clic. No bloquea nada. */}
@@ -593,6 +628,19 @@ export default function MisPublicacionesPage() {
                   </div>
                 </div>
                 <div className="flex flex-row gap-2 sm:flex-col">
+                  {/* Renovar: solo cuando el anuncio ya perdió vigencia y sigue activo
+                      (lo decide el backend con `puede_renovar`). Es la acción que saca
+                      al anuncio del fondo del listado; por eso va en `--accion`. */}
+                  {p.puede_renovar && (
+                    <button
+                      onClick={() => renovar(p.id)}
+                      disabled={ocupado}
+                      title="Vuelve a poner este anuncio al frente del listado"
+                      className="flex-1 rounded-full bg-accion px-4 py-2 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {ocupado ? "…" : "Renovar anuncio"}
+                    </button>
+                  )}
                   {/* Publicar el borrador: deshabilitado bajo el umbral, diciendo cuánto
                       falta (M2.8). El backend revalida igual. */}
                   {esBorrador && (

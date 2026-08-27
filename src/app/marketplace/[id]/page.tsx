@@ -38,6 +38,7 @@ import {
   tonoEstadoComponente,
 } from "@/lib/ficha";
 import { precioNum } from "@/lib/precio";
+import { antiguedadDe } from "@/lib/antiguedad";
 import {
   ApiError,
   EstadoComponente,
@@ -436,6 +437,7 @@ export default function PublicacionDetallePage() {
   }, [id]);
 
   const pctFicha = pub?.ficha?.completitud ?? pub?.completitud_ficha ?? 0;
+  const antiguedadDetalle = pub ? antiguedadDe(pub) : null;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-6 sm:py-10">
@@ -530,6 +532,17 @@ export default function PublicacionDetallePage() {
                 ]
                   .filter(Boolean)
                   .join("   ·   ")}
+              </p>
+            )}
+
+            {/* Antigüedad del anuncio (migración 0026): "Publicado hace N semanas".
+                Es solo recencia, en el tono neutro de la meta. */}
+            {antiguedadDetalle && (
+              <p className="mt-1 text-xs text-secundario">
+                {antiguedadDetalle.texto}
+                {antiguedadDetalle.vencido && esMia && (
+                  <span className="font-semibold text-tinta"> · renuévalo para volver al frente</span>
+                )}
               </p>
             )}
 

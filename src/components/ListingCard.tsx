@@ -35,6 +35,7 @@ import { BotonFavorito } from "@/components/BotonFavorito";
 import { fichaIncompleta } from "@/lib/ficha";
 import type { ControlFavoritos } from "@/lib/favoritos";
 import { precioNum } from "@/lib/precio";
+import { antiguedadDe } from "@/lib/antiguedad";
 import type { PublicacionInterna, PublicacionReferenciada } from "@/types/api";
 
 // Extras opcionales del carril comprador (MC1). Son opcionales a propósito: donde la
@@ -89,6 +90,31 @@ function LineaExtras({
   // Cuerpo a 12px/400 (§3). `text-secundario` da 5.87:1 sobre la tarjeta blanca.
   return (
     <p className="mt-0.5 line-clamp-2 text-xs text-secundario">{extras.join(" · ")}</p>
+  );
+}
+
+// Antigüedad del anuncio: "Publicado hace N semanas". Es metadato de recencia, así que
+// va con la placa (no es criterio de decisión ni un chip). Cuando el anuncio ya perdió
+// vigencia (`vencido`) se añade "· sin renovar" en el MISMO tono neutro —no se estrena
+// un color: la señal es la palabra, no el color (regla "un color, un trabajo" de §1)—.
+// Sin datos de fecha (backend viejo) no se renderiza nada.
+function LineaAntiguedad({
+  pub,
+}: {
+  pub: {
+    semanas_publicada?: number;
+    vigente?: boolean;
+    renovada_en?: string;
+    creado_en?: string;
+  };
+}) {
+  const ant = antiguedadDe(pub);
+  if (!ant) return null;
+  return (
+    <p className="mt-1 text-[11px] text-secundario">
+      {ant.texto}
+      {ant.vencido && <span className="opacity-80"> · sin renovar</span>}
+    </p>
   );
 }
 
@@ -202,6 +228,7 @@ export function ListingInternaCard({
               para verificar, no un criterio para decidir. En mono y en `--marca`
               porque es el dato del registro oficial (§1/§3), vía `.texto-placa`. */}
           <p className="mt-1 texto-placa">{pub.placa}</p>
+          <LineaAntiguedad pub={pub} />
         </div>
 
         {/* CHIPS — metadato, al final (§4: una fila y NADA más). Como máximo dos,
@@ -267,6 +294,7 @@ export function ListingReferenciadaCard({
           <h3 className="truncate text-[15px] font-medium text-tinta">{titulo}</h3>
           <LineaExtras ciudad={pub.ciudad} kilometraje={pub.kilometraje} />
           {pub.placa && <p className="mt-1 texto-placa">{pub.placa}</p>}
+          <LineaAntiguedad pub={pub} />
         </div>
 
         {/* Descripción copiada del anuncio original (M2.8): UNA línea. El detalle

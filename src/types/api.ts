@@ -437,6 +437,15 @@ export interface PublicacionInterna {
   // URL de la primera foto (portada del feed). null si la publicación no tiene fotos.
   foto_portada?: string | null;
   creado_en: string;
+  // Antigüedad del anuncio (migración 0026 del backend). `renovada_en` = publicación
+  // o última renovación; de ahí sale "hace N semanas". `vigente=false` → ya cumplió
+  // `SEMANAS_VIGENCIA` semanas sin renovar y el feed/búsqueda lo mandan al final.
+  // `puede_renovar` = el dueño puede volver a subirlo (solo si además está activa).
+  // Opcionales: un backend viejo (aún sin desplegar) no los manda.
+  renovada_en?: string;
+  semanas_publicada?: number;
+  vigente?: boolean;
+  puede_renovar?: boolean;
 }
 
 export type EstadoModeracion = "pendiente" | "aprobada" | "rechazada";
@@ -463,6 +472,11 @@ export interface PublicacionReferenciada {
   estado_moderacion: EstadoModeracion;
   activa: boolean;
   creado_en: string;
+  // Antigüedad (migración 0026). Una referencia externa también envejece y cae al
+  // final del feed/búsqueda al perder vigencia; no se renueva (la trae un aportante,
+  // no el vendedor). Derivado de `creado_en` en el backend. Opcionales: backend viejo.
+  semanas_publicada?: number;
+  vigente?: boolean;
 }
 
 // Referencia que aporta el usuario: pega el link de un anuncio externo (Facebook

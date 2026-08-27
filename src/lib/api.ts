@@ -416,6 +416,17 @@ export function solicitarVerificacion(id: number) {
   );
 }
 
+// El dueño RENUEVA su anuncio: `renovada_en = now()` y vuelve al frente del feed y de
+// la búsqueda. Gratis. 422 si el anuncio no está activo o si todavía es vigente
+// (renovar es el remedio de un anuncio viejo, no un atajo para saltar la cola).
+export function renovarPublicacion(id: number) {
+  return fetchAPI<PublicacionInterna>(
+    `/marketplace/publicaciones/${id}/renovar`,
+    { method: "POST" },
+    true
+  );
+}
+
 // ─── Vendedor y contacto comprador-vendedor (M5 / TASK-001) ───────────────
 // El teléfono del vendedor vive SOLO en estas tres rutas: el perfil propio (privado) y
 // la revelación bajo acción explícita del comprador. Ni el feed, ni /buscar, ni el
