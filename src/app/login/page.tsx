@@ -14,16 +14,29 @@ const ID_EMAIL = "login-email";
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-3xl font-bold">Iniciar sesión</h1>
-      <p className="mt-2 text-sm text-secundario">
-        ¿No tienes cuenta?{" "}
-        <Link href="/registro" className="text-marca font-medium">Crear una</Link>
-      </p>
+    // Dirección C: tarjeta mínima centrada. Contenedor angosto centrado vertical y
+    // horizontalmente; la tarjeta lleva borde, radio 2xl y sombra de tarjeta. El enlace a
+    // registro va centrado, debajo de la tarjeta.
+    <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-6 py-12">
+      <div className="rounded-2xl border border-borde bg-superficie p-6 sombra-tarjeta sm:p-8">
+        <h1 className="text-center text-2xl font-bold text-tinta">Iniciar sesión</h1>
+        <p className="mt-1.5 text-center text-sm text-secundario">
+          Entra para ver y cuidar el historial de tus autos.
+        </p>
 
-      <Suspense fallback={<div className="mt-8 h-48 animate-pulse rounded-xl bg-superficie-tenue" />}>
-        <LoginForm />
-      </Suspense>
+        <Suspense
+          fallback={<div className="mt-6 h-48 animate-pulse rounded-xl bg-superficie-tenue" />}
+        >
+          <LoginForm />
+        </Suspense>
+      </div>
+
+      <p className="mt-4 text-center text-sm text-secundario">
+        ¿Nuevo por aquí?{" "}
+        <Link href="/registro" className="font-medium text-marca">
+          Crea tu cuenta
+        </Link>
+      </p>
     </div>
   );
 }

@@ -83,8 +83,9 @@ export function DestacadosMarket() {
 
       {autos.length > 0 && (
         // 2 columnas en móvil, igual que la grilla de `/marketplace`: una tarjeta por
-        // fila obligaba a seis pantallas de scroll para ver seis autos en la home.
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-3">
+        // fila obligaba a seis pantallas de scroll para ver seis autos en la home. En
+        // desktop sube a la densidad de la Dirección C (hasta 4 por fila).
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {autos.map((p) => (
             <ListingInternaCard key={p.id} pub={p} />
           ))}

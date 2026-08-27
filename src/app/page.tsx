@@ -103,7 +103,7 @@ function ValoresSection() {
             href={it.href}
             className="group sombra-tarjeta block rounded-3xl border border-borde bg-superficie p-6 transition hover:-translate-y-0.5 hover:border-marca"
           >
-            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-accion text-2xl shadow-sm">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-superficie-tenue text-2xl">
               {it.emoji}
             </div>
             <h3 className="text-lg font-semibold text-tinta">

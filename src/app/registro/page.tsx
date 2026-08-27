@@ -47,40 +47,51 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-3xl font-bold">Crear cuenta</h1>
-      <p className="mt-2 text-sm text-secundario">
+    // Dirección C: tarjeta mínima centrada, mismo molde que /login.
+    <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col justify-center px-6 py-12">
+      <div className="rounded-2xl border border-borde bg-superficie p-6 sombra-tarjeta sm:p-8">
+        <h1 className="text-center text-2xl font-bold text-tinta">Crear cuenta</h1>
+        <p className="mt-1.5 text-center text-sm text-secundario">
+          Es gratis. Guarda tus autos y su historial en un solo lugar.
+        </p>
+
+        {/* Con Google no hay contraseña que inventar ni que recordar, que es justamente el
+            punto: por eso va ARRIBA del formulario y como alternativa visible, no como un
+            enlace al pie. El separador "o" lo pinta AccesoGoogle.
+            Sin `alPedirContrasena`: acá no hay formulario de contraseña que sirva para un
+            409 (ese correo YA tiene cuenta), así que la salida es el enlace a /login que
+            AccesoGoogle renderiza, apuntando a /mi-cuenta. */}
+        <AccesoGoogle contexto="registro" alObtenerToken={entrar} />
+
+        <form onSubmit={submit} className="mt-6 space-y-4">
+          <CampoTexto label="Nombre (opcional)" value={nombre} onChange={setNombre} autoComplete="name" />
+          <CampoTexto label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" requerido />
+          <CampoTexto label="Contraseña (8+ caracteres)" type="password" value={password} onChange={setPassword} autoComplete="new-password" requerido />
+          {error && (
+            <p className="rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={enviando}
+            className="w-full rounded-xl bg-accion px-4 py-3 font-semibold text-superficie shadow-sm disabled:opacity-60"
+          >
+            {enviando ? "Creando..." : "Crear cuenta gratis"}
+          </button>
+        </form>
+
+        <p className="mt-5 text-center text-xs text-secundario">
+          Al registrarte aceptas guardar tu información de garage en nuestros servidores. No
+          compartimos datos con terceros.
+        </p>
+      </div>
+
+      <p className="mt-4 text-center text-sm text-secundario">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/login" className="text-marca font-medium">Iniciar sesión</Link>
-      </p>
-
-      {/* Con Google no hay contraseña que inventar ni que recordar, que es justamente el
-          punto: por eso va ARRIBA del formulario y como alternativa visible, no como un
-          enlace al pie. El separador "o" lo pinta AccesoGoogle.
-          Sin `alPedirContrasena`: acá no hay formulario de contraseña que sirva para un
-          409 (ese correo YA tiene cuenta), así que la salida es el enlace a /login que
-          AccesoGoogle renderiza, apuntando a /mi-cuenta. */}
-      <AccesoGoogle contexto="registro" alObtenerToken={entrar} />
-
-      <form onSubmit={submit} className="mt-6 space-y-4">
-        <CampoTexto label="Nombre (opcional)" value={nombre} onChange={setNombre} autoComplete="name" />
-        <CampoTexto label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" requerido />
-        <CampoTexto label="Contraseña (8+ caracteres)" type="password" value={password} onChange={setPassword} autoComplete="new-password" requerido />
-        {error && (
-          <p className="rounded-xl border border-error bg-error-tinte px-4 py-2 text-sm text-error">
-            {error}
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={enviando}
-          className="w-full rounded-xl bg-accion px-4 py-3 font-semibold text-superficie shadow-sm disabled:opacity-60"
-        >
-          {enviando ? "Creando..." : "Crear cuenta gratis"}
-        </button>
-      </form>
-      <p className="mt-6 text-center text-xs text-secundario">
-        Al registrarte aceptas guardar tu información de garage en nuestros servidores. No compartimos datos con terceros.
+        <Link href="/login" className="font-medium text-marca">
+          Inicia sesión
+        </Link>
       </p>
     </div>
   );

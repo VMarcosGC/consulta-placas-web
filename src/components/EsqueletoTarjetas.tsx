@@ -20,7 +20,7 @@ function TarjetaFantasma() {
 export function EsqueletoTarjetas({ cantidad = 8 }: { cantidad?: number }) {
   return (
     <div
-      className="grid animate-pulse grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
+      className="grid animate-pulse grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
       aria-hidden
     >
       {Array.from({ length: cantidad }, (_, i) => (

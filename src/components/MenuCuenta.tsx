@@ -255,7 +255,7 @@ export function MenuCuenta({
            fuente, para no mover el resto de la fila del header a 320px. */
         className="inline-flex min-h-11 items-center gap-2 rounded-full border border-borde bg-superficie px-2 py-1.5 text-sm font-medium text-secundario hover:border-borde-fuerte sm:px-3"
       >
-        <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accion text-[11px] font-black text-superficie">
+        <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full bg-marca text-[11px] font-black text-superficie">
           {inicial}
           {/* Punto ámbar = "todavía no pueden escribirte". El texto va en el aria-label
               del botón; acá es decoración. */}

@@ -332,10 +332,11 @@ function ContenidoMarketplace() {
   const internas = useMemo(() => todasLasInternas(feed), [feed]);
   const referenciadas = feed.referenciadas;
 
-  const marcas = useMemo(
-    () => marcasDelStock([...internas, ...referenciadas]).slice(0, MAX_CHIPS_MARCA),
+  const marcasStock = useMemo(
+    () => marcasDelStock([...internas, ...referenciadas]),
     [internas, referenciadas]
   );
+  const marcas = useMemo(() => marcasStock.slice(0, MAX_CHIPS_MARCA), [marcasStock]);
 
   const bandasConStock = useMemo(
     () =>
@@ -364,6 +365,23 @@ function ContenidoMarketplace() {
   // (internas + referenciadas), no los 7 bloques curados de MC1.
   const totalStock = internas.length + referenciadas.length;
   const portadaCurada = totalStock >= UMBRAL_PORTADA_CURADA;
+
+  // Línea de estadística de la portada (Dirección C · ESTORE). Se deriva del feed que ya
+  // está en cliente —sin endpoint nuevo—: total de autos, marcas distintas y cuántos son
+  // "verificados o con ficha" (`esTransparente`). Una parte con conteo 0 se omite; con el
+  // feed cargando o vacío `partes` queda vacío y no se pinta la línea.
+  const lineaEstadistica = [
+    totalStock > 0 &&
+      `${totalStock.toLocaleString("es-EC")} ${totalStock === 1 ? "auto" : "autos"}`,
+    marcasStock.length > 0 &&
+      `${marcasStock.length} ${marcasStock.length === 1 ? "marca" : "marcas"}`,
+    transparentes.length > 0 &&
+      `${transparentes.length} ${
+        transparentes.length === 1 ? "verificado o con ficha" : "verificados o con ficha"
+      }`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   // Grilla unificada (solo en modo poco stock): internas + referenciadas en una lista,
   // de lo más reciente a lo más antiguo. Las premium se distinguen solas por su `ring-2`.
@@ -459,6 +477,11 @@ function ContenidoMarketplace() {
         <h1 className="text-2xl font-black text-tinta sm:text-3xl">
           Autos <span className="text-marca">en venta</span>
         </h1>
+        {/* Línea de estadística (Dirección C): conteos del inventario en `font-mono`
+            —es un dato, no copy—. Se arma en `lineaEstadistica` desde el feed en cliente. */}
+        {lineaEstadistica.length > 0 && (
+          <p className="mt-1.5 font-mono text-xs text-secundario">{lineaEstadistica}</p>
+        )}
         <p className="mt-1 text-sm text-secundario sm:text-base">
           Cada anuncio muestra la ficha técnica del vendedor y los datos oficiales de su
           placa. También hay referencias de portales externos, sin verificar.
@@ -488,7 +511,9 @@ function ContenidoMarketplace() {
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-accion px-4 py-2 text-sm font-semibold text-superficie shadow-sm hover:opacity-90"
+              /* Píldora oscura, no `--accion`: buscar es navegación, no conversión —
+                 misma familia que "Cargar más autos" (§2). */
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-oscuro px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave"
             >
               Buscar
             </button>
@@ -507,14 +532,14 @@ function ContenidoMarketplace() {
                 type="button"
                 aria-pressed={activa}
                 onClick={() => (activa ? actualizarUrl({ precio_min: null, precio_max: null }) : aplicarBanda(b))}
-                // Chip ACTIVO en `--marca`, no en `--accion` (TASK-017 fase 3). Un filtro
-                // aplicado es estado de selección, no la acción de conversión, y §2 reserva
-                // `--accion` para esa sola cosa. Además queda en la misma familia que el
-                // botón "Filtros" de acá al lado, que ya marcaba su estado activo con
-                // `--marca`: eran dos lenguajes para "esto está activo" en la misma barra.
+                // Chip ACTIVO en píldora OSCURA (`--oscuro`), estilo ESTORE (Dirección C):
+                // un filtro aplicado es estado de selección de segundo nivel, no la acción
+                // de conversión —§2 reserva `--accion` (esmeralda) para esa sola cosa—. La
+                // píldora oscura es el lenguaje del sistema para "seleccionado / secundario
+                // sólido"; el botón "Filtros" de acá al lado marca su estado activo igual.
                 className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
                   activa
-                    ? "bg-marca text-superficie"
+                    ? "bg-oscuro text-white"
                     : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
                 }`}
               >
@@ -528,15 +553,16 @@ function ContenidoMarketplace() {
             onClick={() => setPanelAbierto((v) => !v)}
             className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
               nAvanzados > 0
-                ? "border-marca bg-marca-tinte text-marca-texto"
+                ? "border-oscuro bg-oscuro text-white"
                 : "border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
             }`}
           >
             Filtros
             {nAvanzados > 0 && (
-              // Contador de filtros activos: metadato, no acción. En `--marca` para no
-              // gastar `--accion` (§2) y para acompañar al botón que lo contiene.
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-marca text-[11px] font-black text-superficie">
+              // Contador de filtros activos: metadato, no acción. Va SOBRE la píldora oscura
+              // del botón activo, así que blanco sólido con el número en oscuro: se lee como
+              // badge de notificación y no gasta `--accion` (§2).
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-[11px] font-black text-oscuro">
                 {nAvanzados}
               </span>
             )}
@@ -725,7 +751,7 @@ function ContenidoMarketplace() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {busqueda.items.map((item) =>
                   item.tipo_publicacion === "interna" && item.interna ? (
                     <ListingInternaCard
@@ -754,7 +780,9 @@ function ContenidoMarketplace() {
                     type="button"
                     onClick={cargarMas}
                     disabled={cargandoMas}
-                    className="rounded-full bg-accion px-6 py-3 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    // Píldora OSCURA, no `--accion`: "cargar más" es navegación, no
+                    // conversión. El esmeralda queda reservado para publicar/contactar (§2).
+                    className="rounded-full bg-oscuro px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {cargandoMas ? "Cargando…" : "Cargar más autos"}
                   </button>
@@ -794,7 +822,7 @@ function ContenidoMarketplace() {
                 titulo="♥ Tus favoritos"
                 descripcion="Los autos que guardaste. Si alguno baja de precio, te lo marcamos aquí."
               >
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {favoritosInternos.map((p) => (
                     <ListingInternaCard
                       key={`fi-${p.id}`}
@@ -827,7 +855,7 @@ function ContenidoMarketplace() {
                 }
                 descripcion="Todo lo publicado ahora mismo, de lo más reciente a lo más antiguo."
               >
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {stockUnificado.map((e) =>
                     e.tipo === "interna" ? (
                       <ListingInternaCard
@@ -884,7 +912,7 @@ function ContenidoMarketplace() {
                   titulo="✓ Verificados y transparentes"
                   descripcion="Con sello de la plataforma o con la ficha técnica casi completa."
                 >
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {transparentes.slice(0, MAX_POR_BLOQUE).map((p) => (
                       <ListingInternaCard
                         key={p.id}
@@ -919,7 +947,7 @@ function ContenidoMarketplace() {
               {/* Recién publicados. */}
               {recientes.length > 0 && (
                 <Bloque titulo="Recién publicados" descripcion="Lo último que entró al mercado.">
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {recientes.slice(0, MAX_POR_BLOQUE).map((p) => (
                       <ListingInternaCard
                         key={p.id}
@@ -969,7 +997,7 @@ function ContenidoMarketplace() {
                   titulo="Referencias externas"
                   descripcion="Anuncios de otros portales aportados por usuarios. La plataforma no los verifica."
                 >
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {referenciadas.map((p) => (
                       <ListingReferenciadaCard key={p.id} pub={p} favoritos={control} />
                     ))}
