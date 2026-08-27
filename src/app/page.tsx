@@ -1,11 +1,9 @@
-// Landing market-first (M2.6). El producto ES el market de autos: comprar y vender con
-// transparencia. La consulta por placa baja a "Herramientas" — sigue accesible y completa,
-// pero deja de ser la promesa principal mientras las fuentes estatales sigan bloqueadas.
-// Español de Ecuador (tuteo), tono no agresivo.
+// Página inicial: NO es un feed de autos (eso vive en /marketplace). Es un resumen de
+// lo que hay en la web —comprar, vender, garage, consulta de placa— con vínculos
+// directos a cada cosa. Español de Ecuador (tuteo), tono no agresivo.
 
 import Link from "next/link";
 import { ConsultaForm } from "@/components/ConsultaForm";
-import { DestacadosMarket } from "@/components/DestacadosMarket";
 
 export default function Home() {
   return (
@@ -13,13 +11,11 @@ export default function Home() {
     // (fixed) para que el último bloque no quede tapado. 0 desde `md`.
     <div className="espacio-barra-movil">
       <HeroSection />
-      <DestacadosMarket />
       <ValoresSection />
       <HerramientasSection />
       {/* Sin bloque de precios acá. La monetización está SUSPENDIDA en toda la superficie
           del producto (AGENTS.md §1.0.3): no hay página de precios, ni tokens, ni planes
-          de pago. Cuando se reactive, dónde va el costo se decide de nuevo — no se
-          revierte por costumbre. */}
+          de pago. */}
       <CtaSection />
     </div>
   );
@@ -35,21 +31,14 @@ function HeroSection() {
       <div className="mx-auto max-w-4xl px-6 pt-10 pb-10 text-center sm:pt-24 sm:pb-16">
         <span className="inline-flex items-center gap-2 rounded-full border border-borde bg-superficie px-3 py-1 text-xs font-medium text-secundario shadow-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-confirmado animate-pulse" />
-          Ficha técnica declarada + datos oficiales de la placa
+          Ficha del vendedor + datos oficiales de la placa
         </span>
-        <h1 className="mt-5 text-4xl sm:mt-6 sm:text-7xl font-black tracking-tight leading-[1.05] text-tinta">
-          Compra y vende autos<br />
-          con <span className="text-marca">transparencia</span>
+        <h1 className="mt-5 text-4xl sm:mt-6 sm:text-6xl font-black tracking-tight leading-[1.05] text-tinta">
+          Compra y vende autos en Ecuador
         </h1>
-        {/* Subtítulo corto en móvil (2-3 líneas); el texto completo queda para desktop. */}
-        <p className="mx-auto mt-5 max-w-2xl text-lg text-secundario sm:hidden">
-          Cada anuncio junta la ficha del vendedor con los datos oficiales de la placa. Así
-          sabes qué estás viendo antes de ir a verlo.
-        </p>
-        <p className="mx-auto mt-6 hidden max-w-2xl text-lg text-secundario sm:block">
-          Cada anuncio muestra la ficha técnica que declara el vendedor y, junto a ella, los
-          datos oficiales de la placa: matrícula e infracciones. Así sabes qué estás viendo
-          antes de ir a verlo.
+        <p className="mx-auto mt-5 max-w-xl text-lg text-secundario">
+          Un solo lugar para ver anuncios, publicar el tuyo y revisar el historial de una
+          placa. Cada auto viene con lo que declara el vendedor y con sus datos oficiales.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row">
           <Link
