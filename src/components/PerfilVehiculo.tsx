@@ -334,17 +334,20 @@ function derivarEnlaces(perfil: VehiculoConsolidado): EnlaceExterno[] {
 function BotonEnlace({ e }: { e: EnlaceExterno }) {
   const base =
     "group flex items-center justify-between gap-2 rounded-xl px-4 py-3 transition";
+  // El destacado es navegación a un portal oficial externo, no la conversión de la
+  // pantalla: píldora oscura (`--oscuro`), no esmeralda. El único `--accion` de la
+  // consulta queda para el botón "Consultar" del formulario.
   if (e.destacado) {
     return (
       <a
         href={e.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${base} bg-accion text-superficie shadow-sm hover:opacity-90`}
+        className={`${base} bg-oscuro text-white shadow-sm hover:bg-oscuro-suave`}
       >
         <span className="min-w-0">
           <span className="block text-sm font-bold">{e.etiqueta} ↗</span>
-          <span className="block truncate text-[11px] text-superficie/80">{e.descripcion}</span>
+          <span className="block truncate text-[11px] text-white/80">{e.descripcion}</span>
         </span>
       </a>
     );

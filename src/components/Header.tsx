@@ -52,6 +52,15 @@ export function Header() {
 
   const nombreCorto = usuario?.nombre?.trim() || usuario?.email?.split("@")[0] || "Mi cuenta";
 
+  // Botón-ícono del cluster derecho (estilo tienda): círculo con filete frío, realce
+  // sutil al pasar y anillo de foco en `--marca`. El tamaño (h-10/w-10 = 40px) sale de
+  // la Dirección C; queda apenas bajo el pill de la cuenta (min-h-11) pero centrado en
+  // la fila, sin mover el ajuste medido a 320-400px.
+  const claseIconoHeader =
+    "inline-flex h-10 w-10 items-center justify-center rounded-full border border-borde " +
+    "bg-superficie text-lg leading-none transition-colors hover:bg-superficie-tenue " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca";
+
   function salir() {
     cerrarSesion(); // dispara "sesion-cambiada" → el header se actualiza solo
     router.push("/");
@@ -116,6 +125,17 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {logueado ? (
             <>
+              {/* Favoritos: no hay página propia; los favoritos guardados se ven en la
+                  portada del market ("Tus favoritos"). Solo con sesión: sin cuenta no
+                  hay favoritos que mostrar. El ♡ va en `--marca` (identidad/favorito),
+                  no en `--accion`. */}
+              <Link
+                href="/marketplace"
+                aria-label="Tus favoritos"
+                className={`${claseIconoHeader} text-marca`}
+              >
+                <span aria-hidden>♡</span>
+              </Link>
               {/* Menú de la cuenta: única entrada a "Mis publicaciones" y "Mi contacto",
                   que no tenían enlace propio en el Header. Visible en todos los anchos
                   (en celular queda solo el círculo con la inicial). */}

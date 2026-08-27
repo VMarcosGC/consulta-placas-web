@@ -92,7 +92,7 @@ export default function ModeracionPage() {
           </p>
           <Link
             href="/marketplace"
-            className="mt-6 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
+            className="mt-6 inline-flex rounded-full bg-oscuro px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-oscuro-suave"
           >
             Ir al marketplace
           </Link>

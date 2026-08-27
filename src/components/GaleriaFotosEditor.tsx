@@ -210,8 +210,11 @@ export function GaleriaFotosEditor({ publicacionId }: { publicacionId: number })
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.url} alt={`Foto ${i + 1}`} className="h-28 w-full object-cover" />
+                {/* "Portada" es una etiqueta decorativa (marca cuál foto es la portada),
+                    no una acción: tinte de marca, nunca `--accion` —esa se reserva para
+                    el botón "+ Agregar fotos" de arriba. */}
                 {i === 0 && (
-                  <span className="absolute left-1 top-1 rounded-full bg-accion px-2 py-0.5 text-[10px] font-bold text-superficie">
+                  <span className="absolute left-1 top-1 rounded-full bg-marca-tinte px-2 py-0.5 text-[10px] font-bold text-marca-texto">
                     Portada
                   </span>
                 )}

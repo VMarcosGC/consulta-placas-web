@@ -83,7 +83,7 @@ export function DatosOficialesMini({ placa }: { placa: string }) {
     (!sinDatosOficiales && r.matriculaEtiqueta === "Sin dato" && r.municipalesEnProceso);
 
   return (
-    <section className="rounded-2xl border border-borde bg-superficie p-5 sombra-tarjeta sm:p-6">
+    <section className="rounded-2xl border border-borde-fuerte bg-superficie p-5 sombra-tarjeta sm:p-6">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-tinta">Datos oficiales</h2>
         <Insignia tono="info">Fuentes públicas</Insignia>

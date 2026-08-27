@@ -464,7 +464,7 @@ export default function PublicacionDetallePage() {
           <p className="mt-1 text-secundario">Puede que ya no esté disponible o se haya pausado.</p>
           <Link
             href="/marketplace"
-            className="mt-4 inline-flex rounded-full bg-accion px-5 py-2.5 text-sm font-semibold text-superficie"
+            className="mt-4 inline-flex rounded-full bg-oscuro px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-oscuro-suave"
           >
             Ver otras publicaciones
           </Link>
@@ -534,15 +534,16 @@ export default function PublicacionDetallePage() {
             )}
 
             {/* Fila de acciones, visible sin scroll en celular (M2.7): "Verificar esta
-                placa" (acción de valor sobre la placa) y, para el comprador, "Contactar
-                al vendedor", que ancla a la sección de contacto del final. La revelación
-                del teléfono vive al final, después de la evidencia (ficha + datos
-                oficiales) — decisión de Marcos, 2026-08-27. El dueño ve "Editar mi
-                anuncio" en lugar del ancla. */}
+                placa" —navegación a la herramienta de consulta, píldora oscura, NO es
+                conversión— y, para el comprador, "Contactar al vendedor", que ancla a la
+                sección de contacto del final. Así el único `--accion` (esmeralda) de la
+                pantalla queda para "Ver teléfono". La revelación del teléfono vive al
+                final, después de la evidencia (ficha + datos oficiales) — decisión de
+                Marcos, 2026-08-27. El dueño ve "Editar mi anuncio" en lugar del ancla. */}
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
                 href={`/consultar/${encodeURIComponent(pub.placa)}`}
-                className="rounded-full bg-accion px-6 py-3 text-center text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
+                className="rounded-full bg-oscuro px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-oscuro-suave"
               >
                 Verificar esta placa
               </Link>
