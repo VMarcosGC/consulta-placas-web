@@ -507,13 +507,12 @@ export default function PublicacionDetallePage() {
               )}
             </div>
 
-            {/* CTA principal. El contacto con el vendedor llega en M5; por ahora la acción
-                de más valor para el comprador es verificar la placa en las fuentes.
-
-                NOTA: se evaluó ascender "Ver teléfono" a CTA primario y se REVIRTIÓ a
-                propósito. Cambiar qué acción manda en un anuncio es una decisión de
-                producto y merece discutirse aparte, no colarse dentro de la tarea que
-                agrega el contacto. Queda anotado como candidato en ORDEN-DE-TRABAJO. */}
+            {/* Fila de acciones, visible sin scroll en celular (M2.7): "Verificar esta
+                placa" (acción de valor sobre la placa) y, para el comprador, "Contactar
+                al vendedor", que ancla a la sección de contacto del final. La revelación
+                del teléfono vive al final, después de la evidencia (ficha + datos
+                oficiales) — decisión de Marcos, 2026-08-27. El dueño ve "Editar mi
+                anuncio" en lugar del ancla. */}
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
                 href={`/consultar/${encodeURIComponent(pub.placa)}`}
@@ -521,6 +520,14 @@ export default function PublicacionDetallePage() {
               >
                 Verificar esta placa
               </Link>
+              {!esMia && (
+                <a
+                  href="#contacto-vendedor"
+                  className="rounded-full border border-borde-fuerte bg-superficie px-6 py-3 text-center text-sm font-semibold text-secundario transition hover:bg-superficie-tenue"
+                >
+                  Contactar al vendedor
+                </a>
+              )}
               {esMia && (
                 <Link
                   href="/marketplace/mis-publicaciones"
@@ -530,10 +537,6 @@ export default function PublicacionDetallePage() {
                 </Link>
               )}
             </div>
-
-            {/* Contacto con el vendedor (M5), como acción secundaria. El teléfono NO
-                viaja en el detalle: se pide bajo acción explícita (ver ContactoVendedor). */}
-            <ContactoVendedor publicacionId={pub.id} esMia={esMia} />
 
             {pub.descripcion && (
               <p className="mt-4 whitespace-pre-line text-secundario">{pub.descripcion}</p>
@@ -606,6 +609,15 @@ export default function PublicacionDetallePage() {
               </div>
             </div>
           )}
+
+          {/* 6. CONTACTO: el último paso de la decisión, después de la evidencia (ficha +
+              datos oficiales). El botón compacto del encabezado ancla aquí. El teléfono NO
+              viaja en el detalle: se revela bajo acción explícita (ver ContactoVendedor).
+              scroll-mt-24 deja aire para el header sticky al anclar. */}
+          <section id="contacto-vendedor" className="mt-8 scroll-mt-24">
+            <h2 className="text-xl font-bold text-tinta">Contactar al vendedor</h2>
+            <ContactoVendedor publicacionId={pub.id} esMia={esMia} />
+          </section>
         </>
       )}
     </div>
