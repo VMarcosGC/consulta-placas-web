@@ -17,6 +17,7 @@ import {
   solicitarVerificacion,
 } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
+import { cargarPerfilVendedor } from "@/lib/vendedor";
 import { AvisoContactoVendedor } from "@/components/AvisoContactoVendedor";
 import { FichaEditor } from "@/components/FichaEditor";
 import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
@@ -329,6 +330,12 @@ export default function MisPublicacionesPage() {
   // % de ficha recién guardado por el editor, por publicación. Pisa al valor que trajo el
   // listado para que el CTA "Completa tu ficha" baje en vivo sin recargar la página.
   const [completitudes, setCompletitudes] = useState<Record<number, number>>({});
+  // ¿El perfil de vendedor ya tiene un teléfono con el que un comprador pueda escribir?
+  //   null  → todavía no lo sabemos (cargando) o la lectura del perfil falló / sesión
+  //           vencida: en esos casos NO avisamos, no molestamos sobre algo no verificado.
+  //   false → el perfil no existe aún (404 de onboarding) o existe sin `telefono`.
+  //   true  → hay número; el aviso no aplica.
+  const [perfilConTelefono, setPerfilConTelefono] = useState<boolean | null>(null);
 
   // Patrón lint-safe (react-hooks/set-state-in-effect): el setState cae SIEMPRE después
   // del await, nunca de forma síncrona dentro del efecto. Ver src/app/marketplace/page.tsx.
@@ -340,10 +347,25 @@ export default function MisPublicacionesPage() {
     let activo = true;
     (async () => {
       try {
-        const lista = await listarMisPublicaciones();
+        // El perfil de vendedor se resuelve junto al listado: el aviso "todavía no pueden
+        // contactarte" solo tiene sentido sabiendo las dos cosas (hay anuncio activo + no
+        // hay número). `cargarPerfilVendedor` NO lanza —traduce el 404 de onboarding a
+        // `sin_perfil`— así que no puede romper este `try` ni el listado.
+        const [lista, perfilCargado] = await Promise.all([
+          listarMisPublicaciones(),
+          cargarPerfilVendedor(),
+        ]);
         if (activo) {
           setPubs(lista);
           setError(null);
+          // `sin_perfil` (404 de onboarding) o perfil sin `telefono` → falta el número.
+          // `fallo` / `sesion_expirada` se dejan en null: no avisamos sobre algo que no
+          // pudimos verificar (y del 401 se encarga el `catch` del listado).
+          if (perfilCargado.tipo === "perfil") {
+            setPerfilConTelefono(Boolean(perfilCargado.perfil.telefono));
+          } else if (perfilCargado.tipo === "sin_perfil") {
+            setPerfilConTelefono(false);
+          }
         }
       } catch (err) {
         if (!activo) return;
@@ -410,6 +432,14 @@ export default function MisPublicacionesPage() {
     }
   }
 
+  // Aviso de contacto: hay al menos un anuncio en el feed pero el vendedor no tiene número,
+  // así que quien pulse "Ver teléfono" recibe un 409. Se deriva de `pubs`, de modo que al
+  // publicar un borrador (borrador → activa) el aviso aparece sin recargar. Mientras carga,
+  // si el perfil ya tiene teléfono, o si no hay anuncios activos → no se muestra nada.
+  const hayAnuncioActivo = pubs.some((p) => p.estado === "activa");
+  const mostrarAvisoContacto =
+    !cargando && perfilConTelefono === false && hayAnuncioActivo;
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
       <Link href="/marketplace" className="text-sm text-secundario hover:text-tinta">
@@ -428,9 +458,10 @@ export default function MisPublicacionesPage() {
         </Link>
       </header>
 
-      {/* Contacto de vendedor (M5): publicar sin número deja al comprador sin cómo
-          escribir, así que el estado se ve donde el vendedor administra sus anuncios. */}
-      <AvisoContactoVendedor />
+      {/* Contacto de vendedor (M5 / cierre Ola 2): un anuncio activo sin número deja al
+          comprador con un 409 al pulsar "Ver teléfono". El aviso aparece SOLO en ese caso;
+          si no hay anuncios activos, si el perfil ya tiene número, o si aún carga → nada. */}
+      {mostrarAvisoContacto && <AvisoContactoVendedor />}
 
       {cargando && <p className="text-secundario">Cargando…</p>}
       {error && (

@@ -23,6 +23,7 @@ import {
   publicarBorrador,
 } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
+import { cargarPerfilVendedor } from "@/lib/vendedor";
 import { FichaEditor } from "@/components/FichaEditor";
 import { GaleriaFotosEditor } from "@/components/GaleriaFotosEditor";
 import {
@@ -505,6 +506,10 @@ export default function PublicarPage() {
   const [completitud, setCompletitud] = useState(0);
   const [publicando, setPublicando] = useState(false);
   const [errorPublicar, setErrorPublicar] = useState<string | null>(null);
+  // Publicado con éxito pero el perfil de vendedor no tiene teléfono: en vez de ir directo
+  // al detalle, mostramos un paso corto que invita a cargarlo. NO bloquea nada — el
+  // anuncio ya está activo — es solo el nudge para no cerrar el ciclo a medias.
+  const [necesitaContacto, setNecesitaContacto] = useState(false);
 
   useEffect(() => {
     if (!tieneSesion()) router.push("/login?next=/marketplace/publicar");
@@ -518,7 +523,19 @@ export default function PublicarPage() {
     setErrorPublicar(null);
     try {
       await publicarBorrador(publicacionId);
-      router.push(`/marketplace/${publicacionId}`);
+      // El anuncio YA está activo. Antes de mandarlo al detalle revisamos si el vendedor
+      // tiene cómo recibir mensajes: sin número, quien pulse "Ver teléfono" recibe un 409.
+      // `cargarPerfilVendedor` no lanza. Solo un "falta el número" CONFIRMADO desvía el
+      // flujo; un fallo de red o una sesión vencida siguen al detalle como siempre.
+      const perfil = await cargarPerfilVendedor();
+      const faltaContacto =
+        perfil.tipo === "sin_perfil" ||
+        (perfil.tipo === "perfil" && !perfil.perfil.telefono);
+      if (faltaContacto) {
+        setNecesitaContacto(true);
+      } else {
+        router.push(`/marketplace/${publicacionId}`);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         // El 422 del umbral ya trae copy es-EC accionable desde el backend.
@@ -571,6 +588,40 @@ export default function PublicarPage() {
   // donde el CTA "Completa tu ficha" le sigue recordando lo que le falta.
   function completarDespues() {
     router.push("/marketplace/mis-publicaciones");
+  }
+
+  // Paso de cierre: el anuncio quedó publicado pero el perfil no tiene teléfono. Dos
+  // salidas claras y ninguna bloquea: cargar el número ahora, o irse al detalle y hacerlo
+  // después. Token `--marca` (invitación, no error): mismo tono que el resto del wizard.
+  if (necesitaContacto && publicacionId != null) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-10">
+        <h1 className="text-3xl font-black text-tinta">Tu anuncio ya está publicado</h1>
+        <div className="mt-6 rounded-2xl border border-marca bg-marca-tinte p-5">
+          <p className="text-sm font-semibold text-marca-texto">
+            Un último paso: agrega tu número para que los compradores puedan escribirte.
+          </p>
+          <p className="mt-1 text-sm text-marca-texto">
+            Ya aparece en el feed y cualquiera puede verlo. Mientras no cargues un celular
+            con WhatsApp, quien se interese no tiene cómo comunicarse contigo.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/marketplace/mi-perfil-vendedor"
+              className="rounded-full bg-accion px-6 py-3 text-center text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
+            >
+              Agregar mi número
+            </Link>
+            <Link
+              href={`/marketplace/${publicacionId}`}
+              className="text-center text-sm font-semibold text-secundario hover:text-tinta"
+            >
+              Lo hago después
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
