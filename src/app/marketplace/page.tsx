@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buscarPublicaciones, obtenerFeedMarketplace } from "@/lib/api";
 import { InvitacionFavorito } from "@/components/BotonFavorito";
+import { EsqueletoTarjetas } from "@/components/EsqueletoTarjetas";
 import { ListingInternaCard, ListingReferenciadaCard } from "@/components/ListingCard";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { bajaDePrecio } from "@/lib/favoritos";
@@ -703,7 +704,7 @@ function ContenidoMarketplace() {
           </div>
 
           {cargandoBusqueda ? (
-            <p className="text-secundario">Buscando autos…</p>
+            <EsqueletoTarjetas />
           ) : busqueda.error ? (
             <div className="rounded-2xl border border-error bg-error-tinte p-6 text-center">
               <p className="font-semibold text-error">{busqueda.error}</p>
@@ -767,7 +768,7 @@ function ContenidoMarketplace() {
       {/* ── Portada del comprador (solo sin búsqueda activa) ────────────────── */}
       {!busquedaActiva && (
         <>
-          {cargandoFeed && <p className="text-secundario">Cargando publicaciones…</p>}
+          {cargandoFeed && <EsqueletoTarjetas />}
 
           {feedVacio && (
             <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">

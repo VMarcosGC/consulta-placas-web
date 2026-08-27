@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { obtenerFeedMarketplace } from "@/lib/api";
+import { EsqueletoTarjetas } from "@/components/EsqueletoTarjetas";
 import { ListingInternaCard } from "@/components/ListingCard";
 import type { PublicacionInterna } from "@/types/api";
 
@@ -61,7 +62,7 @@ export function DestacadosMarket() {
         </div>
       </div>
 
-      {cargando && <p className="text-secundario">Cargando publicaciones…</p>}
+      {cargando && <EsqueletoTarjetas cantidad={6} />}
 
       {!cargando && autos.length === 0 && (
         <div className="rounded-3xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
