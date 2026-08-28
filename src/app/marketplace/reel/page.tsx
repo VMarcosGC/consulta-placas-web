@@ -65,15 +65,27 @@ function ReelInterna({
   const guardado = control.esFavorito(pub.placa);
 
   return (
-    <section className="relative h-[100dvh] w-full shrink-0 snap-start snap-always overflow-hidden bg-black">
+    <section className="relative flex h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center overflow-hidden bg-black">
       {pub.foto_portada ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={pub.foto_portada}
-          alt={titulo(pub)}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+        <>
+          {/* Fondo desenfocado: rellena el letterbox sin un vacío plano. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={pub.foto_portada}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
+          />
+          {/* Foto real: mantiene su relación de aspecto y NO se agranda más allá de su
+              tamaño natural (así no pierde calidad). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={pub.foto_portada}
+            alt={titulo(pub)}
+            loading="lazy"
+            className="relative h-auto max-h-full w-auto max-w-full object-contain"
+          />
+        </>
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-superficie-tenue text-6xl">
           🚗
@@ -83,30 +95,38 @@ function ReelInterna({
       {/* Scrim para que el texto se lea sobre cualquier foto. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
-      {/* Rail derecho estilo IG. */}
-      <div className="absolute bottom-28 right-3 flex flex-col items-center gap-4 text-white">
+      {/* Rail derecho estilo IG. z-20 = por encima del bloque de texto (si no, ese
+          bloque se comía los toques del ♡ y la ℹ). */}
+      <div className="absolute bottom-32 right-3 z-20 flex flex-col items-center gap-3 text-white">
         <button
           type="button"
           onClick={() => control.alternar(pub.placa, pub.precio_usd)}
-          aria-label={guardado ? "Quitar de favoritos" : "Guardar en favoritos"}
+          aria-label={guardado ? "Quitar de tus intereses" : "Guardar en tus intereses"}
           aria-pressed={guardado}
-          className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-2xl backdrop-blur transition hover:bg-white/20"
+          className={`grid h-12 w-12 place-items-center rounded-full text-2xl backdrop-blur transition active:scale-90 ${
+            guardado ? "bg-marca text-superficie" : "bg-white/15 hover:bg-white/25"
+          }`}
         >
           <span aria-hidden>{guardado ? "♥" : "♡"}</span>
         </button>
+        <span className="text-[10px] font-semibold text-white/70">Guardar</span>
         <button
           type="button"
           onClick={() => setAbierto((v) => !v)}
-          className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-lg backdrop-blur transition hover:bg-white/20"
+          className={`grid h-12 w-12 place-items-center rounded-full text-lg backdrop-blur transition active:scale-90 ${
+            abierto ? "bg-white text-black" : "bg-white/15 hover:bg-white/25"
+          }`}
           aria-label="Ver detalle"
           aria-expanded={abierto}
         >
           <span aria-hidden>{abierto ? "▾" : "ℹ"}</span>
         </button>
+        <span className="text-[10px] font-semibold text-white/70">Detalle</span>
       </div>
 
-      {/* Bloque inferior: precio, título, meta. */}
-      <div className="absolute inset-x-0 bottom-0 p-5 pb-24 text-white">
+      {/* Bloque inferior: precio, título, meta. `pointer-events-none` para no tapar el
+          rail; los hijos interactivos reactivan los eventos. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5 pb-24 text-white">
         <div className="flex flex-wrap items-center gap-1.5">
           {pub.semanas_publicada === 0 && (
             <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-black backdrop-blur">
@@ -136,7 +156,7 @@ function ReelInterna({
         <p className="mt-0.5 font-mono text-xs tracking-widest text-white/70">{pub.placa}</p>
 
         {abierto && (
-          <div className="mt-3 rounded-2xl bg-white/10 p-3 text-sm backdrop-blur">
+          <div className="pointer-events-auto mt-3 rounded-2xl bg-white/10 p-3 text-sm backdrop-blur">
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-white/85">
               {pub.completitud_ficha != null && (
                 <span>Ficha {pub.completitud_ficha}%</span>
@@ -165,17 +185,31 @@ function ReelInterna({
 function ReelReferenciada({ pub }: { pub: PublicacionReferenciada }) {
   const portada = pub.fotos?.[0] ?? pub.imagen_url;
   return (
-    <section className="relative h-[100dvh] w-full shrink-0 snap-start snap-always overflow-hidden bg-black">
+    <section className="relative flex h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center overflow-hidden bg-black">
       {portada ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={portada} alt={titulo(pub)} className="h-full w-full object-cover" loading="lazy" />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={portada}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={portada}
+            alt={titulo(pub)}
+            loading="lazy"
+            className="relative h-auto max-h-full w-auto max-w-full object-contain"
+          />
+        </>
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-superficie-tenue text-6xl">
           🚗
         </div>
       )}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 p-5 pb-24 text-white">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5 pb-24 text-white [&_a]:pointer-events-auto">
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] backdrop-blur">
           ⓘ Referencia externa · sin verificar
         </span>

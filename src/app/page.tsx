@@ -72,13 +72,21 @@ function AccesosSection() {
       href: "/mi-garage",
       cta: "Abrir mi garage",
     },
+    {
+      chip: "Servicios",
+      titulo: "Servicios para tu auto",
+      texto: "Mecánicas, centros de servicio, lavaderos, luces y accesorios de tu ciudad.",
+      emoji: "🛠️",
+      href: "/servicios",
+      cta: "Ver servicios",
+    },
   ];
   return (
     <section className="mx-auto max-w-5xl px-6 pb-16">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-secundario">
         ¿Qué quieres hacer?
       </h2>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {accesos.map((a) => (
           <Link
             key={a.titulo}
