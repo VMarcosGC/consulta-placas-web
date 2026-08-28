@@ -85,41 +85,28 @@ function FilaDato({ fila }: { fila: FilaFicha }) {
   );
 }
 
-function BloqueFichaPlano({
-  titulo,
-  icono,
-  filas,
-}: {
-  titulo: string;
-  icono: string;
-  filas: FilaFicha[];
-}) {
-  if (filas.length === 0) return null;
-  return (
-    <div className="border-t border-borde pt-4 first:border-t-0 first:pt-0">
-      <p className="mb-1 flex items-center gap-2 text-sm font-bold text-tinta">
-        <span aria-hidden className="text-base">
-          {icono}
-        </span>
-        {titulo}
-      </p>
-      <dl className="sm:grid sm:grid-cols-2 sm:gap-x-10">
-        {filas.map((f, i) => (
-          <FilaDato key={i} fila={f} />
-        ))}
-      </dl>
-    </div>
-  );
-}
-
+// Ficha técnica como PESTAÑAS: una fila horizontal de botones (uno por bloque con
+// datos + "Extras"); al tocar un botón, el recuadro de abajo muestra ESE bloque y va
+// cambiando según el botón. Tocar el botón activo cierra el recuadro.
 function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
-  const bloques = BLOQUES_FICHA.map((b) => ({
-    clave: b.clave,
-    titulo: b.titulo,
-    icono: b.icono,
-    filas: b.filas(ficha[b.clave]),
-  }));
-  const tieneAlgo = bloques.some((b) => b.filas.length > 0) || ficha.extras.length > 0;
+  const tabs: {
+    clave: string;
+    titulo: string;
+    icono: string;
+    filas: FilaFicha[];
+    extras: { nombre: string; detalle?: string | null }[];
+  }[] = [];
+  for (const b of BLOQUES_FICHA) {
+    const filas = b.filas(ficha[b.clave]);
+    if (filas.length) tabs.push({ clave: b.clave, titulo: b.titulo, icono: b.icono, filas, extras: [] });
+  }
+  if (ficha.extras.length > 0) {
+    tabs.push({ clave: "extras", titulo: "Extras", icono: "✨", filas: [], extras: ficha.extras });
+  }
+
+  // Primer botón abierto por defecto. `null` = recuadro cerrado.
+  const [activo, setActivo] = useState<string | null>(tabs[0]?.clave ?? null);
+  const abierto = tabs.find((t) => t.clave === activo) ?? null;
 
   return (
     <section className="mt-8">
@@ -132,31 +119,50 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
         )}
       </div>
 
-      {!tieneAlgo ? (
+      {tabs.length === 0 ? (
         <p className="rounded-2xl border border-borde bg-superficie p-6 text-sm text-secundario">
           El vendedor aún no cargó los detalles de motor, carrocería ni interiores.
           Puedes pedírselos al contactarlo.
         </p>
       ) : (
         <>
-          <p className="text-xs text-secundario">
-            El estado y la condición los declara el vendedor; la plataforma no los verifica.
-          </p>
-          <div className="mt-3 space-y-4">
-            {bloques.map((b) => (
-              <BloqueFichaPlano key={b.clave} titulo={b.titulo} icono={b.icono} filas={b.filas} />
-            ))}
+          {/* Botones horizontales (scroll en celular). El activo va en la píldora
+              `--oscuro` (sólido inversor); el resto, contorno. */}
+          <div role="tablist" className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map((t) => {
+              const on = t.clave === activo;
+              return (
+                <button
+                  key={t.clave}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  aria-expanded={on}
+                  onClick={() => setActivo(on ? null : t.clave)}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+                    on
+                      ? "bg-oscuro text-superficie shadow-sm"
+                      : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
+                  }`}
+                >
+                  <span aria-hidden>{t.icono}</span>
+                  {t.titulo}
+                </button>
+              );
+            })}
+          </div>
 
-            {ficha.extras.length > 0 && (
-              <div className="border-t border-borde pt-4">
-                <p className="mb-2 flex items-center gap-2 text-sm font-bold text-tinta">
-                  <span aria-hidden className="text-base">
-                    ✨
-                  </span>
-                  Extras
-                </p>
+          {/* Recuadro: cambia con el botón. `key` fuerza el re-montaje → la animación
+              se repite al cambiar de pestaña. */}
+          {abierto && (
+            <div
+              key={abierto.clave}
+              role="tabpanel"
+              className="animate-fade-in-up mt-3 rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta"
+            >
+              {abierto.clave === "extras" ? (
                 <ul className="flex flex-wrap gap-2">
-                  {ficha.extras.map((e, i) => (
+                  {abierto.extras.map((e, i) => (
                     <li
                       key={i}
                       className="rounded-full border border-borde bg-superficie-tenue px-3 py-1 text-xs"
@@ -166,9 +172,18 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
                     </li>
                   ))}
                 </ul>
-              </div>
-            )}
-          </div>
+              ) : (
+                <dl className="sm:grid sm:grid-cols-2 sm:gap-x-10">
+                  {abierto.filas.map((f, i) => (
+                    <FilaDato key={i} fila={f} />
+                  ))}
+                </dl>
+              )}
+              <p className="mt-3 text-[11px] text-secundario">
+                El estado y la condición los declara el vendedor; la plataforma no los verifica.
+              </p>
+            </div>
+          )}
         </>
       )}
     </section>
