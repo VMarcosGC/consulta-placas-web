@@ -3,6 +3,9 @@
 // es la fuente de verdad de los catálogos (src/modules/marketplace/schemas.py).
 
 import type {
+  BloqueCarroceria,
+  BloqueInteriores,
+  BloqueMotorSuspension,
   Combustible,
   EstadoComponente,
   EstadoPintura,
@@ -133,3 +136,73 @@ export const UMBRAL_FICHA_PUBLICACION = Number(
 export function puedePublicar(pct: number | null | undefined): boolean {
   return (pct ?? 0) >= UMBRAL_FICHA_PUBLICACION;
 }
+
+// ── Filas de un bloque de la ficha ─────────────────────────────────────────
+// Fuente ÚNICA de qué campos y en qué orden muestra cada bloque. La usan el detalle
+// del anuncio (sección "Ficha técnica") y el panel flotante por foto de la galería.
+// `estado` = valor de condición → se pinta con color (Insignia) donde se pueda; el
+// panel lo muestra como texto. `sensible` = "declarado por el vendedor, sin verificar".
+export type FilaFicha =
+  | { etiqueta: string; valor: string; sensible?: boolean }
+  | { etiqueta: string; estado: EstadoComponente; sensible?: boolean };
+
+const _si_no = (v: boolean) => (v ? "Sí" : "No");
+
+export function filasMotorSuspension(b: BloqueMotorSuspension | null | undefined): FilaFicha[] {
+  if (!b) return [];
+  const f: FilaFicha[] = [];
+  if (b.combustible) f.push({ etiqueta: "Combustible", valor: COMBUSTIBLE_LABEL[b.combustible] });
+  if (b.cilindraje_cc != null)
+    f.push({ etiqueta: "Cilindraje", valor: `${b.cilindraje_cc.toLocaleString("es-EC")} cc` });
+  if (b.transmision) f.push({ etiqueta: "Transmisión", valor: TRANSMISION_LABEL[b.transmision] });
+  if (b.traccion) f.push({ etiqueta: "Tracción", valor: TRACCION_LABEL[b.traccion] });
+  if (b.estado_motor) f.push({ etiqueta: "Estado del motor", estado: b.estado_motor, sensible: true });
+  if (b.estado_suspension)
+    f.push({ etiqueta: "Estado de la suspensión", estado: b.estado_suspension, sensible: true });
+  if (b.fugas_visibles != null)
+    f.push({ etiqueta: "Fugas visibles", valor: _si_no(b.fugas_visibles), sensible: true });
+  if (b.cambios_recientes) f.push({ etiqueta: "Cambios recientes", valor: b.cambios_recientes });
+  if (b.observaciones) f.push({ etiqueta: "Observaciones", valor: b.observaciones });
+  return f;
+}
+
+export function filasCarroceria(b: BloqueCarroceria | null | undefined): FilaFicha[] {
+  if (!b) return [];
+  const f: FilaFicha[] = [];
+  if (b.tipo) f.push({ etiqueta: "Tipo", valor: TIPO_CARROCERIA_LABEL[b.tipo] });
+  if (b.numero_puertas != null) f.push({ etiqueta: "Puertas", valor: String(b.numero_puertas) });
+  if (b.color) f.push({ etiqueta: "Color", valor: b.color });
+  if (b.estado_pintura)
+    f.push({ etiqueta: "Estado de la pintura", valor: ESTADO_PINTURA_LABEL[b.estado_pintura], sensible: true });
+  if (b.choques_reparados != null)
+    f.push({ etiqueta: "Choques reparados", valor: _si_no(b.choques_reparados), sensible: true });
+  if (b.oxido_visible != null)
+    f.push({ etiqueta: "Óxido visible", valor: _si_no(b.oxido_visible), sensible: true });
+  if (b.estado_general)
+    f.push({ etiqueta: "Estado general", estado: b.estado_general, sensible: true });
+  if (b.observaciones) f.push({ etiqueta: "Observaciones", valor: b.observaciones });
+  return f;
+}
+
+export function filasInteriores(b: BloqueInteriores | null | undefined): FilaFicha[] {
+  if (!b) return [];
+  const f: FilaFicha[] = [];
+  if (b.material_asientos)
+    f.push({ etiqueta: "Material de asientos", valor: MATERIAL_ASIENTOS_LABEL[b.material_asientos] });
+  if (b.estado_asientos)
+    f.push({ etiqueta: "Estado de asientos", estado: b.estado_asientos, sensible: true });
+  if (b.aire_acondicionado != null)
+    f.push({ etiqueta: "Aire acondicionado", valor: _si_no(b.aire_acondicionado), sensible: true });
+  if (b.sistema_audio) f.push({ etiqueta: "Sistema de audio", valor: b.sistema_audio });
+  if (b.estado_tablero)
+    f.push({ etiqueta: "Estado del tablero", estado: b.estado_tablero, sensible: true });
+  if (b.observaciones) f.push({ etiqueta: "Observaciones", valor: b.observaciones });
+  return f;
+}
+
+// Metadatos de cada bloque (para títulos e íconos, y para casar `foto.bloque`).
+export const BLOQUES_FICHA = [
+  { clave: "motor_suspension", titulo: "Motor y suspensión", icono: "⚙️", filas: filasMotorSuspension },
+  { clave: "carroceria", titulo: "Carrocería", icono: "🚙", filas: filasCarroceria },
+  { clave: "interiores", titulo: "Interiores", icono: "🪑", filas: filasInteriores },
+] as const;

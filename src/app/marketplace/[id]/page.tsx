@@ -1,23 +1,24 @@
-// Detalle público de una publicación — rediseño mobile-first (M2.7).
+// Detalle público de una publicación — rediseño mobile-first (M2.7 → M2.12).
 //
 // Jerarquía de lectura: FOTO → PRECIO/título/CTA → ficha técnica → extras → contacto.
-//   - Galería arriba, con swipe horizontal en móvil (scroll-snap, sin librerías).
-//   - Bloque de precio + título + acciones visible sin scroll en un celular.
-//   - Ficha técnica en tarjetas por bloque, cada una con su ícono.
-//   - "Datos oficiales" (matrícula/multas de la placa) está en stand-by hasta resolver
-//     de dónde salen esos datos de forma estable; por eso el detalle no la muestra.
+//   - Galería (`GaleriaAnuncio`): foto principal + miniaturas, panel flotante con el
+//     detalle de la ficha que corresponde a la foto activa (exterior→carrocería,
+//     interior→interiores…), y visor a pantalla completa con zoom.
+//   - Ficha técnica PLANA (sin tarjetas anidadas): un encabezado por bloque + lista de
+//     datos a dos columnas. Menos "recuadro", mismo detalle (M2.12).
+//   - "Datos oficiales" (matrícula/multas) está en stand-by hasta resolver la fuente.
 //
-// Regla del proyecto: el frontend NO transforma datos; solo lee y pinta lo que el backend
-// consolida. Los estados/booleanos declarativos llevan "declarado por el vendedor" porque
-// la plataforma no los verifica.
+// Regla del proyecto: el frontend NO transforma datos; solo lee y pinta. Los campos de
+// estado/condición llevan "declarado" porque la plataforma no los verifica.
 
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { BentoCard, Insignia } from "@/components/BentoCard";
+import { Insignia } from "@/components/BentoCard";
 import { ContactoVendedor } from "@/components/ContactoVendedor";
+import { GaleriaAnuncio } from "@/components/GaleriaAnuncio";
 import {
   listarMisPublicaciones,
   listarVehiculos,
@@ -25,25 +26,19 @@ import {
 } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import {
-  COMBUSTIBLE_LABEL,
+  BLOQUES_FICHA,
   ESTADO_COMPONENTE_LABEL,
-  ESTADO_PINTURA_LABEL,
-  MATERIAL_ASIENTOS_LABEL,
-  TIPO_CARROCERIA_LABEL,
-  TRACCION_LABEL,
-  TRANSMISION_LABEL,
   colorCompletitud,
   fichaIncompleta,
   fichaPendiente,
   tonoEstadoComponente,
+  type FilaFicha,
 } from "@/lib/ficha";
 import { precioNum } from "@/lib/precio";
 import { antiguedadDe } from "@/lib/antiguedad";
 import {
   ApiError,
-  EstadoComponente,
   FichaSalida,
-  FotoSalida,
   PublicacionDetalle,
   Vehiculo,
 } from "@/types/api";
@@ -62,156 +57,73 @@ function tituloVehiculo(p: PublicacionDetalle): string {
   return partes.length ? partes.join(" ") : "Vehículo en venta";
 }
 
-// ── Fila de dato de la ficha ────────────────────────────────────────────────
-// Los campos declarativos sensibles llevan la etiqueta "declarado por el vendedor".
+// ── Ficha técnica (plana: encabezado + lista a dos columnas, sin tarjetas) ───
+// Menos "recuadro", mismo detalle. Las filas de cada bloque salen del helper único
+// `BLOQUES_FICHA` (src/lib/ficha.ts), que también alimenta el panel por foto.
 
-function Fila({
-  etiqueta,
-  children,
-  sensible,
-}: {
-  etiqueta: string;
-  children: React.ReactNode;
-  sensible?: boolean;
-}) {
+function FilaDato({ fila }: { fila: FilaFicha }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-borde-suave py-2 last:border-b-0">
+    <div className="flex items-baseline justify-between gap-4 border-b border-borde-suave py-2">
       <dt className="text-sm text-secundario">
-        {etiqueta}
-        {sensible && (
-          <span className="ml-1.5 align-middle text-[10px] font-medium uppercase tracking-wide text-declarado-texto">
-            declarado por el vendedor
+        {fila.etiqueta}
+        {fila.sensible && (
+          <span className="ml-1.5 align-middle text-[10px] uppercase tracking-wide text-declarado-texto">
+            declarado
           </span>
         )}
       </dt>
-      <dd className="text-right text-sm font-semibold text-tinta">{children}</dd>
+      <dd className="text-right text-sm font-semibold text-tinta">
+        {"estado" in fila ? (
+          <Insignia tono={tonoEstadoComponente(fila.estado)}>
+            {ESTADO_COMPONENTE_LABEL[fila.estado]}
+          </Insignia>
+        ) : (
+          fila.valor
+        )}
+      </dd>
     </div>
   );
 }
 
-function ValorEstado({ estado }: { estado: EstadoComponente }) {
-  return <Insignia tono={tonoEstadoComponente(estado)}>{ESTADO_COMPONENTE_LABEL[estado]}</Insignia>;
-}
-
-function ValorBool({ valor }: { valor: boolean }) {
-  return <span>{valor ? "Sí" : "No"}</span>;
-}
-
-// Un bloque de la ficha, con su ícono. Si no tiene ningún dato, no se renderiza.
-function BloqueFicha({
+function BloqueFichaPlano({
   titulo,
   icono,
-  vacio,
-  children,
+  filas,
 }: {
   titulo: string;
   icono: string;
-  vacio: boolean;
-  children: React.ReactNode;
+  filas: FilaFicha[];
 }) {
-  if (vacio) return null;
+  if (filas.length === 0) return null;
   return (
-    <BentoCard
-      titulo={titulo}
-      badge={
-        <span className="text-lg" aria-hidden>
+    <div className="border-t border-borde pt-4 first:border-t-0 first:pt-0">
+      <p className="mb-1 flex items-center gap-2 text-sm font-bold text-tinta">
+        <span aria-hidden className="text-base">
           {icono}
         </span>
-      }
-    >
-      <dl>{children}</dl>
-    </BentoCard>
-  );
-}
-
-// ── Galería (arriba del todo; swipe horizontal en móvil) ────────────────────
-
-function Galeria({ fotos, titulo }: { fotos: FotoSalida[]; titulo: string }) {
-  const [activa, setActiva] = useState(0);
-
-  if (fotos.length === 0) {
-    return (
-      <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-borde bg-superficie-tenue text-secundario sm:aspect-[16/8]">
-        <span className="text-5xl" aria-hidden>
-          🚗
-        </span>
-        <span className="text-xs font-medium">El vendedor aún no subió fotos</span>
-      </div>
-    );
-  }
-
-  const principal = fotos[Math.min(activa, fotos.length - 1)];
-  return (
-    <div>
-      {/* Móvil: carrusel con scroll-snap (swipe nativo, sin librerías).
-          Desde sm: una foto principal grande y las miniaturas debajo. */}
-      {/* tabIndex + role: el contenedor con scroll debe poder recorrerse con teclado. */}
-      <div
-        tabIndex={0}
-        role="group"
-        aria-label={`Fotos de ${titulo}: desliza para verlas`}
-        className="-mx-6 flex snap-x snap-mandatory gap-2 overflow-x-auto px-6 pb-2 sm:hidden"
-      >
-        {fotos.map((f, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={f.id}
-            src={f.url}
-            alt={`Foto ${i + 1} de ${titulo}`}
-            className="aspect-[4/3] w-[85%] shrink-0 snap-center rounded-2xl object-cover"
-          />
+        {titulo}
+      </p>
+      <dl className="sm:grid sm:grid-cols-2 sm:gap-x-10">
+        {filas.map((f, i) => (
+          <FilaDato key={i} fila={f} />
         ))}
-      </div>
-
-      <div className="hidden sm:block">
-        <div className="overflow-hidden rounded-2xl border border-borde bg-superficie-tenue sombra-tarjeta">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={principal.url}
-            alt={`Foto de ${titulo}`}
-            className="aspect-[16/9] w-full object-cover"
-          />
-        </div>
-        {fotos.length > 1 && (
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {fotos.map((f, i) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setActiva(i)}
-                className={`h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                  i === activa ? "border-marca" : "border-transparent hover:border-borde-fuerte"
-                }`}
-                aria-label={`Ver foto ${i + 1} de ${fotos.length}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={f.url} alt={`Miniatura ${i + 1}`} className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {fotos.length > 1 && (
-        <p className="mt-2 text-center text-[11px] text-secundario sm:hidden">
-          Desliza para ver las {fotos.length} fotos
-        </p>
-      )}
+      </dl>
     </div>
   );
 }
 
-// ── Ficha técnica ───────────────────────────────────────────────────────────
-
 function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
-  const ms = ficha.motor_suspension;
-  const ca = ficha.carroceria;
-  const it = ficha.interiores;
-  const tieneAlgo = ms != null || ca != null || it != null || ficha.extras.length > 0;
+  const bloques = BLOQUES_FICHA.map((b) => ({
+    clave: b.clave,
+    titulo: b.titulo,
+    icono: b.icono,
+    filas: b.filas(ficha[b.clave]),
+  }));
+  const tieneAlgo = bloques.some((b) => b.filas.length > 0) || ficha.extras.length > 0;
 
   return (
     <section className="mt-8">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold text-tinta">Ficha técnica</h2>
         {fichaIncompleta(ficha.completitud) ? (
           <Insignia tono="neutro">Ficha incompleta</Insignia>
@@ -221,122 +133,40 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
       </div>
 
       {!tieneAlgo ? (
-        <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
-          <p className="font-medium text-tinta">Todavía sin ficha técnica</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-secundario">
-            El vendedor aún no cargó los detalles del motor, la carrocería ni los
-            interiores. Puedes pedírselos al contactarlo.
-          </p>
-        </div>
+        <p className="rounded-2xl border border-borde bg-superficie p-6 text-sm text-secundario">
+          El vendedor aún no cargó los detalles de motor, carrocería ni interiores.
+          Puedes pedírselos al contactarlo.
+        </p>
       ) : (
         <>
-          <p className="mb-4 text-xs text-secundario">
-            Los datos de estado y condición son declarados por el vendedor; la plataforma no
-            los verifica.
+          <p className="text-xs text-secundario">
+            El estado y la condición los declara el vendedor; la plataforma no los verifica.
           </p>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <BloqueFicha titulo="Motor y suspensión" icono="⚙️" vacio={ms == null}>
-              {ms?.combustible && (
-                <Fila etiqueta="Combustible">{COMBUSTIBLE_LABEL[ms.combustible]}</Fila>
-              )}
-              {ms?.cilindraje_cc != null && (
-                <Fila etiqueta="Cilindraje">{ms.cilindraje_cc.toLocaleString("es-EC")} cc</Fila>
-              )}
-              {ms?.transmision && (
-                <Fila etiqueta="Transmisión">{TRANSMISION_LABEL[ms.transmision]}</Fila>
-              )}
-              {ms?.traccion && <Fila etiqueta="Tracción">{TRACCION_LABEL[ms.traccion]}</Fila>}
-              {ms?.estado_motor && (
-                <Fila etiqueta="Estado del motor" sensible>
-                  <ValorEstado estado={ms.estado_motor} />
-                </Fila>
-              )}
-              {ms?.estado_suspension && (
-                <Fila etiqueta="Estado de la suspensión" sensible>
-                  <ValorEstado estado={ms.estado_suspension} />
-                </Fila>
-              )}
-              {ms?.fugas_visibles != null && (
-                <Fila etiqueta="Fugas visibles" sensible>
-                  <ValorBool valor={ms.fugas_visibles} />
-                </Fila>
-              )}
-              {ms?.cambios_recientes && (
-                <Fila etiqueta="Cambios recientes">{ms.cambios_recientes}</Fila>
-              )}
-              {ms?.observaciones && <Fila etiqueta="Observaciones">{ms.observaciones}</Fila>}
-            </BloqueFicha>
-
-            <BloqueFicha titulo="Carrocería" icono="🚙" vacio={ca == null}>
-              {ca?.tipo && <Fila etiqueta="Tipo">{TIPO_CARROCERIA_LABEL[ca.tipo]}</Fila>}
-              {ca?.numero_puertas != null && <Fila etiqueta="Puertas">{ca.numero_puertas}</Fila>}
-              {ca?.color && <Fila etiqueta="Color">{ca.color}</Fila>}
-              {ca?.estado_pintura && (
-                <Fila etiqueta="Estado de la pintura" sensible>
-                  {ESTADO_PINTURA_LABEL[ca.estado_pintura]}
-                </Fila>
-              )}
-              {ca?.choques_reparados != null && (
-                <Fila etiqueta="Choques reparados" sensible>
-                  <ValorBool valor={ca.choques_reparados} />
-                </Fila>
-              )}
-              {ca?.oxido_visible != null && (
-                <Fila etiqueta="Óxido visible" sensible>
-                  <ValorBool valor={ca.oxido_visible} />
-                </Fila>
-              )}
-              {ca?.estado_general && (
-                <Fila etiqueta="Estado general" sensible>
-                  <ValorEstado estado={ca.estado_general} />
-                </Fila>
-              )}
-              {ca?.observaciones && <Fila etiqueta="Observaciones">{ca.observaciones}</Fila>}
-            </BloqueFicha>
-
-            <BloqueFicha titulo="Interiores" icono="🪑" vacio={it == null}>
-              {it?.material_asientos && (
-                <Fila etiqueta="Material de asientos">
-                  {MATERIAL_ASIENTOS_LABEL[it.material_asientos]}
-                </Fila>
-              )}
-              {it?.estado_asientos && (
-                <Fila etiqueta="Estado de asientos" sensible>
-                  <ValorEstado estado={it.estado_asientos} />
-                </Fila>
-              )}
-              {it?.aire_acondicionado != null && (
-                <Fila etiqueta="Aire acondicionado" sensible>
-                  <ValorBool valor={it.aire_acondicionado} />
-                </Fila>
-              )}
-              {it?.sistema_audio && <Fila etiqueta="Sistema de audio">{it.sistema_audio}</Fila>}
-              {it?.estado_tablero && (
-                <Fila etiqueta="Estado del tablero" sensible>
-                  <ValorEstado estado={it.estado_tablero} />
-                </Fila>
-              )}
-              {it?.observaciones && <Fila etiqueta="Observaciones">{it.observaciones}</Fila>}
-            </BloqueFicha>
+          <div className="mt-3 space-y-4">
+            {bloques.map((b) => (
+              <BloqueFichaPlano key={b.clave} titulo={b.titulo} icono={b.icono} filas={b.filas} />
+            ))}
 
             {ficha.extras.length > 0 && (
-              <BentoCard
-                titulo="Extras"
-                badge={
-                  <span className="text-lg" aria-hidden>
+              <div className="border-t border-borde pt-4">
+                <p className="mb-2 flex items-center gap-2 text-sm font-bold text-tinta">
+                  <span aria-hidden className="text-base">
                     ✨
                   </span>
-                }
-              >
-                <ul className="space-y-2">
+                  Extras
+                </p>
+                <ul className="flex flex-wrap gap-2">
                   {ficha.extras.map((e, i) => (
-                    <li key={i} className="rounded-xl bg-superficie-tenue px-3 py-2">
-                      <p className="text-sm font-semibold text-tinta">{e.nombre}</p>
-                      {e.detalle && <p className="text-xs text-secundario">{e.detalle}</p>}
+                    <li
+                      key={i}
+                      className="rounded-full border border-borde bg-superficie-tenue px-3 py-1 text-xs"
+                    >
+                      <span className="font-semibold text-tinta">{e.nombre}</span>
+                      {e.detalle && <span className="text-secundario"> — {e.detalle}</span>}
                     </li>
                   ))}
                 </ul>
-              </BentoCard>
+              </div>
             )}
           </div>
         </>
@@ -481,9 +311,14 @@ export default function PublicacionDetallePage() {
 
       {pub && !cargando && (
         <>
-          {/* 1. FOTO: lo primero que se ve. */}
+          {/* 1. FOTO: lo primero que se ve. La galería trae el panel por foto y el
+              visor con zoom. */}
           <div className="mt-4">
-            <Galeria fotos={pub.fotos} titulo={tituloVehiculo(pub)} />
+            <GaleriaAnuncio
+              fotos={pub.fotos}
+              ficha={pub.ficha}
+              titulo={tituloVehiculo(pub)}
+            />
           </div>
 
           {/* 2. PRECIO + título + acciones: entra sin scroll en un celular. Ritmo
