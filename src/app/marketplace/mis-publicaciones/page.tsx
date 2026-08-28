@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   actualizarPublicacion,
+  certificarPublicacion,
   eliminarPublicacion,
   listarMisPublicaciones,
   publicarBorrador,
@@ -68,6 +69,70 @@ const KILOMETRAJE_MAXIMO = 2_000_000;
 
 const inputCls =
   "w-full rounded-xl border border-borde-fuerte px-3 py-2 text-sm text-tinta focus-glow";
+
+// Sello "revisado por mecánica" (item 5). Si ya tiene sello, lo muestra. Si no, un
+// campo para canjear el código de un solo uso que la mecánica le dio al vendedor.
+function SelloMecanicaFila({
+  pub,
+  onSellada,
+}: {
+  pub: PublicacionInterna;
+  onSellada: (nueva: PublicacionInterna) => void;
+}) {
+  const [codigo, setCodigo] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (pub.sello_mecanica) {
+    return (
+      <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-confirmado-tinte px-2.5 py-0.5 text-xs font-semibold text-confirmado-texto">
+        🔧 Revisado por {pub.sello_mecanica.nombre} · {pub.sello_mecanica.ciudad}
+      </p>
+    );
+  }
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    const c = codigo.trim();
+    if (c.length < 4) {
+      setError("Escribe el código completo (formato MEC-XXXX-XXXX).");
+      return;
+    }
+    setError(null);
+    setEnviando(true);
+    try {
+      onSellada(await certificarPublicacion(pub.id, c));
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message || "No pudimos validar el código."
+          : "No pudimos validar el código."
+      );
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <form onSubmit={enviar} className="mt-2 flex flex-wrap items-center gap-2">
+      <input
+        value={codigo}
+        onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+        placeholder="Código de mecánica: MEC-XXXX-XXXX"
+        className="w-52 rounded-full border border-borde-fuerte px-3 py-1.5 text-xs font-mono text-tinta focus-glow"
+        maxLength={24}
+      />
+      <button
+        type="submit"
+        disabled={enviando}
+        className="rounded-full border border-borde-fuerte bg-superficie px-3.5 py-1.5 text-xs font-semibold text-secundario transition hover:bg-superficie-tenue disabled:opacity-50"
+      >
+        {enviando ? "…" : "🔧 Certificar"}
+      </button>
+      {error && <span className="w-full text-xs text-error">{error}</span>}
+    </form>
+  );
+}
 
 // ¿Este texto libre es una de las 12 ciudades del catálogo? Si no, el <select> arranca
 // en "Sin especificar" y — clave — ese valor NO se considera "cambiado", así que un
@@ -566,6 +631,13 @@ export default function MisPublicacionesPage() {
                       )}
                     </p>
                   )}
+
+                  <SelloMecanicaFila
+                    pub={p}
+                    onSellada={(nueva) =>
+                      setPubs((prev) => prev.map((x) => (x.id === nueva.id ? nueva : x)))
+                    }
+                  />
 
                   {/* CTA persistente (M2.5): mientras la ficha no esté al 100 %, el dueño
                       ve cuánto le falta y entra a completarla de un clic. No bloquea nada. */}

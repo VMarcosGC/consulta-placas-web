@@ -437,6 +437,17 @@ export function renovarPublicacion(id: number) {
   );
 }
 
+// El vendedor canjea el código que le dio la mecánica en SU publicación → sello
+// "revisado por mecánica". 404 si no es suya, 422 si el código no existe/ya se usó/
+// expiró. Requiere sesión.
+export function certificarPublicacion(id: number, codigo: string) {
+  return fetchAPI<PublicacionInterna>(
+    `/marketplace/publicaciones/${id}/certificar`,
+    { method: "POST", body: JSON.stringify({ codigo }) },
+    true
+  );
+}
+
 // ── Calificaciones comprador → vendedor ─────────────────────────────────────
 
 // Resumen + comentarios de un vendedor. Público; si hay sesión, `mia` trae tu voto.

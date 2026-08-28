@@ -168,7 +168,19 @@ export function ListingInternaCard({
   const chipBase =
     "inline-flex shrink-0 items-center rounded-full px-1.5 py-1 text-[11px] font-semibold leading-tight";
   const chips: ReactNode[] = [];
-  if (pub.verificado) {
+  // El sello de mecánica es la señal de confianza más fuerte del anuncio: va primero.
+  if (pub.sello_mecanica) {
+    chips.push(
+      <span
+        key="mecanica"
+        className={`${chipBase} bg-confirmado-tinte text-confirmado-texto`}
+        title={`Revisado por ${pub.sello_mecanica.nombre}`}
+      >
+        🔧 Revisado
+      </span>
+    );
+  }
+  if (pub.verificado && chips.length < 2) {
     chips.push(
       <span key="verificado" className={`${chipBase} bg-confirmado-tinte text-confirmado-texto`}>
         ✓ Verificado

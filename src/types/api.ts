@@ -449,6 +449,15 @@ export interface PublicacionInterna {
   // "Me gusta" público = cuántos usuarios tienen esta placa en favoritos. Más "me gusta"
   // empuja la publicación hacia arriba en el feed (relevancia). Opcional: backend viejo.
   total_favoritos?: number;
+  // Sello "revisado por mecánica" (migración 0028). `null` = sin sello. Lo activa el
+  // vendedor canjeando un código de la mecánica. Distinto de `verificado` (§10.6).
+  sello_mecanica?: SelloMecanica | null;
+}
+
+export interface SelloMecanica {
+  nombre: string;
+  ciudad: string;
+  certificado_en: string;
 }
 
 export type EstadoModeracion = "pendiente" | "aprobada" | "rechazada";

@@ -371,6 +371,11 @@ export default function PublicacionDetallePage() {
                   ★ Premium
                 </span>
               )}
+              {pub.sello_mecanica && (
+                <Insignia tono="ok">
+                  🔧 Revisado por {pub.sello_mecanica.nombre}
+                </Insignia>
+              )}
               {pub.verificado && <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>}
               {fichaIncompleta(pctFicha) && <Insignia tono="neutro">Ficha incompleta</Insignia>}
               {/* Popularidad: solo aparece si cruzó el umbral. Sin votos NO se muestra
