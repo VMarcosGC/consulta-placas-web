@@ -57,43 +57,42 @@ export function DistribucionGeografica() {
         </p>
       </div>
 
-      <div className="grid items-center gap-6 sm:grid-cols-[minmax(0,320px)_1fr]">
-        <MapaEcuador
-          porProvincia={porProvincia}
-          onSeleccion={(prov) => {
-            if (prov) router.push(`/marketplace?provincia=${encodeURIComponent(prov)}`);
-          }}
-        />
+      {/* El MAPA es lo predominante: ancho completo, arriba. */}
+      <MapaEcuador
+        porProvincia={porProvincia}
+        onSeleccion={(prov) => {
+          if (prov) router.push(`/marketplace?provincia=${encodeURIComponent(prov)}`);
+        }}
+      />
 
-        {/* Resumen por región — enlaces directos. */}
-        <ul className="space-y-2">
-          {datos.regiones.map((region) => (
-            <li key={region.region}>
-              <Link
-                href={`/marketplace?region=${encodeURIComponent(region.region)}`}
-                className="group flex items-baseline justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3 transition hover:border-borde-fuerte"
-              >
-                <span className="font-semibold text-tinta group-hover:underline">
-                  {region.region}
-                </span>
-                <span className="font-mono text-xs text-secundario">
-                  {region.total} {region.total === 1 ? "auto" : "autos"} →
-                </span>
-              </Link>
-              <div className="mt-1 flex flex-wrap gap-1.5 px-1">
-                {region.provincias.map((p) => (
-                  <Link
-                    key={p.provincia}
-                    href={`/marketplace?provincia=${encodeURIComponent(p.provincia)}`}
-                    className="rounded-full border border-borde px-2 py-0.5 text-[11px] text-secundario hover:border-borde-fuerte hover:text-tinta"
-                  >
-                    {p.provincia} · {p.total}
-                  </Link>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ul>
+      {/* Leyendas en TEXTO, debajo del mapa: región + sus provincias, cada una enlaza. */}
+      <div className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+        {datos.regiones.map((region) => (
+          <div key={region.region}>
+            <Link
+              href={`/marketplace?region=${encodeURIComponent(region.region)}`}
+              className="group flex items-baseline justify-between gap-3 border-b border-borde pb-1"
+            >
+              <span className="text-sm font-bold text-tinta group-hover:underline">
+                {region.region}
+              </span>
+              <span className="font-mono text-xs text-secundario">
+                {region.total} {region.total === 1 ? "auto" : "autos"} →
+              </span>
+            </Link>
+            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+              {region.provincias.map((p) => (
+                <Link
+                  key={p.provincia}
+                  href={`/marketplace?provincia=${encodeURIComponent(p.provincia)}`}
+                  className="text-[13px] text-secundario hover:text-tinta"
+                >
+                  {p.provincia} <span className="font-mono text-secundario">· {p.total}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

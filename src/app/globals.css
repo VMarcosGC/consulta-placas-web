@@ -302,7 +302,23 @@ body {
 }
 .animate-fade-in-up { animation: fade-in-up 0.4s ease-out both; }
 
+/* Marquesina: la tira de resumen de la ficha sobre la foto del auto se desplaza sola
+   de derecha a izquierda. El contenido va DUPLICADO en el markup y el track se mueve
+   -50% para un bucle sin costura. Pausa al pasar el mouse. */
+@keyframes marquesina {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquesina-track {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  animation: marquesina 26s linear infinite;
+  will-change: transform;
+}
+.marquesina:hover .marquesina-track { animation-play-state: paused; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .animate-fade-in-up { animation: none; }
+  .marquesina-track { animation: none; transform: none; }
 }

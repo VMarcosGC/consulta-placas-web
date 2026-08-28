@@ -77,9 +77,18 @@ export function AccesoGoogle({
           setError(
             "El ingreso con Google no está disponible ahora mismo. Puedes entrar con tu contraseña."
           );
+        } else if (err.status === 401) {
+          // "No autorizado": el `aud` del id_token no casa con el GOOGLE_CLIENT_ID del
+          // backend, o el origen no está habilitado en el cliente OAuth. NO es la cuenta
+          // del usuario: es configuración nuestra. No se muestra el copy crudo del
+          // backend ("Credenciales de Google inválidas") porque suena a culpa suya.
+          setError(
+            "El ingreso con Google está mal configurado de nuestro lado (no es tu cuenta). " +
+              "Entra con tu contraseña mientras lo corregimos."
+          );
         } else {
-          // 401 (credencial inválida) y 422 (claims insuficientes) traen copy es-EC del
-          // backend. Se muestra ese y se agrega la alternativa que siempre existe.
+          // 422 (claims insuficientes) trae copy es-EC del backend. Se muestra ese y se
+          // agrega la alternativa que siempre existe.
           setError(`${err.message} También puedes entrar con tu contraseña.`);
         }
       } else {

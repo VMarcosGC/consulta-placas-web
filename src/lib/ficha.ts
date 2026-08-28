@@ -237,3 +237,35 @@ export const BLOQUES_FICHA = [
   { clave: "carroceria", titulo: "Carrocería", icono: "🚙", filas: filasCarroceria },
   { clave: "interiores", titulo: "Interiores", icono: "🪑", filas: filasInteriores },
 ] as const;
+
+// RESUMEN transversal de la ficha (para la tira flotante en cualquier foto, incluida
+// una sin bloque asignado). Toma los datos "titular" de los tres bloques, en orden de
+// lo que más decide una visita, y corta corto. Vacío si la ficha no tiene nada.
+export function resumenFicha(
+  ficha: {
+    motor_suspension?: BloqueMotorSuspension | null;
+    carroceria?: BloqueCarroceria | null;
+    interiores?: BloqueInteriores | null;
+  } | null | undefined
+): FilaFicha[] {
+  if (!ficha) return [];
+  const ms = ficha.motor_suspension;
+  const ca = ficha.carroceria;
+  const it = ficha.interiores;
+  const f: FilaFicha[] = [];
+  if (ca?.tipo) f.push({ etiqueta: "Tipo", valor: TIPO_CARROCERIA_LABEL[ca.tipo] });
+  if (ms?.combustible) f.push({ etiqueta: "Combustible", valor: COMBUSTIBLE_LABEL[ms.combustible] });
+  if (ms?.transmision) f.push({ etiqueta: "Transmisión", valor: TRANSMISION_LABEL[ms.transmision] });
+  if (ms?.cilindraje_cc != null)
+    f.push({ etiqueta: "Cilindraje", valor: `${ms.cilindraje_cc.toLocaleString("es-EC")} cc` });
+  if (ms?.traccion) f.push({ etiqueta: "Tracción", valor: TRACCION_LABEL[ms.traccion] });
+  if (ca?.color) f.push({ etiqueta: "Color", valor: ca.color });
+  if (ca?.numero_puertas != null) f.push({ etiqueta: "Puertas", valor: String(ca.numero_puertas) });
+  if (ca?.estado_general)
+    f.push({ etiqueta: "Estado general", estado: ca.estado_general, sensible: true });
+  else if (ms?.estado_motor)
+    f.push({ etiqueta: "Estado del motor", estado: ms.estado_motor, sensible: true });
+  if (it?.aire_acondicionado != null)
+    f.push({ etiqueta: "A/C", valor: _si_no(it.aire_acondicionado), sensible: true });
+  return f;
+}

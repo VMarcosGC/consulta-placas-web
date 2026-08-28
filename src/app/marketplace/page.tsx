@@ -182,12 +182,14 @@ function Selector({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-secundario">{etiqueta}</span>
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-secundario">
+        {etiqueta}
+      </span>
       <select
         value={valor}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-xl border border-borde-fuerte bg-superficie px-3 py-2.5 text-tinta outline-none focus:border-marca focus:ring-2 focus:ring-marca/25"
+        className="rounded-lg border border-borde-fuerte bg-superficie px-2.5 py-1.5 text-sm text-tinta outline-none focus:border-marca focus:ring-2 focus:ring-marca/25"
       >
         {children}
       </select>
@@ -543,9 +545,10 @@ function ContenidoMarketplace() {
           </button>
         </div>
 
-        {/* Panel de filtros avanzados (colapsable en móvil para no saturar). */}
+        {/* Panel de filtros avanzados (colapsable; arranca cerrado). Compacto: 2
+            columnas ya en celular, campos chicos, poco aire — "ocupa lo mínimo". */}
         {panelAbierto && (
-          <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid grid-cols-2 gap-2.5 rounded-xl border border-borde bg-superficie p-3 sombra-tarjeta sm:grid-cols-3 lg:grid-cols-4">
             <Selector
               etiqueta="Tipo de vehículo"
               valor={filtros.tipo ?? ""}
@@ -611,32 +614,30 @@ function ContenidoMarketplace() {
               ))}
             </Selector>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Selector
-                etiqueta="Año desde"
-                valor={filtros.anio_min != null ? String(filtros.anio_min) : ""}
-                onChange={(v) => actualizarUrl({ anio_min: v || null })}
-              >
-                <option value="">Cualquiera</option>
-                {aniosAnio.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </Selector>
-              <Selector
-                etiqueta="Año hasta"
-                valor={filtros.anio_max != null ? String(filtros.anio_max) : ""}
-                onChange={(v) => actualizarUrl({ anio_max: v || null })}
-              >
-                <option value="">Cualquiera</option>
-                {aniosAnio.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </Selector>
-            </div>
+            <Selector
+              etiqueta="Año desde"
+              valor={filtros.anio_min != null ? String(filtros.anio_min) : ""}
+              onChange={(v) => actualizarUrl({ anio_min: v || null })}
+            >
+              <option value="">Cualquiera</option>
+              {aniosAnio.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </Selector>
+            <Selector
+              etiqueta="Año hasta"
+              valor={filtros.anio_max != null ? String(filtros.anio_max) : ""}
+              onChange={(v) => actualizarUrl({ anio_max: v || null })}
+            >
+              <option value="">Cualquiera</option>
+              {aniosAnio.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </Selector>
 
             {/* Ubicación. Al elegir provincia se limpia una región previa (el backend
                 interseca; para el comprador es más claro "una cosa a la vez"). El mapa
@@ -655,11 +656,11 @@ function ContenidoMarketplace() {
             </Selector>
 
             {busquedaActiva && (
-              <div className="flex items-end sm:col-span-2 lg:col-span-3">
+              <div className="col-span-2 flex items-end sm:col-span-3 lg:col-span-4">
                 <button
                   type="button"
                   onClick={limpiarFiltros}
-                  className="rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
+                  className="rounded-full border border-borde-fuerte bg-superficie px-4 py-1.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
                 >
                   Limpia todos los filtros
                 </button>

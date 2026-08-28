@@ -12,57 +12,64 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BLOQUES_FICHA,
   ESTADO_COMPONENTE_LABEL,
+  resumenFicha,
   type FilaFicha,
 } from "@/lib/ficha";
 import type { FichaSalida, FotoSalida } from "@/types/api";
 
-// ── Panel con el detalle de la ficha que matchea la foto ────────────────────
-// `foto.bloque` es motor_suspension | carroceria | interiores | general. Si hay un
-// bloque con datos, se muestra su resumen junto a la foto.
+// ── Resumen de la ficha para la foto ───────────────────────────────────────
+// `foto.bloque` es motor_suspension | carroceria | interiores | general. Si la foto
+// tiene un bloque con datos, se resume ESE bloque; si no (o es `general`), se resume
+// la ficha entera. La tira aparece en TODA foto que tenga algo que mostrar.
 
-function filasDe(bloque: string | null, ficha: FichaSalida | null): {
-  titulo: string;
-  icono: string;
-  filas: FilaFicha[];
-} | null {
-  if (!ficha || !bloque) return null;
-  const meta = BLOQUES_FICHA.find((b) => b.clave === bloque);
-  if (!meta) return null;
-  const filas = meta.filas(ficha[meta.clave]);
-  return filas.length ? { titulo: meta.titulo, icono: meta.icono, filas } : null;
+function resumenDeFoto(
+  bloque: string | null,
+  ficha: FichaSalida | null
+): { titulo: string; icono: string; filas: FilaFicha[] } | null {
+  if (!ficha) return null;
+  const meta = bloque ? BLOQUES_FICHA.find((b) => b.clave === bloque) : undefined;
+  if (meta) {
+    const filas = meta.filas(ficha[meta.clave]);
+    if (filas.length) return { titulo: meta.titulo, icono: meta.icono, filas };
+  }
+  const filas = resumenFicha(ficha);
+  return filas.length ? { titulo: "Resumen del auto", icono: "📋", filas } : null;
 }
 
 function valorFila(fila: FilaFicha): string {
   return "estado" in fila ? ESTADO_COMPONENTE_LABEL[fila.estado] : fila.valor;
 }
 
-// Tira flotante SOBRE la foto, abajo, transparente. Muestra el detalle de la ficha que
-// corresponde a esta foto (`foto.bloque`) sin tapar la imagen: un scrim degradado + una
-// fila de chips translúcidos que se desplaza en horizontal. Va sobre la IMAGEN, así que
-// el texto blanco es correcto en claro y en oscuro.
+// Tira flotante SOBRE la foto, abajo, transparente, SIEMPRE visible en cada foto. Los
+// chips se desplazan solos de derecha a izquierda (marquesina, CSS en globals.css);
+// el contenido va DUPLICADO para un bucle sin costura. Pausa al pasar el mouse. Va
+// sobre la IMAGEN → texto blanco, correcto en claro y en oscuro; no tapa la foto.
 function TiraDetalleFoto({
   contenido,
 }: {
-  contenido: NonNullable<ReturnType<typeof filasDe>>;
+  contenido: NonNullable<ReturnType<typeof resumenDeFoto>>;
 }) {
+  const chips = contenido.filas.map((f, i) => (
+    <span
+      key={i}
+      className="mx-1 whitespace-nowrap rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] text-white backdrop-blur-sm"
+    >
+      <span className="text-white/60">{f.etiqueta}: </span>
+      <span className="font-semibold">{valorFila(f)}</span>
+    </span>
+  ));
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0">
-      <div className="bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-2.5 pt-10">
-        <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-white/90">
+    <div className="marquesina pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden">
+      <div className="bg-gradient-to-t from-black/75 via-black/35 to-transparent pb-2 pt-10">
+        <p className="mb-1 flex items-center gap-1.5 px-3 text-[11px] font-bold text-white/90">
           <span aria-hidden>{contenido.icono}</span>
           {contenido.titulo}
         </p>
-        <div className="pointer-events-auto flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {contenido.filas.map((f, i) => (
-            <span
-              key={i}
-              className="shrink-0 whitespace-nowrap rounded-full bg-white/15 px-2 py-0.5 text-[11px] text-white backdrop-blur-sm"
-            >
-              <span className="text-white/65">{f.etiqueta}: </span>
-              <span className="font-semibold">{valorFila(f)}</span>
-              {f.sensible && <span className="ml-1 text-[9px] uppercase text-white/50">decl.</span>}
-            </span>
-          ))}
+        <div className="marquesina-track">
+          <span className="flex shrink-0 pr-2">{chips}</span>
+          <span className="flex shrink-0 pr-2" aria-hidden>
+            {chips}
+          </span>
         </div>
       </div>
     </div>
@@ -97,7 +104,7 @@ function Visor({
   const toque = useRef<number | null>(null);
 
   const foto = fotos[indice];
-  const contenido = filasDe(foto?.bloque ?? null, ficha);
+  const contenido = resumenDeFoto(foto?.bloque ?? null, ficha);
 
   const reset = useCallback(() => {
     setEscala(1);
@@ -271,7 +278,7 @@ export function GaleriaAnuncio({
 
   const i = Math.min(activa, fotos.length - 1);
   const foto = fotos[i];
-  const contenido = filasDe(foto.bloque, ficha);
+  const contenido = resumenDeFoto(foto.bloque, ficha);
 
   return (
     <div>
