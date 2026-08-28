@@ -179,6 +179,110 @@ export interface VehiculoCrear {
   ciudad_registro?: string;
 }
 
+// ── Garage: mantenimientos ──────────────────────────────────────────────────
+// Mirror de src/modules/vehiculos/schemas/mantenimiento.py. Registros inmutables
+// (POST/GET/DELETE, sin PATCH). `costo` lo serializa el backend como string decimal.
+
+export interface MantenimientoCrear {
+  tipo: string;
+  fecha: string; // YYYY-MM-DD
+  kilometraje_relacionado: number;
+  taller?: string | null;
+  costo?: number | string | null;
+}
+
+export interface MantenimientoSalida {
+  id: number;
+  vehiculo_id: number;
+  tipo: string;
+  fecha: string;
+  kilometraje_relacionado: number;
+  taller: string | null;
+  costo: string | null;
+  creado_en: string;
+}
+
+// ── Garage: control de gastos (migración 0032) ──────────────────────────────
+// Mirror de src/modules/vehiculos/schemas/gasto.py. Montos como string decimal.
+
+export type TipoGastoApi =
+  | "combustible"
+  | "mantenimiento"
+  | "seguro"
+  | "matricula"
+  | "peajes"
+  | "multas"
+  | "repuestos"
+  | "lavado"
+  | "otro";
+
+export interface GastoCrear {
+  tipo: TipoGastoApi;
+  monto_usd: number | string;
+  fecha: string; // YYYY-MM-DD
+  kilometraje?: number | null;
+  nota?: string | null;
+}
+
+export interface GastoSalida {
+  id: number;
+  vehiculo_id: number;
+  tipo: TipoGastoApi;
+  monto_usd: string;
+  fecha: string;
+  kilometraje: number | null;
+  nota: string | null;
+  creado_en: string;
+}
+
+export interface GastoPorTipo {
+  tipo: TipoGastoApi;
+  total_usd: string;
+  cantidad: number;
+}
+
+export interface ResumenGastos {
+  total_usd: string;
+  cantidad: number;
+  por_tipo: GastoPorTipo[];
+  promedio_mensual_usd: string;
+  meses_con_datos: number;
+  ultimo_registro: string | null;
+  mantenimientos_costo_usd: string;
+}
+
+export interface GastosVehiculo {
+  resumen: ResumenGastos;
+  items: GastoSalida[];
+}
+
+// ── Garage: plan de cuidado por reglas ──────────────────────────────────────
+// Mirror de src/modules/vehiculos/schemas/plan_cuidado.py. `fuente` deja lugar a un
+// plan con IA más adelante sin cambiar la forma.
+
+export type EstadoItemPlan = "al_dia" | "proximo" | "vencido" | "sin_datos";
+
+export interface ItemPlanCuidado {
+  clave: string;
+  titulo: string;
+  estado: EstadoItemPlan;
+  detalle: string;
+  cada_km: number | null;
+  cada_meses: number | null;
+  ultimo_km: number | null;
+  ultima_fecha: string | null;
+  proximo_km: number | null;
+}
+
+export interface PlanCuidado {
+  fuente: "reglas" | "ia";
+  km_referencia: number | null;
+  vencidos: number;
+  proximos: number;
+  nota_ia: string;
+  items: ItemPlanCuidado[];
+}
+
 // ── Favoritos del usuario ────────────────────────────────────────────────────
 // Mirror de src/modules/vehiculos/schemas/favorito.py del backend.
 // OJO: el favorito es por PLACA (String, no FK), no por publicación. Una placa puede
@@ -424,6 +528,8 @@ export interface PublicacionInterna {
   precio_usd: number;
   plan: PlanPublicacion;
   estado: EstadoPublicacion;
+  // Fecha en que pasó a `vendida` (migración 0031). null salvo estado === "vendida".
+  vendido_en?: string | null;
   estado_verificacion: EstadoVerificacion;
   destacado: boolean;
   verificado: boolean;

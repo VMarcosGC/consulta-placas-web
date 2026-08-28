@@ -2,7 +2,8 @@
 // verificación, y puede: editar los datos básicos (título, descripción, ciudad,
 // kilometraje, precio — M2.11), editar la ficha técnica y las fotos, SOLICITAR la
 // verificación "Verificado por la plataforma" (gratis; la revisa un administrador),
-// publicar un borrador o eliminar la publicación. Requiere sesión.
+// publicar un borrador, MARCAR COMO VENDIDO (lo saca del feed y lo lleva al resumen
+// de vendidos, con su fecha) o eliminar la publicación. Requiere sesión.
 
 "use client";
 
@@ -518,6 +519,45 @@ export default function MisPublicacionesPage() {
     }
   }
 
+  // Cambia el estado del anuncio (activa/pausada/vendida). El backend sella o limpia
+  // `vendido_en` en la transición. "Vender" es la acción que lo saca del feed y lo
+  // manda al resumen de vendidos; "volver a publicar" lo reactiva.
+  async function cambiarEstado(id: number, estado: "activa" | "pausada" | "vendida") {
+    setProcesando(id);
+    setError(null);
+    try {
+      const actualizada = await actualizarPublicacion(id, { estado });
+      setPubs((prev) => prev.map((p) => (p.id === id ? actualizada : p)));
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message || "No pudimos cambiar el estado del anuncio."
+          : "No pudimos cambiar el estado del anuncio."
+      );
+    } finally {
+      setProcesando(null);
+    }
+  }
+
+  // Resumen por estado (chips del encabezado) + lista de vendidos aparte. El vendedor
+  // pidió "dónde va lo de vendido": va como un resumen propio, no mezclado con lo activo.
+  const cuenta = {
+    activa: pubs.filter((p) => p.estado === "activa").length,
+    vendida: pubs.filter((p) => p.estado === "vendida").length,
+    pausada: pubs.filter((p) => p.estado === "pausada").length,
+    borrador: pubs.filter((p) => p.estado === "borrador").length,
+  };
+  const vendidas = pubs.filter((p) => p.estado === "vendida");
+  const noVendidas = pubs.filter((p) => p.estado !== "vendida");
+  const fmtFecha = (iso?: string | null) =>
+    iso
+      ? new Date(iso).toLocaleDateString("es-EC", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "";
+
   // Aviso de contacto: hay al menos un anuncio en el feed pero el vendedor no tiene número,
   // así que quien pulse "Ver teléfono" recibe un 409. Se deriva de `pubs`, de modo que al
   // publicar un borrador (borrador → activa) el aviso aparece sin recargar. Mientras carga,
@@ -556,6 +596,75 @@ export default function MisPublicacionesPage() {
         </p>
       )}
 
+      {/* Resumen por estado: un vistazo de cuántos hay activos, vendidos, en pausa
+          y en borrador. */}
+      {!cargando && pubs.length > 0 && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <span className="rounded-full bg-confirmado-tinte px-3 py-1 text-xs font-semibold text-confirmado-texto">
+            {cuenta.activa} {cuenta.activa === 1 ? "activo" : "activos"}
+          </span>
+          <span className="rounded-full bg-marca-tinte px-3 py-1 text-xs font-semibold text-marca-texto">
+            {cuenta.vendida} {cuenta.vendida === 1 ? "vendido" : "vendidos"}
+          </span>
+          {cuenta.pausada > 0 && (
+            <span className="rounded-full bg-superficie-tenue px-3 py-1 text-xs font-semibold text-secundario">
+              {cuenta.pausada} en pausa
+            </span>
+          )}
+          {cuenta.borrador > 0 && (
+            <span className="rounded-full bg-superficie-tenue px-3 py-1 text-xs font-semibold text-secundario">
+              {cuenta.borrador} en borrador
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Resumen de autos vendidos — separado de lo activo a propósito (pedido de
+          producto). Cada uno con su fecha de venta y la opción de volver a publicarlo. */}
+      {!cargando && vendidas.length > 0 && (
+        <section className="mb-8 rounded-2xl border border-borde bg-superficie-tenue p-4 sm:p-5 sombra-tarjeta">
+          <h2 className="text-sm font-bold text-tinta">
+            🎉 Vendidos ({vendidas.length})
+          </h2>
+          <ul className="mt-3 divide-y divide-borde">
+            {vendidas.map((p) => {
+              const t =
+                p.titulo || [p.marca, p.modelo, p.anio].filter(Boolean).join(" ") || p.placa;
+              return (
+                <li
+                  key={p.id}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-tinta">{t}</p>
+                    <p className="text-xs text-secundario">
+                      ${p.precio_usd.toLocaleString("es-EC")}
+                      {p.vendido_en && ` · vendido el ${fmtFecha(p.vendido_en)}`}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => cambiarEstado(p.id, "activa")}
+                      disabled={procesando === p.id}
+                      className="rounded-full border border-borde-fuerte bg-superficie px-3 py-1.5 text-xs font-semibold text-secundario transition hover:bg-superficie-tenue disabled:opacity-50"
+                    >
+                      {procesando === p.id ? "…" : "Volver a publicar"}
+                    </button>
+                    <Link
+                      href={`/marketplace/${p.id}`}
+                      className="rounded-full border border-borde-fuerte bg-superficie px-3 py-1.5 text-xs font-semibold text-secundario transition hover:bg-superficie-tenue"
+                    >
+                      Ver
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {!cargando && pubs.length === 0 && (
         <div className="rounded-2xl border border-borde bg-superficie p-10 text-center sombra-tarjeta">
           <p className="text-lg font-semibold text-secundario">Todavía no publicas ningún auto.</p>
@@ -569,7 +678,7 @@ export default function MisPublicacionesPage() {
       )}
 
       <div className="space-y-4">
-        {pubs.map((p) => {
+        {noVendidas.map((p) => {
           const titulo =
             p.titulo || [p.marca, p.modelo, p.anio].filter(Boolean).join(" ") || "Sin datos";
           const ocupado = procesando === p.id;
@@ -751,6 +860,19 @@ export default function MisPublicacionesPage() {
                     <span className="flex-1 rounded-full bg-superficie-tenue px-4 py-2 text-center text-xs text-secundario">
                       Hazla premium para verificar
                     </span>
+                  )}
+                  {/* Marcar como vendido: disponible mientras el anuncio esté activo o
+                      pausado. Lo saca del feed y lo manda al resumen de vendidos, con
+                      su fecha. "Volver a publicar" vive en ese resumen. */}
+                  {(p.estado === "activa" || p.estado === "pausada") && (
+                    <button
+                      onClick={() => cambiarEstado(p.id, "vendida")}
+                      disabled={ocupado}
+                      title="Marca este auto como vendido y sácalo del listado"
+                      className="flex-1 rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario transition hover:bg-superficie-tenue disabled:opacity-50"
+                    >
+                      {ocupado ? "…" : "Marcar como vendido"}
+                    </button>
                   )}
                   <button
                     onClick={() => borrar(p.id)}

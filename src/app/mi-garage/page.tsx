@@ -129,7 +129,9 @@ export default function MiGaragePage() {
 
       {/* Garage ≠ Publicar (M2.10): son cosas distintas y conviene decirlo sin ruido. */}
       <p className="mt-6 rounded-xl border border-borde bg-superficie px-4 py-2.5 text-xs text-secundario sombra-tarjeta">
-        Tu garage es privado (tu historial). Publicar crea un anuncio público de venta.
+        Tu garage es privado (tu historial). Entra a <strong>Cuidado y gastos</strong> de
+        cada auto para ver qué mantenimientos tocan y llevar el control de lo que gastas.
+        Publicar, en cambio, crea un anuncio público de venta.
       </p>
 
       <section className="mt-6 space-y-3">
@@ -209,6 +211,12 @@ export default function MiGaragePage() {
                     Publicar este auto
                   </Link>
                 )}
+                <Link
+                  href={`/mi-garage/${v.id}`}
+                  className="rounded-lg border border-marca bg-marca-tinte px-3 py-1.5 text-xs font-semibold text-marca-texto transition hover:opacity-90"
+                >
+                  Cuidado y gastos →
+                </Link>
                 <Link
                   href={`/consultar/${v.placa}`}
                   className="rounded-lg border border-borde-fuerte px-3 py-1.5 text-xs font-medium text-secundario hover:bg-superficie-tenue"

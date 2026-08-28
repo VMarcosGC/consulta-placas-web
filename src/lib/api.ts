@@ -20,7 +20,13 @@ import {
   FotoRegistrar,
   FotoSalida,
   FuenteRespuesta,
+  GastoCrear,
+  GastoSalida,
+  GastosVehiculo,
   GoogleLoginEntrada,
+  MantenimientoCrear,
+  MantenimientoSalida,
+  PlanCuidado,
   PublicacionActualizar,
   PublicacionCrear,
   PublicacionDetalle,
@@ -205,6 +211,63 @@ export function crearVehiculo(datos: VehiculoCrear) {
 
 export function eliminarVehiculo(id: number) {
   return fetchAPI<void>(`/vehiculos/${id}`, { method: "DELETE" }, true);
+}
+
+// ─── Garage: mantenimientos (auth, dueño) ─────────────────
+export function listarMantenimientos(vehiculoId: number) {
+  return fetchAPI<MantenimientoSalida[]>(
+    `/vehiculos/${vehiculoId}/mantenimientos`,
+    {},
+    true
+  );
+}
+
+export function crearMantenimiento(vehiculoId: number, datos: MantenimientoCrear) {
+  return fetchAPI<MantenimientoSalida>(
+    `/vehiculos/${vehiculoId}/mantenimientos`,
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function eliminarMantenimiento(vehiculoId: number, mantenimientoId: number) {
+  return fetchAPI<void>(
+    `/vehiculos/${vehiculoId}/mantenimientos/${mantenimientoId}`,
+    { method: "DELETE" },
+    true
+  );
+}
+
+// ─── Garage: control de gastos (auth, dueño) ──────────────
+// El GET trae listado + resumen derivado (total, promedio mensual, desglose por tipo).
+export function listarGastos(vehiculoId: number) {
+  return fetchAPI<GastosVehiculo>(`/vehiculos/${vehiculoId}/gastos`, {}, true);
+}
+
+export function crearGasto(vehiculoId: number, datos: GastoCrear) {
+  return fetchAPI<GastoSalida>(
+    `/vehiculos/${vehiculoId}/gastos`,
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function eliminarGasto(vehiculoId: number, gastoId: number) {
+  return fetchAPI<void>(
+    `/vehiculos/${vehiculoId}/gastos/${gastoId}`,
+    { method: "DELETE" },
+    true
+  );
+}
+
+// ─── Garage: plan de cuidado por reglas (auth, dueño) ─────
+export function obtenerPlanCuidado(vehiculoId: number, km?: number) {
+  const qs = km != null ? `?km=${km}` : "";
+  return fetchAPI<PlanCuidado>(
+    `/vehiculos/${vehiculoId}/plan-cuidado${qs}`,
+    {},
+    true
+  );
 }
 
 // ─── Favoritos (auth) ─────────────────────────────────────
