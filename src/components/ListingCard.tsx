@@ -38,6 +38,11 @@ import { precioNum } from "@/lib/precio";
 import { antiguedadDe } from "@/lib/antiguedad";
 import type { PublicacionInterna, PublicacionReferenciada } from "@/types/api";
 
+// A partir de este nº de "me gusta" la publicación muestra el sello "Popular". Por
+// debajo se ve un ♥ N discreto; en 0 no se muestra nada (no es una nota baja, es la
+// línea base). Se ajusta si el volumen de votos crece.
+const UMBRAL_POPULAR = 5;
+
 // Extras opcionales del carril comprador (MC1). Son opcionales a propósito: donde la
 // tarjeta ya se usaba sin favoritos (home, mis-publicaciones) se omiten y todo sigue
 // igual. `distintivo` es el espacio del badge "↓ Bajó $X" de "Tus favoritos".
@@ -208,13 +213,27 @@ export function ListingInternaCard({
             ✦ Nuevo
           </span>
         )}
-        {/* "Me gusta" público: cuánta gente guardó esta placa. Solo si hay al menos uno.
-            Abajo-izquierda, sobre la foto (negro translúcido = tema-independiente). */}
-        {(pub.total_favoritos ?? 0) > 0 && (
-          <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
-            ♥ {pub.total_favoritos}
-          </span>
-        )}
+        {/* "Me gusta" público (voto de la gente). Tres niveles y NINGUNO parece una
+            "nota baja": sin votos NO se muestra nada (línea base); con pocos, un ♥ N
+            discreto; a partir del umbral, un sello "Popular" en `--marca`. */}
+        {(() => {
+          const n = pub.total_favoritos ?? 0;
+          if (n >= UMBRAL_POPULAR) {
+            return (
+              <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-marca px-2 py-0.5 text-[11px] font-bold text-superficie shadow-sm">
+                🔥 Popular · {n}
+              </span>
+            );
+          }
+          if (n > 0) {
+            return (
+              <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
+                ♥ {n}
+              </span>
+            );
+          }
+          return null;
+        })()}
         {favoritos && (
           <BotonFavorito
             placa={pub.placa}

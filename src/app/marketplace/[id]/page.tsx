@@ -372,9 +372,22 @@ export default function PublicacionDetallePage() {
               )}
               {pub.verificado && <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>}
               {fichaIncompleta(pctFicha) && <Insignia tono="neutro">Ficha incompleta</Insignia>}
+              {/* Popularidad: solo aparece si cruzó el umbral. Sin votos NO se muestra
+                  nada (no es "nota baja", es la línea base). */}
+              {(pub.total_favoritos ?? 0) >= 5 && (
+                <span className="inline-flex items-center rounded-full bg-marca px-2.5 py-0.5 text-xs font-black text-superficie">
+                  🔥 Popular
+                </span>
+              )}
               {/* Solo el dueño ve este chip; nunca un comprador anónimo. */}
               {esMia && viveEnGarage && <Insignia tono="info">🚗 Vive en tu garage</Insignia>}
             </div>
+            {(pub.total_favoritos ?? 0) > 0 && (
+              <p className="mt-2 text-sm text-secundario">
+                ♥ A {pub.total_favoritos}{" "}
+                {pub.total_favoritos === 1 ? "persona le" : "personas les"} gustó este auto
+              </p>
+            )}
 
             <p className="mt-4 text-4xl font-black leading-none text-tinta sm:text-5xl">
               {precioFmt(pub.precio_usd)}
