@@ -208,6 +208,13 @@ export function ListingInternaCard({
             ✦ Nuevo
           </span>
         )}
+        {/* "Me gusta" público: cuánta gente guardó esta placa. Solo si hay al menos uno.
+            Abajo-izquierda, sobre la foto (negro translúcido = tema-independiente). */}
+        {(pub.total_favoritos ?? 0) > 0 && (
+          <span className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
+            ♥ {pub.total_favoritos}
+          </span>
+        )}
         {favoritos && (
           <BotonFavorito
             placa={pub.placa}

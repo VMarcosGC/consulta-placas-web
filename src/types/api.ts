@@ -446,6 +446,9 @@ export interface PublicacionInterna {
   semanas_publicada?: number;
   vigente?: boolean;
   puede_renovar?: boolean;
+  // "Me gusta" público = cuántos usuarios tienen esta placa en favoritos. Más "me gusta"
+  // empuja la publicación hacia arriba en el feed (relevancia). Opcional: backend viejo.
+  total_favoritos?: number;
 }
 
 export type EstadoModeracion = "pendiente" | "aprobada" | "rechazada";
