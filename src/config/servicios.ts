@@ -29,11 +29,22 @@ export type Servicio = {
   whatsapp?: string;
   telefono?: string;
   direccion?: string;
+  /** Texto libre ("Lun a Vie 8:00–18:00 · Sáb 8:00–13:00"). */
+  horario?: string;
   /** true = la plataforma revisó sus credenciales (mecánica certificada). */
   certificado?: boolean;
   /** DEMO = ejemplo simulado, no un negocio real. */
   demo?: boolean;
 };
+
+// Horario de atención típico de un taller/negocio automotriz en Ecuador. Se usa como
+// relleno para los ejemplos demo; los negocios reales cargan el suyo.
+const HORARIOS_DEMO = [
+  "Lun a Vie 8:00–18:00 · Sáb 8:00–13:00",
+  "Lun a Sáb 8:30–17:30",
+  "Lun a Vie 9:00–19:00 · Sáb 9:00–14:00",
+  "Lun a Vie 8:00–17:00",
+];
 
 // Negocios reales (se llenan a mano cuando alguien se suma por el CTA).
 export const SERVICIOS_REALES: Servicio[] = [];
@@ -96,7 +107,9 @@ const SERVICIOS_DEMO: Servicio[] = (() => {
         provincia,
         descripcion,
         whatsapp: _telefono(i),
+        telefono: _telefono(i),
         direccion: `Av. ${s} y Calle ${a}, ${ciudad}`,
+        horario: HORARIOS_DEMO[i % HORARIOS_DEMO.length],
         certificado: cat === "mecanica_certificada",
         demo: true,
       });

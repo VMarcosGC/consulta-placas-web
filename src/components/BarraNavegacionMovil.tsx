@@ -7,11 +7,12 @@
 //
 // DECISIONES QUE NO SE PUEDEN PERDER AL TOCAR ESTE ARCHIVO:
 //
-//  1. **Tres entradas.** Inicio, Marketplace y Publicar son los flujos primarios. La
-//     "Consulta de placa" quedó en stand-by (pendiente de resolver la fuente de datos) y
-//     salió de la barra; Inicio tomó su lugar porque en celular el logo era su único
-//     acceso. Con una cuarta entrada las etiquetas no entran a 320px; el resto vive en el
-//     menú de la cuenta del Header.
+//  1. **Cuatro entradas.** Inicio, Marketplace, Servicios y Publicar son los flujos
+//     primarios. La "Consulta de placa" quedó en stand-by (pendiente de resolver la fuente
+//     de datos) y salió de la barra; Inicio tomó su lugar porque en celular el logo era su
+//     único acceso. Servicios se sumó por pedido de producto (el directorio de talleres es
+//     navegación primaria). A 320px las etiquetas quedan justas y truncan con elegancia;
+//     una quinta entrada ya no entra — el resto vive en el menú de la cuenta del Header.
 //  2. **Destinos `<Link>`, no `div` con onClick.** Se abren en pestaña nueva, se navegan
 //     con teclado y el prefetch de Next funciona.
 //  3. **La ruta activa se marca dos veces**: en color (para quien ve) y con
@@ -67,6 +68,24 @@ function IconoPublicar({ className }: PropsIcono) {
   );
 }
 
+function IconoServicios({ className }: PropsIcono) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      {/* Llave inglesa */}
+      <path d="M14.7 6.3a3.5 3.5 0 0 0-4.6 4.6l-6 6a1.6 1.6 0 0 0 2.3 2.3l6-6a3.5 3.5 0 0 0 4.6-4.6l-2 2-2-2 2-2z" />
+    </svg>
+  );
+}
+
 function IconoInicio({ className }: PropsIcono) {
   return (
     <svg
@@ -114,6 +133,13 @@ const ENTRADAS: Entrada[] = [
     // Todo /marketplace/* cuenta como "estoy en el market" (detalle de anuncio,
     // referencias, mis publicaciones), menos Publicar, que tiene entrada propia.
     esActiva: (ruta) => ruta.startsWith("/marketplace") && !ruta.startsWith(RUTA_PUBLICAR),
+  },
+  {
+    href: "/servicios",
+    etiqueta: "Servicios",
+    etiquetaAccesible: "Servicios para tu auto",
+    icono: IconoServicios,
+    esActiva: (ruta) => ruta.startsWith("/servicios"),
   },
   {
     href: RUTA_PUBLICAR,

@@ -769,6 +769,50 @@ export interface DistribucionGeografica {
   regiones: RegionDistribucion[];
 }
 
+// ── Directorio de servicios automotrices (migración 0029 + 0030 `horario`) ────
+// Mirror de src/modules/marketplace/schemas.py. Un usuario propone un negocio → entra
+// `pendiente`; un admin lo aprueba. El GET público solo trae aprobados + activos.
+
+export type CategoriaServicioApi =
+  | "mecanica"
+  | "mecanica_certificada"
+  | "centro_servicio"
+  | "lavadero"
+  | "luces"
+  | "accesorios"
+  | "otro";
+
+export interface ServicioCrear {
+  nombre: string;
+  categoria: CategoriaServicioApi;
+  provincia: string;
+  ciudad: string;
+  descripcion?: string;
+  telefono?: string;
+  whatsapp?: string;
+  direccion?: string;
+  horario?: string;
+  url_externa?: string;
+}
+
+export interface ServicioSalida {
+  id: number;
+  nombre: string;
+  categoria: CategoriaServicioApi;
+  provincia: string;
+  ciudad: string;
+  descripcion: string | null;
+  telefono: string | null;
+  whatsapp: string | null;
+  direccion: string | null;
+  horario: string | null;
+  url_externa: string | null;
+  certificado: boolean;
+  estado_moderacion: "pendiente" | "aprobada" | "rechazada";
+  activo: boolean;
+  creado_en: string;
+}
+
 // ── Vendedor y contacto comprador-vendedor (TASK-001 / M5) ───────────────────
 // Mirror de VendedorActualizar / VendedorPerfilSalida / ContactoVendedorSalida
 // (src/modules/marketplace/schemas.py, bloque "Vendedor y contacto").

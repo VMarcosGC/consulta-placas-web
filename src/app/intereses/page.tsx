@@ -2,13 +2,14 @@
 //
 // - Autos: favoritos por placa (backend, `useFavoritos`). Se cruzan contra el feed
 //   público para pintar la tarjeta con datos frescos (precio de hoy, etc.).
-// - Servicios: guardados en `localStorage` (el directorio aún no tiene backend).
+// - Servicios: el id guardado en `localStorage` puede ser de la demo (`demo-N`) o de un
+//   negocio real aprobado (`api-N`); se resuelve contra la unión de ambas fuentes.
 
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { obtenerFeedMarketplace } from "@/lib/api";
+import { listarServicios, obtenerFeedMarketplace } from "@/lib/api";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { ListingInternaCard, ListingReferenciadaCard } from "@/components/ListingCard";
 import { todasLasInternas } from "@/lib/marketplace";
@@ -16,7 +17,12 @@ import {
   alternarServicioGuardado,
   useServiciosGuardados,
 } from "@/lib/serviciosGuardados";
-import { CATEGORIAS_SERVICIO, SERVICIOS } from "@/config/servicios";
+import {
+  CATEGORIAS_SERVICIO,
+  SERVICIOS,
+  type CategoriaServicio,
+  type Servicio,
+} from "@/config/servicios";
 import type {
   FeedMarketplace,
   PublicacionInterna,
@@ -29,6 +35,7 @@ export default function InteresesPage() {
   const { control, mapa, haySesion } = useFavoritos();
   const [feed, setFeed] = useState<FeedMarketplace>(FEED_VACIO);
   const [cargando, setCargando] = useState(true);
+  const [serviciosApi, setServiciosApi] = useState<Servicio[]>([]);
   const idsServicios = useServiciosGuardados();
 
   useEffect(() => {
@@ -43,6 +50,22 @@ export default function InteresesPage() {
         if (activo) setCargando(false);
       }
     })();
+    listarServicios()
+      .then((r) => {
+        if (!activo || !Array.isArray(r)) return;
+        setServiciosApi(
+          r.map((s) => ({
+            id: `api-${s.id}`,
+            nombre: s.nombre,
+            categoria: s.categoria as CategoriaServicio,
+            ciudad: s.ciudad,
+            provincia: s.provincia,
+            whatsapp: s.whatsapp ?? undefined,
+            certificado: s.certificado,
+          }))
+        );
+      })
+      .catch(() => {});
     return () => {
       activo = false;
     };
@@ -57,9 +80,10 @@ export default function InteresesPage() {
   const referenciadas = feed.referenciadas.filter((p: PublicacionReferenciada) =>
     guardada(p.placa)
   );
+  const catalogoServicios = [...serviciosApi, ...SERVICIOS];
   const servicios = idsServicios
-    .map((id) => SERVICIOS.find((s) => s.id === id))
-    .filter((s): s is (typeof SERVICIOS)[number] => s != null);
+    .map((id) => catalogoServicios.find((s) => s.id === id))
+    .filter((s): s is Servicio => s != null);
 
   const sinAutos = !cargando && internas.length === 0 && referenciadas.length === 0;
 

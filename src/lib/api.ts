@@ -7,6 +7,8 @@ import {
   CalificacionCrear,
   CalificacionesVendedor,
   ContactoVendedorSalida,
+  ServicioCrear,
+  ServicioSalida,
   DistribucionGeografica,
   Favorito,
   FavoritoCrear,
@@ -433,6 +435,29 @@ export function renovarPublicacion(id: number) {
   return fetchAPI<PublicacionInterna>(
     `/marketplace/publicaciones/${id}/renovar`,
     { method: "POST" },
+    true
+  );
+}
+
+// ── Directorio de servicios automotrices ───────────────────────────────────
+
+// Directorio público: solo aprobados + activos. Filtros opcionales.
+export function listarServicios(filtros?: {
+  categoria?: string;
+  provincia?: string;
+}) {
+  const p = new URLSearchParams();
+  if (filtros?.categoria) p.set("categoria", filtros.categoria);
+  if (filtros?.provincia) p.set("provincia", filtros.provincia);
+  const qs = p.toString();
+  return fetchAPI<ServicioSalida[]>(`/marketplace/servicios${qs ? `?${qs}` : ""}`);
+}
+
+// Un usuario propone un negocio para el directorio → entra `pendiente`. Requiere sesión.
+export function crearServicio(datos: ServicioCrear) {
+  return fetchAPI<ServicioSalida>(
+    "/marketplace/servicios",
+    { method: "POST", body: JSON.stringify(datos) },
     true
   );
 }

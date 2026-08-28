@@ -1,29 +1,87 @@
-// Directorio de servicios automotrices. VERSIÓN 1 (sin backend): lista curada en
-// `src/config/servicios.ts` + filtro por categoría + CTA para que un negocio se sume.
-// Cuando haya negocios reales se agrega el mapa por provincia y las calificaciones.
+// Directorio de servicios automotrices.
+//
+// FORMA (pedido de producto, 2026-08-27): NO es una lista plana. Primero se ven los
+// BLOQUES por categoría (mecánica, lavadero, luces…); al tocar uno se abre la lista de
+// esa categoría. Cada servicio muestra lo básico + dirección, teléfono y horario, y un
+// apartado de AGENDAMIENTO que la plataforma va a ofrecer (hoy es un anuncio).
+//
+// DATOS: mezcla los negocios aprobados del backend (`GET /marketplace/servicios`) con la
+// lista demo de `src/config/servicios.ts` (relleno mientras no hay volumen real). Si el
+// backend falla, la sección sigue viva con la demo.
+//
+// El alta de un negocio: formulario propio (requiere sesión) → entra `pendiente` y lo
+// revisa un admin. El wa.me queda como vía secundaria.
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   CATEGORIAS_SERVICIO,
   CONTACTO_ALTA_NEGOCIO,
-  SERVICIOS,
+  SERVICIOS as SERVICIOS_DEMO,
   type CategoriaServicio,
+  type Servicio,
 } from "@/config/servicios";
+import { PROVINCIAS } from "@/lib/geografia";
+import { crearServicio, listarServicios } from "@/lib/api";
+import { tieneSesion } from "@/lib/auth";
 import {
   alternarServicioGuardado,
   useServiciosGuardados,
 } from "@/lib/serviciosGuardados";
+import type { CategoriaServicioApi, ServicioSalida } from "@/types/api";
+
+// ServicioSalida (backend) → forma de tarjeta que ya usa esta página.
+function desdeApi(s: ServicioSalida): Servicio {
+  return {
+    id: `api-${s.id}`,
+    nombre: s.nombre,
+    categoria: s.categoria as CategoriaServicio,
+    ciudad: s.ciudad,
+    provincia: s.provincia,
+    descripcion: s.descripcion ?? undefined,
+    telefono: s.telefono ?? undefined,
+    whatsapp: s.whatsapp ?? undefined,
+    direccion: s.direccion ?? undefined,
+    horario: s.horario ?? undefined,
+    certificado: s.certificado,
+    demo: false,
+  };
+}
 
 export default function ServiciosPage() {
-  const [cat, setCat] = useState<CategoriaServicio | "">("");
+  const [cat, setCat] = useState<CategoriaServicio | null>(null);
+  const [abierto, setAbierto] = useState<string | null>(null);
+  const [servicios, setServicios] = useState<Servicio[]>(SERVICIOS_DEMO);
   const guardados = new Set(useServiciosGuardados());
 
+  // Trae los aprobados del backend y los antepone a la demo. Si falla, se queda la demo.
+  useEffect(() => {
+    let vivo = true;
+    listarServicios()
+      .then((r) => {
+        if (!vivo || !Array.isArray(r) || r.length === 0) return;
+        setServicios([...r.map(desdeApi), ...SERVICIOS_DEMO]);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  const conteos = useMemo(() => {
+    const m = new Map<CategoriaServicio, number>();
+    for (const s of servicios) m.set(s.categoria, (m.get(s.categoria) ?? 0) + 1);
+    return m;
+  }, [servicios]);
+
   const lista = useMemo(
-    () => (cat ? SERVICIOS.filter((s) => s.categoria === cat) : SERVICIOS),
-    [cat]
+    () => (cat ? servicios.filter((s) => s.categoria === cat) : []),
+    [cat, servicios]
   );
+
+  const metaCat = CATEGORIAS_SERVICIO.find((c) => c.clave === cat);
 
   return (
     <div className="espacio-barra-movil mx-auto max-w-5xl px-6 py-8 sm:py-10">
@@ -31,139 +89,417 @@ export default function ServiciosPage() {
         <h1 className="text-2xl font-black text-tinta sm:text-3xl">Servicios para tu auto</h1>
         <p className="mt-1 text-sm text-secundario sm:text-base">
           Mecánicas y mecánicas certificadas, centros de servicio, lavaderos, luces y
-          accesorios. Un solo lugar para encontrarlos y contactarlos.
+          accesorios. Un solo lugar para encontrarlos, ver su horario y contactarlos.
         </p>
       </header>
 
-      {/* Filtro por categoría — chips. */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setCat("")}
-          aria-pressed={cat === ""}
-          className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-            cat === ""
-              ? "bg-oscuro text-superficie"
-              : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
-          }`}
-        >
-          Todos
-        </button>
-        {CATEGORIAS_SERVICIO.map((c) => (
-          <button
-            key={c.clave}
-            type="button"
-            onClick={() => setCat(c.clave)}
-            aria-pressed={cat === c.clave}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-              cat === c.clave
-                ? "bg-oscuro text-superficie"
-                : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
-            }`}
-          >
-            <span aria-hidden>{c.icono}</span>
-            {c.nombre}
-          </button>
-        ))}
-      </div>
-
-      {/* Lista o estado vacío. */}
-      {lista.length === 0 ? (
-        <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
-          <p className="font-medium text-tinta">Todavía no hay servicios listados aquí.</p>
-          <p className="mx-auto mt-1 max-w-md text-sm text-secundario">
-            Estamos sumando talleres y negocios de a poco. Si tienes uno, escríbenos y lo
-            agregamos.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {lista.map((s) => {
-            const meta = CATEGORIAS_SERVICIO.find((c) => c.clave === s.categoria);
+      {/* NIVEL 1 — bloques por categoría. */}
+      {!cat && (
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+          {CATEGORIAS_SERVICIO.map((c) => {
+            const n = conteos.get(c.clave) ?? 0;
             return (
-              <div
-                key={s.id}
-                className="flex flex-col rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta"
+              <button
+                key={c.clave}
+                type="button"
+                onClick={() => {
+                  setCat(c.clave);
+                  setAbierto(null);
+                }}
+                className="group sombra-tarjeta flex flex-col items-start gap-2 rounded-xl border border-borde bg-superficie p-3.5 text-left transition hover:-translate-y-0.5 hover:border-borde-fuerte sm:p-4"
               >
-                <div className="flex items-center gap-2">
-                  <span aria-hidden className="text-lg">
-                    {meta?.icono}
-                  </span>
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-secundario">
-                    {meta?.nombre}
-                  </span>
-                  {s.certificado && (
-                    <span className="rounded-full bg-confirmado-tinte px-2 py-0.5 text-[10px] font-bold text-confirmado-texto">
-                      ✓ Certificado
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => alternarServicioGuardado(s.id)}
-                    aria-pressed={guardados.has(s.id)}
-                    aria-label={
-                      guardados.has(s.id)
-                        ? "Quitar de tus intereses"
-                        : "Guardar en tus intereses"
-                    }
-                    className={`ml-auto text-lg leading-none ${
-                      guardados.has(s.id) ? "text-marca" : "text-borde-fuerte hover:text-marca"
-                    }`}
-                  >
-                    {guardados.has(s.id) ? "♥" : "♡"}
-                  </button>
-                </div>
-                <h3 className="mt-2 text-base font-bold text-tinta">{s.nombre}</h3>
-                <p className="text-sm text-secundario">
-                  {s.ciudad} · {s.provincia}
-                </p>
-                {s.descripcion && (
-                  <p className="mt-1 text-sm text-secundario">{s.descripcion}</p>
-                )}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {s.whatsapp && (
-                    <a
-                      href={`https://wa.me/${s.whatsapp}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full bg-oscuro px-4 py-1.5 text-sm font-semibold text-superficie transition hover:bg-oscuro-suave"
-                    >
-                      WhatsApp
-                    </a>
-                  )}
-                  {s.telefono && (
-                    <a
-                      href={`tel:${s.telefono}`}
-                      className="rounded-full border border-borde-fuerte bg-superficie px-4 py-1.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
-                    >
-                      Llamar
-                    </a>
-                  )}
-                </div>
-              </div>
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-marca-tinte text-xl transition group-hover:scale-105">
+                  {c.icono}
+                </span>
+                <span className="text-sm font-bold leading-tight text-tinta">{c.nombre}</span>
+                <span className="text-[11px] text-secundario">
+                  {n} {n === 1 ? "negocio" : "negocios"}
+                </span>
+              </button>
             );
           })}
         </div>
       )}
 
-      {/* CTA: agrega tu negocio. */}
-      <section className="mt-10 rounded-3xl border border-borde bg-superficie-tenue p-6 text-center sm:p-8">
-        <h2 className="text-lg font-bold text-tinta sm:text-xl">
-          ¿Tienes un taller, lavadero o tienda de accesorios?
-        </h2>
-        <p className="mx-auto mt-1.5 max-w-lg text-sm text-secundario">
-          Súmalo a CarStore Ec y que te encuentren los compradores y vendedores de autos
-          de tu ciudad. Escríbenos y lo agregamos.
-        </p>
-        <a
-          href={CONTACTO_ALTA_NEGOCIO}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-flex rounded-full bg-accion px-6 py-2.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
-        >
-          Contáctanos para sumar tu negocio
-        </a>
-      </section>
+      {/* NIVEL 2 — lista de la categoría elegida. */}
+      {cat && (
+        <>
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setCat(null);
+                setAbierto(null);
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-borde-fuerte bg-superficie px-3 py-1.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
+            >
+              ← Todas
+            </button>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-tinta">
+              <span aria-hidden>{metaCat?.icono}</span>
+              {metaCat?.nombre}
+              <span className="text-sm font-normal text-secundario">({lista.length})</span>
+            </h2>
+          </div>
+
+          {lista.length === 0 ? (
+            <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
+              <p className="font-medium text-tinta">Todavía no hay negocios en esta categoría.</p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-secundario">
+                ¿Tienes uno? Súmalo más abajo y aparece apenas lo revisemos.
+              </p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2.5">
+              {lista.map((s) => (
+                <li key={s.id}>
+                  <TarjetaServicio
+                    servicio={s}
+                    abierta={abierto === s.id}
+                    onToggle={() => setAbierto((a) => (a === s.id ? null : s.id))}
+                    guardado={guardados.has(s.id)}
+                    onGuardar={() => alternarServicioGuardado(s.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+
+      {/* Alta de negocio. */}
+      <AltaNegocio />
     </div>
+  );
+}
+
+// ── Tarjeta de un servicio (acordeón) ──────────────────────────────────────────
+function TarjetaServicio({
+  servicio: s,
+  abierta,
+  onToggle,
+  guardado,
+  onGuardar,
+}: {
+  servicio: Servicio;
+  abierta: boolean;
+  onToggle: () => void;
+  guardado: boolean;
+  onGuardar: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-borde bg-superficie sombra-tarjeta">
+      <div className="flex items-start gap-3 p-4">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={abierta}
+          className="min-w-0 flex-1 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-base font-bold text-tinta">{s.nombre}</h3>
+            {s.certificado && (
+              <span className="shrink-0 rounded-full bg-confirmado-tinte px-2 py-0.5 text-[10px] font-bold text-confirmado-texto">
+                ✓ Certificado
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-secundario">
+            {s.ciudad} · {s.provincia}
+          </p>
+          {s.descripcion && (
+            <p className="mt-1 line-clamp-2 text-sm text-secundario">{s.descripcion}</p>
+          )}
+          <span className="mt-1 inline-block text-xs font-semibold text-tinta">
+            {abierta ? "Ocultar detalle ▲" : "Ver dirección, horario y agenda ▼"}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={onGuardar}
+          aria-pressed={guardado}
+          aria-label={guardado ? "Quitar de tus intereses" : "Guardar en tus intereses"}
+          className={`shrink-0 text-xl leading-none ${
+            guardado ? "text-marca" : "text-borde-fuerte hover:text-marca"
+          }`}
+        >
+          {guardado ? "♥" : "♡"}
+        </button>
+      </div>
+
+      {abierta && (
+        <div className="animate-fade-in-up border-t border-borde px-4 pb-4 pt-3">
+          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+            {s.direccion && (
+              <div className="flex gap-2">
+                <dt aria-hidden>📍</dt>
+                <dd className="text-secundario">{s.direccion}</dd>
+              </div>
+            )}
+            {s.horario && (
+              <div className="flex gap-2">
+                <dt aria-hidden>🕒</dt>
+                <dd className="text-secundario">{s.horario}</dd>
+              </div>
+            )}
+            {(s.telefono || s.whatsapp) && (
+              <div className="flex gap-2">
+                <dt aria-hidden>📞</dt>
+                <dd className="text-secundario">{s.telefono ?? s.whatsapp}</dd>
+              </div>
+            )}
+          </dl>
+
+          {/* Agendamiento — servicio de la plataforma (aún no disponible). */}
+          <div className="mt-3 rounded-xl border border-dashed border-borde-fuerte bg-superficie-tenue p-3">
+            <p className="text-sm font-semibold text-tinta">📅 Agenda tu cita</p>
+            <p className="mt-0.5 text-xs text-secundario">
+              Pronto vas a poder reservar tu turno con este negocio sin salir de CarStore Ec.
+            </p>
+            <button
+              type="button"
+              disabled
+              className="mt-2 cursor-not-allowed rounded-full bg-borde px-4 py-1.5 text-sm font-semibold text-secundario"
+            >
+              Agendar — muy pronto
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {s.whatsapp && (
+              <a
+                href={`https://wa.me/${s.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full bg-oscuro px-4 py-1.5 text-sm font-semibold text-superficie transition hover:bg-oscuro-suave"
+              >
+                WhatsApp
+              </a>
+            )}
+            {s.telefono && (
+              <a
+                href={`tel:${s.telefono}`}
+                className="rounded-full border border-borde-fuerte bg-superficie px-4 py-1.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
+              >
+                Llamar
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Alta de un negocio (formulario + wa.me de respaldo) ────────────────────────
+const CATS_API: { valor: CategoriaServicioApi; etiqueta: string }[] = [
+  { valor: "mecanica", etiqueta: "Mecánica general" },
+  { valor: "mecanica_certificada", etiqueta: "Mecánica certificada" },
+  { valor: "centro_servicio", etiqueta: "Centro de servicio" },
+  { valor: "lavadero", etiqueta: "Lavadero" },
+  { valor: "luces", etiqueta: "Luces y eléctrico" },
+  { valor: "accesorios", etiqueta: "Accesorios y lujos" },
+  { valor: "otro", etiqueta: "Otro" },
+];
+
+function AltaNegocio() {
+  const [abierto, setAbierto] = useState(false);
+  const [haySesion, setHaySesion] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    nombre: "",
+    categoria: "mecanica" as CategoriaServicioApi,
+    provincia: "Pichincha",
+    ciudad: "",
+    whatsapp: "",
+    horario: "",
+    descripcion: "",
+  });
+
+  // Async a propósito: setState directo dentro del cuerpo de un effect lo marca el
+  // linter (react-hooks/set-state-in-effect). Mismo patrón que useFavoritos.
+  useEffect(() => {
+    let vivo = true;
+    const leer = async () => {
+      if (vivo) setHaySesion(tieneSesion());
+    };
+    leer();
+    window.addEventListener("sesion-cambiada", leer);
+    return () => {
+      vivo = false;
+      window.removeEventListener("sesion-cambiada", leer);
+    };
+  }, []);
+
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setEnviando(true);
+    try {
+      await crearServicio({
+        nombre: form.nombre.trim(),
+        categoria: form.categoria,
+        provincia: form.provincia,
+        ciudad: form.ciudad.trim(),
+        whatsapp: form.whatsapp.trim() || undefined,
+        horario: form.horario.trim() || undefined,
+        descripcion: form.descripcion.trim() || undefined,
+      });
+      setOk(true);
+    } catch {
+      setError("No pudimos enviar tu negocio. Revisa los datos e inténtalo de nuevo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <section className="mt-10 rounded-3xl border border-borde bg-superficie-tenue p-6 sm:p-8">
+      <h2 className="text-lg font-bold text-tinta sm:text-xl">
+        ¿Tienes un taller, lavadero o tienda de accesorios?
+      </h2>
+      <p className="mt-1.5 max-w-lg text-sm text-secundario">
+        Súmalo a CarStore Ec y que te encuentren los compradores y vendedores de autos de
+        tu ciudad. Lo revisamos y lo publicamos en el directorio.
+      </p>
+
+      {ok ? (
+        <p className="mt-4 rounded-xl border border-confirmado bg-confirmado-tinte px-4 py-3 text-sm font-medium text-confirmado-texto">
+          ✓ Recibimos tu negocio. Queda pendiente de revisión y aparece en el directorio
+          apenas lo aprobemos.
+        </p>
+      ) : (
+        <>
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            <button
+              type="button"
+              onClick={() => setAbierto((v) => !v)}
+              className="inline-flex rounded-full bg-accion px-6 py-2.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
+            >
+              {abierto ? "Cerrar formulario" : "Sumar mi negocio"}
+            </button>
+            <a
+              href={CONTACTO_ALTA_NEGOCIO}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex rounded-full border border-borde-fuerte bg-superficie px-6 py-2.5 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
+            >
+              Prefiero escribir por WhatsApp
+            </a>
+          </div>
+
+          {abierto && !haySesion && (
+            <p className="mt-4 text-sm text-secundario">
+              Para sumar tu negocio necesitas una cuenta.{" "}
+              <Link href="/login" className="font-semibold text-tinta underline">
+                Inicia sesión
+              </Link>{" "}
+              y vuelve a esta página.
+            </p>
+          )}
+
+          {abierto && haySesion && (
+            <form onSubmit={enviar} className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+                <span className="font-semibold text-tinta">Nombre del negocio</span>
+                <input
+                  required
+                  minLength={2}
+                  maxLength={120}
+                  value={form.nombre}
+                  onChange={(e) => set("nombre", e.target.value)}
+                  className="rounded-lg border border-borde bg-superficie px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-semibold text-tinta">Categoría</span>
+                <select
+                  value={form.categoria}
+                  onChange={(e) => set("categoria", e.target.value)}
+                  className="rounded-lg border border-borde bg-superficie px-3 py-2"
+                >
+                  {CATS_API.map((c) => (
+                    <option key={c.valor} value={c.valor}>
+                      {c.etiqueta}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-semibold text-tinta">Provincia</span>
+                <select
+                  value={form.provincia}
+                  onChange={(e) => set("provincia", e.target.value)}
+                  className="rounded-lg border border-borde bg-superficie px-3 py-2"
+                >
+                  {PROVINCIAS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-semibold text-tinta">Ciudad</span>
+                <input
+                  required
+                  minLength={2}
+                  maxLength={80}
+                  value={form.ciudad}
+                  onChange={(e) => set("ciudad", e.target.value)}
+                  className="rounded-lg border border-borde bg-superficie px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-semibold text-tinta">WhatsApp (opcional)</span>
+                <input
+                  inputMode="tel"
+                  maxLength={20}
+                  placeholder="5939XXXXXXXX"
+                  value={form.whatsapp}
+                  onChange={(e) => set("whatsapp", e.target.value)}
+                  className="rounded-lg border border-borde bg-superficie px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+                <span className="font-semibold text-tinta">Horario (opcional)</span>
+                <input
+                  maxLength={120}
+                  placeholder="Lun a Vie 8:00–18:00 · Sáb 8:00–13:00"
+                  value={form.horario}
+                  onChange={(e) => set("horario", e.target.value)}
+                  className="rounded-lg border border-borde bg-superficie px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+                <span className="font-semibold text-tinta">Qué ofreces (opcional)</span>
+                <textarea
+                  maxLength={1000}
+                  rows={3}
+                  value={form.descripcion}
+                  onChange={(e) => set("descripcion", e.target.value)}
+                  className="rounded-lg border border-borde bg-superficie px-3 py-2"
+                />
+              </label>
+
+              {error && (
+                <p className="text-sm font-medium text-error sm:col-span-2">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={enviando}
+                className="inline-flex w-fit rounded-full bg-accion px-6 py-2.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90 disabled:opacity-60 sm:col-span-2"
+              >
+                {enviando ? "Enviando…" : "Enviar para revisión"}
+              </button>
+            </form>
+          )}
+        </>
+      )}
+    </section>
   );
 }

@@ -2,7 +2,7 @@
 // ordenado de lo que hay en la web —comprar, vender, garage— con UN enlace directo a
 // cada área, y debajo el mapa de dónde hay stock.
 //
-// Orden: hero compacto → "¿Qué quieres hacer?" (3 tarjetas) → mapa → publicidad.
+// Orden: hero compacto → "¿Qué quieres hacer?" (4 tarjetas, 2×2 en celular) → mapa → publicidad.
 // El hero es CHICO a propósito para que en celular se vean ya las tarjetas.
 //
 // La consulta de placa / datos oficiales quedó en stand-by. Español de Ecuador (tuteo).
@@ -82,28 +82,31 @@ function AccesosSection() {
     },
   ];
   return (
-    <section className="mx-auto max-w-5xl px-6 pb-16">
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-secundario">
+    <section className="mx-auto max-w-5xl px-6 pb-12">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-secundario">
         ¿Qué quieres hacer?
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 2×2 en celular (compacto, entra en una pantalla), 4 en línea desde lg. */}
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         {accesos.map((a) => (
           <Link
             key={a.titulo}
             href={a.href}
-            className="group sombra-tarjeta flex flex-col rounded-2xl border border-borde bg-superficie p-4 transition hover:-translate-y-0.5 hover:border-borde-fuerte sm:p-5"
+            className="group sombra-tarjeta flex flex-col rounded-xl border border-borde bg-superficie p-3 transition hover:-translate-y-0.5 hover:border-borde-fuerte sm:p-4"
           >
-            <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-marca-tinte text-2xl transition group-hover:scale-105">
+            <div className="flex items-center justify-between gap-2">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-marca-tinte text-lg transition group-hover:scale-105">
                 {a.emoji}
               </span>
-              <span className="rounded-full border border-borde px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secundario">
+              <span className="rounded-full border border-borde px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-secundario">
                 {a.chip}
               </span>
             </div>
-            <h3 className="mt-3 text-base font-bold text-tinta">{a.titulo}</h3>
-            <p className="mt-1 flex-1 text-sm text-secundario">{a.texto}</p>
-            <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-tinta">
+            <h3 className="mt-2.5 text-sm font-bold leading-tight text-tinta sm:text-base">
+              {a.titulo}
+            </h3>
+            <p className="mt-1 hidden flex-1 text-xs text-secundario sm:block">{a.texto}</p>
+            <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-tinta sm:text-sm">
               {a.cta}
               <span className="transition group-hover:translate-x-0.5">→</span>
             </span>

@@ -2,8 +2,9 @@
 // Diseño en docs/producto/experiencia_comprador.md §2 y plan_market_autos.md §MC2.
 //
 // Dos modos, según el querystring de la URL:
-//   • SIN filtros → bloques curados de MC1 (favoritos, destacados, verificados, marcas,
-//     recientes, presupuesto, referencias). Un bloque sin contenido NO se renderiza.
+//   • SIN filtros → bloques curados de MC1 (destacados, verificados, marcas, recientes,
+//     referencias). Un bloque sin contenido NO se renderiza. Los favoritos NO van acá:
+//     viven solo en /intereses.
 //   • CON filtros → grilla plana de `GET /marketplace/buscar` (server-side), paginada por
 //     cursor ("Cargar más autos"). Los filtros viven en la URL → la búsqueda es compartible.
 //
@@ -226,7 +227,7 @@ function ContenidoMarketplace() {
   const [busqueda, setBusqueda] = useState<EstadoBusqueda>(BUSQUEDA_INICIAL);
   const [cargandoMas, setCargandoMas] = useState(false);
 
-  const { control, mapa, haySesion, invitacion, cerrarInvitacion } = useFavoritos();
+  const { control, mapa, invitacion, cerrarInvitacion } = useFavoritos();
 
   // Feed para los bloques curados. Una sola vez. (Patrón lint-safe: el setState cae SIEMPRE
   // después del await, nunca de forma síncrona dentro del efecto.)
@@ -334,15 +335,6 @@ function ContenidoMarketplace() {
     [internas, referenciadas]
   );
   const marcas = useMemo(() => marcasStock.slice(0, MAX_CHIPS_MARCA), [marcasStock]);
-
-  const favoritosInternos = useMemo(
-    () => internas.filter((p) => mapa.has(p.placa.toUpperCase())),
-    [internas, mapa]
-  );
-  const favoritosReferenciados = useMemo(
-    () => referenciadas.filter((p) => p.placa && mapa.has(p.placa.toUpperCase())),
-    [referenciadas, mapa]
-  );
 
   const transparentes = useMemo(() => internas.filter(esTransparente), [internas]);
   const recientes = useMemo(() => porMasReciente(internas), [internas]);
@@ -805,33 +797,8 @@ function ContenidoMarketplace() {
             </div>
           )}
 
-          {/* Tus favoritos — retención pasiva, va arriba de todo EN AMBOS MODOS. */}
-          {haySesion &&
-            favoritosInternos.length + favoritosReferenciados.length > 0 && (
-              <Bloque
-                titulo="♥ Tus favoritos"
-                descripcion="Los autos que guardaste. Si alguno baja de precio, te lo marcamos aquí."
-              >
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                  {favoritosInternos.map((p) => (
-                    <ListingInternaCard
-                      key={`fi-${p.id}`}
-                      pub={p}
-                      favoritos={control}
-                      distintivo={distintivoBaja(p.placa, p.precio_usd)}
-                    />
-                  ))}
-                  {favoritosReferenciados.map((p) => (
-                    <ListingReferenciadaCard
-                      key={`fr-${p.id}`}
-                      pub={p}
-                      favoritos={control}
-                      distintivo={distintivoBaja(p.placa, p.precio_usd)}
-                    />
-                  ))}
-                </div>
-              </Bloque>
-            )}
+          {/* Los favoritos ("♥ me gusta") NO se muestran acá a propósito: viven solo
+              en /intereses. El market es para descubrir, no para revisar lo guardado. */}
 
           {/* ── MODO POCO STOCK (< UMBRAL): una sola grilla con TODO el stock ──
               Internas + referenciadas juntas, de lo más reciente a lo más antiguo.
