@@ -10,6 +10,7 @@
 
 import Link from "next/link";
 import { DistribucionGeografica } from "@/components/DistribucionGeografica";
+import { PublicidadHome } from "@/components/PublicidadHome";
 
 export default function Home() {
   return (
@@ -21,6 +22,9 @@ export default function Home() {
       {/* "¿Dónde están los autos?" — conteo por provincia/región con enlace directo
           al marketplace filtrado. No se renderiza si no hay stock ubicado. */}
       <DistribucionGeografica />
+      {/* Zona de publicidad — no se renderiza si no hay pauta activa
+          (src/config/publicidad.ts). */}
+      <PublicidadHome />
     </div>
   );
 }

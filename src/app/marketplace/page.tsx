@@ -478,9 +478,18 @@ function ContenidoMarketplace() {
     <div className="espacio-barra-movil">
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <header className="mb-6">
-        <h1 className="text-2xl font-black text-tinta sm:text-3xl">
-          Autos <span className="text-marca">en venta</span>
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-black text-tinta sm:text-3xl">
+            Autos <span className="text-marca">en venta</span>
+          </h1>
+          {/* Modo reel: recorrer los autos uno por pantalla, estilo feed. */}
+          <Link
+            href="/marketplace/reel"
+            className="shrink-0 rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario transition hover:bg-superficie-tenue"
+          >
+            ▶ Ver como reel
+          </Link>
+        </div>
         {/* Línea de estadística (Dirección C): conteos del inventario en `font-mono`
             —es un dato, no copy—. Se arma en `lineaEstadistica` desde el feed en cliente. */}
         {lineaEstadistica.length > 0 && (
