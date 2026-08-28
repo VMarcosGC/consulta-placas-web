@@ -57,6 +57,12 @@ export interface IdentidadGoogle {
     auto_select?: boolean;
     cancel_on_tap_outside?: boolean;
     ux_mode?: "popup" | "redirect";
+    // FedCM: en Chrome moderno el flujo del botón SIN FedCM puede no devolver el
+    // `credential` (bloqueo de cookies de terceros). Con esto en `true` el botón usa
+    // la API FedCM del navegador y sigue funcionando. Corrección 2026-08-27.
+    use_fedcm_for_button?: boolean;
+    // Safari/ITP: sin esto el popup puede quedarse sin poder devolver el token.
+    itp_support?: boolean;
   }): void;
   renderButton(contenedor: HTMLElement, opciones: OpcionesBotonGoogle): void;
   disableAutoSelect(): void;
@@ -86,26 +92,31 @@ export function cargarIdentidadGoogle(): Promise<IdentidadGoogle> {
   if (promesaCarga) return promesaCarga;
 
   promesaCarga = new Promise<IdentidadGoogle>((resolver, rechazar) => {
-    // Puede existir ya la etiqueta (otra carga en vuelo tras un fallo previo): en ese
-    // caso solo nos colgamos de sus eventos, sin insertar un segundo script.
-    const existente = document.querySelector<HTMLScriptElement>(
-      `script[data-gis="1"]`
-    );
+    let resuelto = false;
+    const listo = () => {
+      const identidad = window.google?.accounts?.id;
+      if (identidad && !resuelto) {
+        resuelto = true;
+        resolver(identidad);
+        return true;
+      }
+      return false;
+    };
+    const fallar = (mensaje: string) => {
+      if (resuelto) return;
+      resuelto = true;
+      promesaCarga = null;
+      rechazar(new Error(mensaje));
+    };
+
+    // Puede existir ya la etiqueta (otra carga en vuelo, o una que YA terminó tras un
+    // montaje previo): en ese caso el evento `load` quizá ya se disparó y no vuelve, así
+    // que además de escuchar se sondea la API unas cuantas veces.
+    const existente = document.querySelector<HTMLScriptElement>(`script[data-gis="1"]`);
     const script = existente ?? document.createElement("script");
 
-    script.addEventListener("load", () => {
-      const identidad = window.google?.accounts?.id;
-      if (identidad) {
-        resolver(identidad);
-      } else {
-        promesaCarga = null;
-        rechazar(new Error("El script de Google cargó sin la API esperada."));
-      }
-    });
-    script.addEventListener("error", () => {
-      promesaCarga = null;
-      rechazar(new Error("No se pudo cargar el script de Google."));
-    });
+    script.addEventListener("load", listo);
+    script.addEventListener("error", () => fallar("No se pudo cargar el script de Google."));
 
     if (!existente) {
       script.src = URL_GIS;
@@ -113,7 +124,23 @@ export function cargarIdentidadGoogle(): Promise<IdentidadGoogle> {
       script.defer = true;
       script.dataset.gis = "1";
       document.head.appendChild(script);
+    } else if (listo()) {
+      return; // el script ya estaba y la API ya está disponible
     }
+
+    // Sondeo + timeout duro: la promesa NUNCA se queda colgada (antes, si el `load` ya
+    // había ocurrido en un montaje anterior, quedaba pendiente para siempre).
+    let intentos = 0;
+    const tic = window.setInterval(() => {
+      intentos += 1;
+      if (listo() || resuelto) {
+        window.clearInterval(tic);
+      } else if (intentos >= 40) {
+        // ~10 s (40 × 250 ms)
+        window.clearInterval(tic);
+        fallar("Google tardó demasiado en responder.");
+      }
+    }, 250);
   });
 
   return promesaCarga;

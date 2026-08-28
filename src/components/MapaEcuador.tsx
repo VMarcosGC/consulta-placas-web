@@ -1,22 +1,29 @@
-// Mapa visual del Ecuador para elegir provincia. NO es cartografía exacta: es un
-// silueta esquemática + un marcador por provincia colocado en su posición relativa
-// aproximada (oeste→este, norte→sur). Suficiente para "toca la provincia que quieres
-// filtrar" y liviano en gama baja (un solo <svg> inline, sin librerías ni assets).
+// Mapa coroplético del Ecuador para elegir provincia. Geografía ESTILIZADA (contornos
+// simplificados a mano) con la silueta y las posiciones relativas del país; no es
+// cartografía exacta. Cada provincia se rellena con `--color-marca` a una OPACIDAD
+// proporcional al conteo: más autos → color más saturado. Tocar una provincia filtra.
 //
-// Solo se dibujan las 11 provincias que hoy pueden tener stock (las que tienen una
-// ciudad en el catálogo del backend, `geografia.py` / `lib/geografia.ts`).
+// Un solo <svg> inline, sin librerías ni assets. Solo las 11 provincias con ciudad en
+// el catálogo del backend (`geografia.py` / `lib/geografia.ts`).
 
 "use client";
 
-import { PROVINCIAS_MAPA } from "@/lib/geografia";
+import { CONTORNO_ECUADOR, PROVINCIAS_MAPA } from "@/lib/geografia";
 
 type Props = {
-  /** provincia → conteo. Si se pasa, el marcador escala con el número. */
+  /** provincia → conteo. La opacidad del relleno escala con esto. */
   porProvincia?: Record<string, number>;
   seleccionada?: string | null;
   onSeleccion: (provincia: string | null) => void;
   className?: string;
 };
+
+// Opacidad del relleno según la parte del máximo (0 → 1). Piso 0.12 para que una
+// provincia con 1 auto igual se distinga del fondo.
+function opacidad(n: number, max: number): number {
+  if (n <= 0) return 0;
+  return 0.12 + (n / max) * 0.78;
+}
 
 export function MapaEcuador({
   porProvincia,
@@ -25,42 +32,26 @@ export function MapaEcuador({
   className = "",
 }: Props) {
   const conConteo = porProvincia != null;
-  const maxN = conConteo
-    ? Math.max(1, ...Object.values(porProvincia))
-    : 1;
+  const max = conConteo ? Math.max(1, ...Object.values(porProvincia)) : 1;
 
   return (
     <div className={className}>
       <svg
-        viewBox="0 0 320 400"
+        viewBox="0 0 300 400"
         className="w-full"
         role="group"
         aria-label="Mapa del Ecuador: elige una provincia"
       >
-        {/* Silueta nacional aproximada. Decorativa: da el "es un mapa". */}
+        {/* Silueta del país detrás (el resto del territorio sin datos). */}
         <path
-          d="M96 44
-             C120 36 150 40 168 54
-             C182 64 200 66 214 80
-             C226 92 236 110 232 128
-             C228 146 236 160 244 178
-             C250 194 246 214 236 230
-             C226 246 232 262 224 282
-             C214 306 190 322 160 330
-             C136 336 112 330 96 314
-             C82 300 84 280 72 262
-             C58 242 44 226 44 204
-             C44 182 56 166 56 146
-             C56 126 46 110 56 92
-             C66 74 74 52 96 44 Z"
+          d={CONTORNO_ECUADOR}
           className="fill-superficie-tenue stroke-borde-fuerte"
-          strokeWidth="1.5"
+          strokeWidth="1.25"
         />
 
         {PROVINCIAS_MAPA.map((p) => {
           const n = porProvincia?.[p.provincia] ?? 0;
           const activa = seleccionada === p.provincia;
-          const r = conConteo ? 6 + (n / maxN) * 12 : 9;
           return (
             <g
               key={p.provincia}
@@ -68,7 +59,7 @@ export function MapaEcuador({
               tabIndex={0}
               aria-pressed={activa}
               aria-label={`${p.provincia}${conConteo ? `, ${n} ${n === 1 ? "auto" : "autos"}` : ""}`}
-              className="cursor-pointer outline-none"
+              className="cursor-pointer outline-none [&:focus-visible_polygon]:stroke-marca"
               onClick={() => onSeleccion(activa ? null : p.provincia)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -77,41 +68,40 @@ export function MapaEcuador({
                 }
               }}
             >
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r={r}
+              <polygon
+                points={p.puntos}
                 className={
                   activa
                     ? "fill-accion stroke-accion"
-                    : conConteo && n > 0
-                      ? "fill-marca stroke-superficie"
-                      : "fill-borde-fuerte stroke-superficie"
+                    : "fill-marca stroke-superficie transition-[fill-opacity]"
                 }
-                strokeWidth="2"
+                style={activa ? undefined : { fillOpacity: conConteo ? opacidad(n, max) : 0.22 }}
+                strokeWidth={activa ? 2.5 : 1}
               />
+              <text
+                x={p.cx}
+                y={p.cy}
+                textAnchor="middle"
+                className={`pointer-events-none text-[8px] font-bold ${
+                  activa || (conConteo && n / max > 0.55)
+                    ? "fill-superficie"
+                    : "fill-tinta"
+                }`}
+              >
+                {p.corto}
+              </text>
               {conConteo && n > 0 && (
                 <text
-                  x={p.x}
-                  y={p.y + 3.5}
+                  x={p.cx}
+                  y={p.cy + 10}
                   textAnchor="middle"
-                  className={`pointer-events-none text-[9px] font-bold ${
-                    activa ? "fill-superficie" : "fill-superficie"
+                  className={`pointer-events-none text-[9px] font-black ${
+                    activa || n / max > 0.55 ? "fill-superficie" : "fill-tinta"
                   }`}
                 >
                   {n}
                 </text>
               )}
-              <text
-                x={p.x}
-                y={p.y - r - 4}
-                textAnchor="middle"
-                className={`pointer-events-none text-[8.5px] font-semibold ${
-                  activa ? "fill-tinta" : "fill-secundario"
-                }`}
-              >
-                {p.corto}
-              </text>
             </g>
           );
         })}

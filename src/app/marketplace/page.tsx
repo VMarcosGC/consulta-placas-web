@@ -41,8 +41,7 @@ import {
   montoOpcion,
   opcionesAnio,
 } from "@/lib/busqueda";
-import { provinciaDeCiudad } from "@/lib/geografia";
-import { MapaEcuador } from "@/components/MapaEcuador";
+import { PROVINCIAS } from "@/lib/geografia";
 import {
   esTransparente,
   marcasDelStock,
@@ -333,17 +332,6 @@ function ContenidoMarketplace() {
     [internas, referenciadas]
   );
   const marcas = useMemo(() => marcasStock.slice(0, MAX_CHIPS_MARCA), [marcasStock]);
-
-  // Conteo por provincia del stock actual, para dimensionar los marcadores del mapa
-  // del filtro. Derivado de `ciudad` (mismo criterio que el backend, `geografia.py`).
-  const porProvinciaStock = useMemo(() => {
-    const acc: Record<string, number> = {};
-    for (const p of [...internas, ...referenciadas]) {
-      const prov = provinciaDeCiudad(p.ciudad);
-      if (prov) acc[prov] = (acc[prov] ?? 0) + 1;
-    }
-    return acc;
-  }, [internas, referenciadas]);
 
   const favoritosInternos = useMemo(
     () => internas.filter((p) => mapa.has(p.placa.toUpperCase())),
@@ -650,22 +638,21 @@ function ContenidoMarketplace() {
               </Selector>
             </div>
 
-            {/* Ubicación por MAPA. Tocar una provincia filtra; al elegir provincia se
-                limpia una región previa (el backend interseca; para el comprador es más
-                claro "una cosa a la vez"). El <select> se reemplazó por el mapa a pedido
-                de Marcos (2026-08-27). */}
-            <div className="sm:col-span-2 lg:col-span-3">
-              <p className="mb-1 text-sm font-medium text-secundario">Provincia</p>
-              <div className="mx-auto max-w-[260px]">
-                <MapaEcuador
-                  porProvincia={porProvinciaStock}
-                  seleccionada={filtros.provincia ?? null}
-                  onSeleccion={(prov) =>
-                    actualizarUrl({ provincia: prov, region: null })
-                  }
-                />
-              </div>
-            </div>
+            {/* Ubicación. Al elegir provincia se limpia una región previa (el backend
+                interseca; para el comprador es más claro "una cosa a la vez"). El mapa
+                visual de provincias vive en la portada, no acá (decisión 2026-08-27). */}
+            <Selector
+              etiqueta="Provincia"
+              valor={filtros.provincia ?? ""}
+              onChange={(v) => actualizarUrl({ provincia: v || null, region: null })}
+            >
+              <option value="">Todo el país</option>
+              {PROVINCIAS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </Selector>
 
             {busquedaActiva && (
               <div className="flex items-end sm:col-span-2 lg:col-span-3">

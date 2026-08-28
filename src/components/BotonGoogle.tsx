@@ -99,6 +99,12 @@ export function BotonGoogle({
           // Nada de sesión automática: entrar es siempre un acto deliberado.
           auto_select: false,
           cancel_on_tap_outside: true,
+          // Chrome moderno bloquea cookies de terceros: sin FedCM el botón puede no
+          // devolver `credential`. Safari/ITP necesita `itp_support`. `popup` explícito.
+          // (Corrección 2026-08-27 — "corregir el login con Google".)
+          use_fedcm_for_button: true,
+          itp_support: true,
+          ux_mode: "popup",
         });
         // StrictMode monta dos veces en dev y el efecto vuelve a correr al cambiar el
         // ancho: sin esto quedarían dos botones apilados.

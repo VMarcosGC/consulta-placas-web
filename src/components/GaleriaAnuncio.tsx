@@ -9,11 +9,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Insignia } from "@/components/BentoCard";
 import {
   BLOQUES_FICHA,
   ESTADO_COMPONENTE_LABEL,
-  tonoEstadoComponente,
   type FilaFicha,
 } from "@/lib/ficha";
 import type { FichaSalida, FotoSalida } from "@/types/api";
@@ -34,50 +32,39 @@ function filasDe(bloque: string | null, ficha: FichaSalida | null): {
   return filas.length ? { titulo: meta.titulo, icono: meta.icono, filas } : null;
 }
 
-function FilaValor({ fila }: { fila: FilaFicha }) {
-  return (
-    <div className="flex items-start justify-between gap-3 py-1.5">
-      <dt className="text-secundario">
-        {fila.etiqueta}
-        {fila.sensible && (
-          <span className="ml-1 align-middle text-[9px] uppercase tracking-wide text-declarado-texto">
-            declarado
-          </span>
-        )}
-      </dt>
-      <dd className="text-right font-semibold text-tinta">
-        {"estado" in fila ? (
-          <Insignia tono={tonoEstadoComponente(fila.estado)}>
-            {ESTADO_COMPONENTE_LABEL[fila.estado]}
-          </Insignia>
-        ) : (
-          fila.valor
-        )}
-      </dd>
-    </div>
-  );
+function valorFila(fila: FilaFicha): string {
+  return "estado" in fila ? ESTADO_COMPONENTE_LABEL[fila.estado] : fila.valor;
 }
 
-function PanelBloque({
+// Tira flotante SOBRE la foto, abajo, transparente. Muestra el detalle de la ficha que
+// corresponde a esta foto (`foto.bloque`) sin tapar la imagen: un scrim degradado + una
+// fila de chips translúcidos que se desplaza en horizontal. Va sobre la IMAGEN, así que
+// el texto blanco es correcto en claro y en oscuro.
+function TiraDetalleFoto({
   contenido,
-  mostrarTitulo = true,
 }: {
   contenido: NonNullable<ReturnType<typeof filasDe>>;
-  mostrarTitulo?: boolean;
 }) {
   return (
-    <div>
-      {mostrarTitulo && (
-        <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-tinta">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0">
+      <div className="bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-2.5 pt-10">
+        <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-white/90">
           <span aria-hidden>{contenido.icono}</span>
-          Detalle · {contenido.titulo}
+          {contenido.titulo}
         </p>
-      )}
-      <dl className="divide-y divide-borde-suave text-xs">
-        {contenido.filas.map((f, i) => (
-          <FilaValor key={i} fila={f} />
-        ))}
-      </dl>
+        <div className="pointer-events-auto flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {contenido.filas.map((f, i) => (
+            <span
+              key={i}
+              className="shrink-0 whitespace-nowrap rounded-full bg-white/15 px-2 py-0.5 text-[11px] text-white backdrop-blur-sm"
+            >
+              <span className="text-white/65">{f.etiqueta}: </span>
+              <span className="font-semibold">{valorFila(f)}</span>
+              {f.sensible && <span className="ml-1 text-[9px] uppercase text-white/50">decl.</span>}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -247,11 +234,7 @@ function Visor({
           </>
         )}
 
-        {contenido && (
-          <div className="absolute bottom-3 left-3 right-3 max-h-[45%] overflow-y-auto rounded-2xl bg-superficie/95 p-3 shadow-lg backdrop-blur sm:right-auto sm:w-72">
-            <PanelBloque contenido={contenido} />
-          </div>
-        )}
+        {contenido && <TiraDetalleFoto contenido={contenido} />}
       </div>
 
       <p className="pb-3 pt-1 text-center text-[11px] text-white/50">
@@ -304,30 +287,11 @@ export function GaleriaAnuncio({
           ⤢ Ampliar
         </span>
 
-        {/* Panel flotante SOLO en escritorio: el detalle de la ficha que corresponde
-            a esta foto (exterior → carrocería, interior → interiores, …). */}
-        {contenido && (
-          <div className="absolute bottom-3 right-3 top-3 hidden w-64 max-w-[45%] overflow-y-auto rounded-2xl border border-borde bg-superficie/95 p-3 shadow-lg backdrop-blur md:block">
-            <PanelBloque contenido={contenido} />
-          </div>
-        )}
+        {/* Detalle de la ficha que corresponde a ESTA foto (exterior → carrocería,
+            interior → interiores, …). Tira flotante abajo, transparente, sin tapar la
+            imagen. Va en todos los tamaños. */}
+        {contenido && <TiraDetalleFoto contenido={contenido} />}
       </div>
-
-      {/* En celular el panel va DEBAJO de la foto, plegable. */}
-      {contenido && (
-        <details className="group mt-2 rounded-2xl border border-borde bg-superficie p-3 md:hidden">
-          <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-bold text-tinta">
-            <span className="flex items-center gap-1.5">
-              <span aria-hidden>{contenido.icono}</span>
-              Detalle de esta foto · {contenido.titulo}
-            </span>
-            <span className="text-secundario group-open:rotate-180">▾</span>
-          </summary>
-          <div className="mt-2">
-            <PanelBloque contenido={contenido} mostrarTitulo={false} />
-          </div>
-        </details>
-      )}
 
       {fotos.length > 1 && (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
