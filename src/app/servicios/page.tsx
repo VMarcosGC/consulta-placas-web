@@ -11,9 +11,14 @@ import {
   SERVICIOS,
   type CategoriaServicio,
 } from "@/config/servicios";
+import {
+  alternarServicioGuardado,
+  useServiciosGuardados,
+} from "@/lib/serviciosGuardados";
 
 export default function ServiciosPage() {
   const [cat, setCat] = useState<CategoriaServicio | "">("");
+  const guardados = new Set(useServiciosGuardados());
 
   const lista = useMemo(
     () => (cat ? SERVICIOS.filter((s) => s.categoria === cat) : SERVICIOS),
@@ -92,6 +97,21 @@ export default function ServiciosPage() {
                       ✓ Certificado
                     </span>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => alternarServicioGuardado(s.id)}
+                    aria-pressed={guardados.has(s.id)}
+                    aria-label={
+                      guardados.has(s.id)
+                        ? "Quitar de tus intereses"
+                        : "Guardar en tus intereses"
+                    }
+                    className={`ml-auto text-lg leading-none ${
+                      guardados.has(s.id) ? "text-marca" : "text-borde-fuerte hover:text-marca"
+                    }`}
+                  >
+                    {guardados.has(s.id) ? "♥" : "♡"}
+                  </button>
                 </div>
                 <h3 className="mt-2 text-base font-bold text-tinta">{s.nombre}</h3>
                 <p className="text-sm text-secundario">

@@ -98,6 +98,7 @@ export function Header() {
           </Link>
           <Link href="/marketplace/publicar" className="hover:text-tinta">Publicar</Link>
           <Link href="/servicios" className="hover:text-tinta">Servicios</Link>
+          <Link href="/intereses" className="hover:text-tinta">Intereses</Link>
           {logueado && (
             <Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link>
           )}
@@ -125,13 +126,11 @@ export function Header() {
           <ThemeToggle className={`${claseIconoHeader} text-secundario`} />
           {logueado ? (
             <>
-              {/* Favoritos: no hay página propia; los favoritos guardados se ven en la
-                  portada del market ("Tus favoritos"). Solo con sesión: sin cuenta no
-                  hay favoritos que mostrar. El ♡ va en `--marca` (identidad/favorito),
-                  no en `--accion`. */}
+              {/* Intereses: autos y servicios guardados con ♥, en `/intereses`. El ♡ va
+                  en `--marca` (identidad/favorito), no en `--accion`. */}
               <Link
-                href="/marketplace"
-                aria-label="Tus favoritos"
+                href="/intereses"
+                aria-label="Tus intereses"
                 className={`${claseIconoHeader} text-marca`}
               >
                 <span aria-hidden>♡</span>
