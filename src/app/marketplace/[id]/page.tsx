@@ -88,20 +88,44 @@ function FilaDato({ fila }: { fila: FilaFicha }) {
 // Ficha técnica como PESTAÑAS: una fila horizontal de botones (uno por bloque con
 // datos + "Extras"); al tocar un botón, el recuadro de abajo muestra ESE bloque y va
 // cambiando según el botón. Tocar el botón activo cierra el recuadro.
+// Nombre corto para los botones de pestaña (el `titulo` largo queda para el aria).
+const FICHA_TAB_CORTO: Record<string, string> = {
+  motor_suspension: "Motor",
+  carroceria: "Exterior",
+  interiores: "Interior",
+  extras: "Extras",
+};
+
 function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
   const tabs: {
     clave: string;
     titulo: string;
+    corto: string;
     icono: string;
     filas: FilaFicha[];
     extras: { nombre: string; detalle?: string | null }[];
   }[] = [];
   for (const b of BLOQUES_FICHA) {
     const filas = b.filas(ficha[b.clave]);
-    if (filas.length) tabs.push({ clave: b.clave, titulo: b.titulo, icono: b.icono, filas, extras: [] });
+    if (filas.length)
+      tabs.push({
+        clave: b.clave,
+        titulo: b.titulo,
+        corto: FICHA_TAB_CORTO[b.clave] ?? b.titulo,
+        icono: b.icono,
+        filas,
+        extras: [],
+      });
   }
   if (ficha.extras.length > 0) {
-    tabs.push({ clave: "extras", titulo: "Extras", icono: "✨", filas: [], extras: ficha.extras });
+    tabs.push({
+      clave: "extras",
+      titulo: "Extras",
+      corto: "Extras",
+      icono: "✨",
+      filas: [],
+      extras: ficha.extras,
+    });
   }
 
   // Primer botón abierto por defecto. `null` = recuadro cerrado.
@@ -139,6 +163,7 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
                   aria-selected={on}
                   aria-expanded={on}
                   onClick={() => setActivo(on ? null : t.clave)}
+                  aria-label={t.titulo}
                   className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
                     on
                       ? "bg-oscuro text-superficie shadow-sm"
@@ -146,7 +171,7 @@ function FichaTecnica({ ficha }: { ficha: FichaSalida }) {
                   }`}
                 >
                   <span aria-hidden>{t.icono}</span>
-                  {t.titulo}
+                  {t.corto}
                 </button>
               );
             })}

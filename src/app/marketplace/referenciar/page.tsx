@@ -32,6 +32,9 @@ export default function ReferenciarPage() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState(false);
+  // Referenciar rápido: lo esencial (link + marca/modelo/año/precio) siempre visible;
+  // el resto (placa, ciudad, km, descripción, fotos) detrás de este toggle.
+  const [detalleAbierto, setDetalleAbierto] = useState(false);
 
   useEffect(() => {
     if (!tieneSesion()) router.push("/login?next=/marketplace/referenciar");
@@ -152,8 +155,9 @@ export default function ReferenciarPage() {
       <h1 className="mt-3 text-3xl font-black text-tinta">Referenciar un anuncio</h1>
       <p className="mt-1 text-secundario">
         ¿Viste un auto en venta en <span className="font-semibold">Facebook Marketplace</span>,
-        OLX o PatioTuerca? Pega el link y completa los datos. Es{" "}
-        <span className="font-semibold">gratis</span>; nuestro equipo lo revisa antes de publicarlo.
+        OLX o PatioTuerca? Con el <span className="font-semibold">link y 4 datos del auto</span>
+        alcanza. Es <span className="font-semibold">gratis</span> y nuestro equipo lo revisa
+        antes de publicarlo.
       </p>
 
       <form onSubmit={enviar} className="mt-8 space-y-5">
@@ -174,6 +178,10 @@ export default function ReferenciarPage() {
           </p>
         </div>
 
+        {/* Contexto del auto — lo mínimo para que la referencia se entienda. */}
+        <p className="text-xs font-semibold uppercase tracking-wide text-secundario">
+          El auto
+        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-semibold text-secundario">Marca</label>
@@ -223,81 +231,97 @@ export default function ReferenciarPage() {
           </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-secundario">
-            Placa (opcional)
-          </label>
-          <input
-            className={`${inputCls} font-mono tracking-widest`}
-            value={placa}
-            onChange={(e) => setPlaca(e.target.value)}
-            placeholder="ABC1234"
-          />
-        </div>
+        {/* Todo lo demás es OPCIONAL y va plegado: referenciar rápido no lo necesita.
+            Se despliega para quien quiera dejar una referencia más completa. */}
+        <button
+          type="button"
+          onClick={() => setDetalleAbierto((v) => !v)}
+          aria-expanded={detalleAbierto}
+          className="flex w-full items-center justify-between rounded-xl border border-borde bg-superficie-tenue px-3 py-2.5 text-sm font-semibold text-secundario"
+        >
+          Agregar más contexto (opcional): placa, ciudad, km, fotos, descripción
+          <span aria-hidden>{detalleAbierto ? "▲" : "▼"}</span>
+        </button>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-secundario">
-              Ciudad (opcional)
-            </label>
-            <input
-              className={inputCls}
-              value={ciudad}
-              onChange={(e) => setCiudad(e.target.value)}
-              placeholder="Quito"
-              maxLength={80}
-            />
+        {detalleAbierto && (
+          <div className="space-y-5 rounded-2xl border border-borde bg-superficie p-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-secundario">
+                Placa (opcional)
+              </label>
+              <input
+                className={`${inputCls} font-mono tracking-widest`}
+                value={placa}
+                onChange={(e) => setPlaca(e.target.value)}
+                placeholder="ABC1234"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-secundario">
+                  Ciudad (opcional)
+                </label>
+                <input
+                  className={inputCls}
+                  value={ciudad}
+                  onChange={(e) => setCiudad(e.target.value)}
+                  placeholder="Quito"
+                  maxLength={80}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-secundario">
+                  Kilometraje (opcional)
+                </label>
+                <input
+                  className={inputCls}
+                  type="number"
+                  min={0}
+                  max={2000000}
+                  value={kilometraje}
+                  onChange={(e) => setKilometraje(e.target.value)}
+                  placeholder="85000"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-secundario">
+                Descripción del anuncio (opcional)
+              </label>
+              <textarea
+                className={`${inputCls} min-h-24`}
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                maxLength={2000}
+                placeholder="Copia aquí el texto del anuncio original: estado, extras, motivo de venta…"
+              />
+              <p className="mt-1 text-xs text-secundario">
+                Mientras más detalle copies, más útil es la referencia. Igual se muestra
+                como dato no verificado.
+              </p>
+            </div>
+
+            <FotosReferencia fotos={fotos} onCambio={setFotos} />
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-secundario">
+                Imagen por enlace (opcional)
+              </label>
+              <input
+                className={inputCls}
+                value={imagen}
+                onChange={(e) => setImagen(e.target.value)}
+                placeholder="https://…/foto.jpg"
+                inputMode="url"
+              />
+              <p className="mt-1 text-xs text-secundario">
+                Alternativa a subir fotos: pega el enlace directo de una imagen del anuncio.
+              </p>
+            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-semibold text-secundario">
-              Kilometraje (opcional)
-            </label>
-            <input
-              className={inputCls}
-              type="number"
-              min={0}
-              max={2000000}
-              value={kilometraje}
-              onChange={(e) => setKilometraje(e.target.value)}
-              placeholder="85000"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-secundario">
-            Descripción del anuncio (opcional)
-          </label>
-          <textarea
-            className={`${inputCls} min-h-24`}
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            maxLength={2000}
-            placeholder="Copia aquí el texto del anuncio original: estado, extras, motivo de venta…"
-          />
-          <p className="mt-1 text-xs text-secundario">
-            Mientras más detalle copies, más útil es la referencia. Igual se muestra como
-            dato no verificado.
-          </p>
-        </div>
-
-        <FotosReferencia fotos={fotos} onCambio={setFotos} />
-
-        <div>
-          <label className="mb-1 block text-sm font-semibold text-secundario">
-            Imagen por enlace (opcional)
-          </label>
-          <input
-            className={inputCls}
-            value={imagen}
-            onChange={(e) => setImagen(e.target.value)}
-            placeholder="https://…/foto.jpg"
-            inputMode="url"
-          />
-          <p className="mt-1 text-xs text-secundario">
-            Alternativa a subir fotos: pega el enlace directo de una imagen del anuncio.
-          </p>
-        </div>
+        )}
 
         {error && (
           <p className="rounded-xl border border-error bg-error-tinte p-3 text-sm text-error">
