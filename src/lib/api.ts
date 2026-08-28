@@ -4,6 +4,8 @@
 import {
   ApiError,
   CloudinaryError,
+  CalificacionCrear,
+  CalificacionesVendedor,
   ContactoVendedorSalida,
   DistribucionGeografica,
   Favorito,
@@ -431,6 +433,25 @@ export function renovarPublicacion(id: number) {
   return fetchAPI<PublicacionInterna>(
     `/marketplace/publicaciones/${id}/renovar`,
     { method: "POST" },
+    true
+  );
+}
+
+// ── Calificaciones comprador → vendedor ─────────────────────────────────────
+
+// Resumen + comentarios de un vendedor. Público; si hay sesión, `mia` trae tu voto.
+export function obtenerCalificacionesVendedor(vendedorId: number) {
+  return fetchAPI<CalificacionesVendedor>(
+    `/marketplace/vendedores/${vendedorId}/calificaciones`
+  );
+}
+
+// Deja (o actualiza) tu calificación. Requiere sesión. 404 vendedor inexistente,
+// 422 si es tu propio perfil. Devuelve el listado ya actualizado.
+export function calificarVendedor(vendedorId: number, datos: CalificacionCrear) {
+  return fetchAPI<CalificacionesVendedor>(
+    `/marketplace/vendedores/${vendedorId}/calificar`,
+    { method: "POST", body: JSON.stringify(datos) },
     true
   );
 }

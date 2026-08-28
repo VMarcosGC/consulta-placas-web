@@ -18,6 +18,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Insignia } from "@/components/BentoCard";
 import { ContactoVendedor } from "@/components/ContactoVendedor";
+import { CalificacionesVendedor } from "@/components/CalificacionesVendedor";
 import { GaleriaAnuncio } from "@/components/GaleriaAnuncio";
 import {
   listarMisPublicaciones,
@@ -538,6 +539,13 @@ export default function PublicacionDetallePage() {
           <section id="contacto-vendedor" className="mt-8 scroll-mt-24">
             <h2 className="text-xl font-bold text-tinta">Contactar al vendedor</h2>
             <ContactoVendedor publicacionId={pub.id} esMia={esMia} />
+            {pub.vendedor_id != null && (
+              <CalificacionesVendedor
+                vendedorId={pub.vendedor_id}
+                publicacionId={pub.id}
+                esMia={esMia}
+              />
+            )}
           </section>
         </>
       )}

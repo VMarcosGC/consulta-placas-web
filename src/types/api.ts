@@ -695,6 +695,9 @@ export interface FotoSalida {
 export interface PublicacionDetalle extends PublicacionInterna {
   ficha: FichaSalida | null;
   fotos: FotoSalida[];
+  // ID opaco del vendedor, solo en el detalle: se usa para dejarle una calificación.
+  // No es PII (ni teléfono ni nombre). Puede faltar si el anuncio no tiene vendedor.
+  vendedor_id?: number | null;
 }
 
 // ── Búsqueda del comprador (MC2 — lista plana paginada por cursor) ────────────
@@ -800,4 +803,34 @@ export interface ContactoVendedorSalida {
   telefono: string;
   nombre_publico: string | null;
   whatsapp_url: string;
+}
+
+// ── Calificaciones comprador → vendedor ──────────────────────────────────────
+// Mirror de src/modules/marketplace/schemas.py. Solo esa dirección: el contacto es
+// anónimo, el vendedor no puede identificar a un comprador.
+
+export interface CalificacionCrear {
+  estrellas: number; // 1..5
+  comentario?: string | null; // <= 1000
+  publicacion_id?: number | null; // contexto: desde qué anuncio
+}
+
+export interface CalificacionSalida {
+  estrellas: number;
+  comentario: string | null;
+  autor: string; // primer nombre o "Un comprador"
+  creado_en: string;
+}
+
+export interface ResumenCalificaciones {
+  // `null` cuando no hay ninguna: es la LÍNEA BASE, no una nota baja.
+  promedio: number | null;
+  total: number;
+}
+
+export interface CalificacionesVendedor {
+  resumen: ResumenCalificaciones;
+  items: CalificacionSalida[];
+  // La calificación de ESTE usuario (si hay sesión y ya calificó), para prellenar.
+  mia: CalificacionSalida | null;
 }
