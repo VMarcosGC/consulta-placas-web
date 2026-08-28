@@ -200,6 +200,14 @@ export function ListingInternaCard({
     >
       <div className="relative">
         <Portada url={pub.foto_portada} alt={titulo} />
+        {/* "Nuevo" = publicado (o renovado) esta semana. Va arriba-izquierda, en
+            `--marca` (mismo token de "activo/destacado" que el ♡ y el chip Premium);
+            no gasta `--accion` (§2). */}
+        {pub.semanas_publicada === 0 && (
+          <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-marca px-2 py-0.5 text-[11px] font-bold text-superficie shadow-sm">
+            ✦ Nuevo
+          </span>
+        )}
         {favoritos && (
           <BotonFavorito
             placa={pub.placa}

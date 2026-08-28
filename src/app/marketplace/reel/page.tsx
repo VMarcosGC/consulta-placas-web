@@ -108,6 +108,11 @@ function ReelInterna({
       {/* Bloque inferior: precio, título, meta. */}
       <div className="absolute inset-x-0 bottom-0 p-5 pb-24 text-white">
         <div className="flex flex-wrap items-center gap-1.5">
+          {pub.semanas_publicada === 0 && (
+            <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-black backdrop-blur">
+              ✦ Nuevo
+            </span>
+          )}
           {pub.plan === "premium" && (
             <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-black backdrop-blur">
               ★ Premium

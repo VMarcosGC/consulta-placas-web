@@ -50,10 +50,41 @@ export const TIPO_CARROCERIA_LABEL: Record<TipoCarroceria, string> = {
   camioneta: "Camioneta",
   coupe: "Coupé",
   furgoneta: "Furgoneta",
+  van: "Van",
   bus: "Bus",
+  buseta: "Buseta",
   camion: "Camión",
+  volqueta: "Volqueta",
+  tanquero: "Tanquero",
+  tractor: "Tractor",
+  cabezal: "Cabezal",
+  trailer: "Tráiler",
+  maquinaria: "Maquinaria",
   moto: "Moto",
   otro: "Otro",
+};
+
+// Un ícono (emoji) por tipo, para el filtro y las etiquetas. Se elige el más
+// reconocible del set estándar; varios pesados comparten 🚛 porque no hay glifo propio.
+export const TIPO_CARROCERIA_ICONO: Record<TipoCarroceria, string> = {
+  sedan: "🚗",
+  suv: "🚙",
+  hatchback: "🚗",
+  camioneta: "🛻",
+  coupe: "🏎️",
+  furgoneta: "🚐",
+  van: "🚐",
+  bus: "🚌",
+  buseta: "🚐",
+  camion: "🚚",
+  volqueta: "🚛",
+  tanquero: "🚛",
+  tractor: "🚜",
+  cabezal: "🚛",
+  trailer: "🚛",
+  maquinaria: "🚜",
+  moto: "🏍️",
+  otro: "🚗",
 };
 
 export const ESTADO_PINTURA_LABEL: Record<EstadoPintura, string> = {

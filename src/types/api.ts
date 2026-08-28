@@ -576,6 +576,8 @@ export type Combustible = "gasolina" | "diesel" | "hibrido" | "electrico" | "glp
 export type Transmision = "manual" | "automatica" | "cvt" | "semiautomatica";
 export type Traccion = "4x2" | "4x4" | "awd";
 export type EstadoComponente = "excelente" | "bueno" | "regular" | "requiere_atencion";
+// "Tipo de vehículo" del filtro. De livianos a pesados; los comerciales se sumaron el
+// 2026-08-27. Espejo de `TipoCarroceria` en el backend (Literal en JSONB, sin migración).
 export type TipoCarroceria =
   | "sedan"
   | "suv"
@@ -583,8 +585,16 @@ export type TipoCarroceria =
   | "camioneta"
   | "coupe"
   | "furgoneta"
+  | "van"
   | "bus"
+  | "buseta"
   | "camion"
+  | "volqueta"
+  | "tanquero"
+  | "tractor"
+  | "cabezal"
+  | "trailer"
+  | "maquinaria"
   | "moto"
   | "otro";
 export type EstadoPintura =

@@ -28,6 +28,7 @@ import {
   OPCIONES_COMBUSTIBLE,
   OPCIONES_TIPO_CARROCERIA,
   OPCIONES_TRANSMISION,
+  TIPO_CARROCERIA_ICONO,
   TIPO_CARROCERIA_LABEL,
   TRANSMISION_LABEL,
 } from "@/lib/ficha";
@@ -40,15 +41,13 @@ import {
   montoOpcion,
   opcionesAnio,
 } from "@/lib/busqueda";
-import { PROVINCIAS } from "@/lib/geografia";
+import { provinciaDeCiudad } from "@/lib/geografia";
+import { MapaEcuador } from "@/components/MapaEcuador";
 import {
-  BANDAS_PRECIO,
-  enBanda,
   esTransparente,
   marcasDelStock,
   porMasReciente,
   todasLasInternas,
-  type Banda,
 } from "@/lib/marketplace";
 import { ApiError } from "@/types/api";
 import type {
@@ -319,10 +318,6 @@ function ContenidoMarketplace() {
     actualizarUrl({ q: marca });
   }
 
-  function aplicarBanda(b: Banda) {
-    actualizarUrl({ precio_min: b.min ?? null, precio_max: b.max ?? null });
-  }
-
   function limpiarFiltros() {
     setTexto("");
     setPanelAbierto(false);
@@ -339,16 +334,16 @@ function ContenidoMarketplace() {
   );
   const marcas = useMemo(() => marcasStock.slice(0, MAX_CHIPS_MARCA), [marcasStock]);
 
-  const bandasConStock = useMemo(
-    () =>
-      BANDAS_PRECIO.map((b) => ({
-        banda: b,
-        total:
-          internas.filter((p) => enBanda(p.precio_usd, b)).length +
-          referenciadas.filter((p) => enBanda(p.precio_usd, b)).length,
-      })).filter((x) => x.total > 0),
-    [internas, referenciadas]
-  );
+  // Conteo por provincia del stock actual, para dimensionar los marcadores del mapa
+  // del filtro. Derivado de `ciudad` (mismo criterio que el backend, `geografia.py`).
+  const porProvinciaStock = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const p of [...internas, ...referenciadas]) {
+      const prov = provinciaDeCiudad(p.ciudad);
+      if (prov) acc[prov] = (acc[prov] ?? 0) + 1;
+    }
+    return acc;
+  }, [internas, referenciadas]);
 
   const favoritosInternos = useMemo(
     () => internas.filter((p) => mapa.has(p.placa.toUpperCase())),
@@ -533,33 +528,9 @@ function ContenidoMarketplace() {
           </div>
         </form>
 
-        {/* Chips rápidos de presupuesto (con stock) + botón "Filtros". */}
+        {/* Botón "Filtros". Los chips rápidos de presupuesto se retiraron (2026-08-27):
+            el rango de precio ya vive en el panel de filtros — no hacían falta dos. */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {bandasConStock.map(({ banda: b, total }) => {
-            const activa =
-              (filtros.precio_min ?? null) === (b.min ?? null) &&
-              (filtros.precio_max ?? null) === (b.max ?? null);
-            return (
-              <button
-                key={b.clave}
-                type="button"
-                aria-pressed={activa}
-                onClick={() => (activa ? actualizarUrl({ precio_min: null, precio_max: null }) : aplicarBanda(b))}
-                // Chip ACTIVO en píldora OSCURA (`--oscuro`), estilo ESTORE (Dirección C):
-                // un filtro aplicado es estado de selección de segundo nivel, no la acción
-                // de conversión —§2 reserva `--accion` (esmeralda) para esa sola cosa—. La
-                // píldora oscura es el lenguaje del sistema para "seleccionado / secundario
-                // sólido"; el botón "Filtros" de acá al lado marca su estado activo igual.
-                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-                  activa
-                    ? "bg-oscuro text-superficie"
-                    : "border border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
-                }`}
-              >
-                {b.etiqueta} <span className="opacity-70">({total})</span>
-              </button>
-            );
-          })}
           <button
             type="button"
             aria-expanded={panelAbierto}
@@ -595,7 +566,7 @@ function ContenidoMarketplace() {
               <option value="">Cualquiera</option>
               {OPCIONES_TIPO_CARROCERIA.map((o) => (
                 <option key={o.valor} value={o.valor}>
-                  {o.etiqueta}
+                  {TIPO_CARROCERIA_ICONO[o.valor]} {o.etiqueta}
                 </option>
               ))}
             </Selector>
@@ -679,20 +650,22 @@ function ContenidoMarketplace() {
               </Selector>
             </div>
 
-            {/* Ubicación. Al elegir provincia se limpia una región previa (el backend
-                interseca; para el comprador es más claro "una cosa a la vez"). */}
-            <Selector
-              etiqueta="Provincia"
-              valor={filtros.provincia ?? ""}
-              onChange={(v) => actualizarUrl({ provincia: v || null, region: null })}
-            >
-              <option value="">Todo el país</option>
-              {PROVINCIAS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </Selector>
+            {/* Ubicación por MAPA. Tocar una provincia filtra; al elegir provincia se
+                limpia una región previa (el backend interseca; para el comprador es más
+                claro "una cosa a la vez"). El <select> se reemplazó por el mapa a pedido
+                de Marcos (2026-08-27). */}
+            <div className="sm:col-span-2 lg:col-span-3">
+              <p className="mb-1 text-sm font-medium text-secundario">Provincia</p>
+              <div className="mx-auto max-w-[260px]">
+                <MapaEcuador
+                  porProvincia={porProvinciaStock}
+                  seleccionada={filtros.provincia ?? null}
+                  onSeleccion={(prov) =>
+                    actualizarUrl({ provincia: prov, region: null })
+                  }
+                />
+              </div>
+            </div>
 
             {busquedaActiva && (
               <div className="flex items-end sm:col-span-2 lg:col-span-3">
@@ -955,18 +928,26 @@ function ContenidoMarketplace() {
                 </Bloque>
               )}
 
-              {/* Explora por marca — chips derivados del stock real. */}
+              {/* Banner por marca — tiras horizontales con el nombre de cada marca del
+                  stock real. NO son los logos oficiales (la CSP bloquea imágenes
+                  externas y no se pueden empaquetar marcas registradas): es un wordmark
+                  en marco, del mismo lenguaje monocromo del sistema. Clic → filtra. */}
               {marcas.length > 0 && (
                 <Bloque titulo="Explora por marca" descripcion="Marcas con autos publicados ahora.">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
                     {marcas.map(({ marca, total }) => (
                       <button
                         key={marca}
                         type="button"
                         onClick={() => buscarMarca(marca)}
-                        className="rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario shadow-sm transition hover:border-marca hover:text-marca-texto"
+                        className="flex w-28 shrink-0 flex-col items-center gap-1 rounded-2xl border border-borde bg-superficie p-3 text-center shadow-sm transition hover:border-borde-fuerte hover:-translate-y-0.5"
                       >
-                        {marca} <span className="text-secundario">({total})</span>
+                        <span className="grid h-12 w-full place-items-center rounded-xl bg-superficie-tenue px-1 text-xs font-black uppercase leading-tight tracking-tight text-tinta">
+                          {marca}
+                        </span>
+                        <span className="font-mono text-[11px] text-secundario">
+                          {total} {total === 1 ? "auto" : "autos"}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -996,27 +977,6 @@ function ContenidoMarketplace() {
 
               {/* Accesos del vendedor: después de la primera grilla de autos. */}
               {accionesVendedor}
-
-              {/* Por presupuesto — el comprador real compra por bolsillo. */}
-              {bandasConStock.length > 0 && (
-                <Bloque titulo="Por presupuesto" descripcion="Elige tu rango y mira solo lo que te alcanza.">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {bandasConStock.map(({ banda: b, total }) => (
-                      <button
-                        key={b.clave}
-                        type="button"
-                        onClick={() => aplicarBanda(b)}
-                        className="rounded-2xl border border-borde bg-superficie p-5 text-left sombra-tarjeta transition hover:border-marca"
-                      >
-                        <p className="text-base font-bold text-tinta">{b.etiqueta}</p>
-                        <p className="mt-1 text-sm text-secundario">
-                          {total === 1 ? "1 auto disponible" : `${total} autos disponibles`}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </Bloque>
-              )}
 
               {/* Referencias externas — al pie, con su etiqueta de "no verificados".
                   En modo poco stock NO se repite: las referenciadas ya salen en la
