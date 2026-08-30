@@ -211,6 +211,7 @@ export function ListingInternaCard({
   return (
     <Link
       href={`/marketplace/${pub.id}`}
+      data-fecha={pub.creado_en}
       className={`group flex flex-col overflow-hidden rounded-2xl bg-superficie sombra-tarjeta animate-fade-in-up transition hover:-translate-y-0.5 ${
         premium ? "ring-2 ring-marca/50 shadow-md" : "border border-borde"
       }`}
@@ -306,6 +307,7 @@ export function ListingReferenciadaCard({
   return (
     <Link
       href={`/marketplace/referencias/${pub.id}`}
+      data-fecha={pub.creado_en}
       className="group flex flex-col overflow-hidden rounded-2xl border border-borde bg-superficie sombra-tarjeta animate-fade-in-up transition hover:-translate-y-0.5 hover:border-marca/40"
     >
       <div className="relative">

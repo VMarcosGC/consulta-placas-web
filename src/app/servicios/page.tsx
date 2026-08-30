@@ -24,6 +24,14 @@ import {
   type Servicio,
 } from "@/config/servicios";
 import { PROVINCIAS } from "@/lib/geografia";
+import {
+  CIUDADES_ORIGEN,
+  centroideDe,
+  coordDeCiudad,
+  etiquetaDistancia,
+  haversineKm,
+  type Coord,
+} from "@/lib/geolocalizacion";
 import { crearServicio, listarServicios } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import {
@@ -50,11 +58,18 @@ function desdeApi(s: ServicioSalida): Servicio {
   };
 }
 
+type EstadoGeo = "inicial" | "ok" | "negado";
+
 export default function ServiciosPage() {
   const [cat, setCat] = useState<CategoriaServicio | null>(null);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [servicios, setServicios] = useState<Servicio[]>(SERVICIOS_DEMO);
   const guardados = new Set(useServiciosGuardados());
+
+  // Ubicación del usuario para ordenar por cercanía. Primero se intenta el GPS del
+  // navegador; si lo niega o no está, elige una ciudad a mano.
+  const [origen, setOrigen] = useState<Coord | null>(null);
+  const [estadoGeo, setEstadoGeo] = useState<EstadoGeo>("inicial");
 
   // Trae los aprobados del backend y los antepone a la demo. Si falla, se queda la demo.
   useEffect(() => {
@@ -70,16 +85,41 @@ export default function ServiciosPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const geo = typeof navigator !== "undefined" ? navigator.geolocation : undefined;
+    if (!geo) return; // sin GPS → queda "inicial" y se elige ciudad a mano
+    geo.getCurrentPosition(
+      (pos) => {
+        setOrigen({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setEstadoGeo("ok");
+      },
+      () => setEstadoGeo("negado"),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600_000 }
+    );
+  }, []);
+
   const conteos = useMemo(() => {
     const m = new Map<CategoriaServicio, number>();
     for (const s of servicios) m.set(s.categoria, (m.get(s.categoria) ?? 0) + 1);
     return m;
   }, [servicios]);
 
-  const lista = useMemo(
-    () => (cat ? servicios.filter((s) => s.categoria === cat) : []),
-    [cat, servicios]
-  );
+  // Lista de la categoría, con distancia aproximada y ordenada por cercanía cuando hay
+  // un origen. Sin origen: orden original (certificados primero, luego recientes).
+  const lista = useMemo<{ s: Servicio; km: number | null }[]>(() => {
+    const base = cat ? servicios.filter((x) => x.categoria === cat) : [];
+    const conKm = base.map((s) => {
+      if (!origen) return { s, km: null };
+      const c = centroideDe(s.ciudad, s.provincia);
+      return { s, km: c ? haversineKm(origen, c) : null };
+    });
+    if (!origen) return conKm;
+    return conKm.sort((a, b) => {
+      if (a.km == null) return 1;
+      if (b.km == null) return -1;
+      return a.km - b.km;
+    });
+  }, [cat, servicios, origen]);
 
   const metaCat = CATEGORIAS_SERVICIO.find((c) => c.clave === cat);
 
@@ -142,6 +182,19 @@ export default function ServiciosPage() {
             </h2>
           </div>
 
+          {/* Origen para ordenar por cercanía: GPS o, si no, una ciudad a mano. */}
+          <BarraUbicacion
+            estado={estadoGeo}
+            tieneOrigen={origen != null}
+            onCiudad={(ciudad) => {
+              const c = coordDeCiudad(ciudad);
+              if (c) {
+                setOrigen(c);
+                setEstadoGeo("ok");
+              }
+            }}
+          />
+
           {lista.length === 0 ? (
             <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
               <p className="font-medium text-tinta">Todavía no hay negocios en esta categoría.</p>
@@ -151,10 +204,11 @@ export default function ServiciosPage() {
             </div>
           ) : (
             <ul className="flex flex-col gap-2.5">
-              {lista.map((s) => (
+              {lista.map(({ s, km }) => (
                 <li key={s.id}>
                   <TarjetaServicio
                     servicio={s}
+                    km={km}
                     abierta={abierto === s.id}
                     onToggle={() => setAbierto((a) => (a === s.id ? null : s.id))}
                     guardado={guardados.has(s.id)}
@@ -173,15 +227,60 @@ export default function ServiciosPage() {
   );
 }
 
+// ── Barra de ubicación (GPS o ciudad manual) ──────────────────────────────────
+function BarraUbicacion({
+  estado,
+  tieneOrigen,
+  onCiudad,
+}: {
+  estado: EstadoGeo;
+  tieneOrigen: boolean;
+  onCiudad: (ciudad: string) => void;
+}) {
+  if (estado === "ok" && tieneOrigen) {
+    return (
+      <p className="mb-3 flex items-center gap-1.5 text-xs text-secundario">
+        <span aria-hidden>📍</span> Ordenados por cercanía a tu ubicación.
+        <span className="text-borde-fuerte">Distancias y tiempos aproximados.</span>
+      </p>
+    );
+  }
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-borde bg-superficie-tenue px-3 py-2 text-xs text-secundario">
+      <span aria-hidden>📍</span>
+      <span>
+        {estado === "negado"
+          ? "No pudimos usar tu ubicación."
+          : "¿Desde qué ciudad buscas?"}{" "}
+        Elígela y los ordenamos por cercanía:
+      </span>
+      <select
+        defaultValue=""
+        onChange={(e) => e.target.value && onCiudad(e.target.value)}
+        className="rounded-lg border border-borde bg-superficie px-2 py-1 text-xs text-tinta"
+      >
+        <option value="">Ciudad…</option>
+        {CIUDADES_ORIGEN.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // ── Tarjeta de un servicio (acordeón) ──────────────────────────────────────────
 function TarjetaServicio({
   servicio: s,
+  km,
   abierta,
   onToggle,
   guardado,
   onGuardar,
 }: {
   servicio: Servicio;
+  km: number | null;
   abierta: boolean;
   onToggle: () => void;
   guardado: boolean;
@@ -196,11 +295,16 @@ function TarjetaServicio({
           aria-expanded={abierta}
           className="min-w-0 flex-1 text-left"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-bold text-tinta">{s.nombre}</h3>
             {s.certificado && (
               <span className="shrink-0 rounded-full bg-confirmado-tinte px-2 py-0.5 text-[10px] font-bold text-confirmado-texto">
                 ✓ Certificado
+              </span>
+            )}
+            {km != null && (
+              <span className="shrink-0 rounded-full bg-marca-tinte px-2 py-0.5 text-[10px] font-bold text-marca-texto">
+                📍 {etiquetaDistancia(km)}
               </span>
             )}
           </div>

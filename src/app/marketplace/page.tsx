@@ -15,13 +15,14 @@
 
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { buscarPublicaciones, obtenerFeedMarketplace } from "@/lib/api";
 import { InvitacionFavorito } from "@/components/BotonFavorito";
 import { EsqueletoTarjetas } from "@/components/EsqueletoTarjetas";
 import { ListingInternaCard, ListingReferenciadaCard } from "@/components/ListingCard";
+import { LeyendaTiempoScroll } from "@/components/LeyendaTiempoScroll";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { bajaDePrecio } from "@/lib/favoritos";
 import {
@@ -43,6 +44,11 @@ import {
   opcionesAnio,
 } from "@/lib/busqueda";
 import { PROVINCIAS } from "@/lib/geografia";
+import {
+  guardarScrollFeed,
+  guardarSnapshotFeed,
+  leerSnapshotFeed,
+} from "@/lib/feedScroll";
 import {
   esTransparente,
   marcasDelStock,
@@ -214,24 +220,39 @@ function ContenidoMarketplace() {
   const busquedaActiva = hayFiltros(filtros);
   const nAvanzados = conteoAvanzados(filtros);
 
+  // Restauración al volver del detalle (mismo querystring, foto fresca). Se lee UNA vez.
+  const [snap0] = useState(() =>
+    leerSnapshotFeed<FeedMarketplace, EstadoBusqueda>(clave)
+  );
+  // El primer disparo del efecto de búsqueda se salta si ya venimos del snapshot con
+  // resultados para esta misma clave (si no, refetchearía y perdería el scroll).
+  const saltarPrimerFetchBusqueda = useRef(
+    Boolean(snap0 && snap0.busqueda?.clave === clave && hayFiltros(filtros))
+  );
+
   // Buscador de texto: estado local, se confirma a la URL al enviar (no en cada tecla, para
   // no disparar una llamada por pulsación en una red lenta). Se siembra desde la URL.
   const [texto, setTexto] = useState(() => filtros.q ?? "");
   // Panel de filtros avanzados: abierto de entrada si el enlace ya trae filtros avanzados.
   const [panelAbierto, setPanelAbierto] = useState(() => conteoAvanzados(filtros) > 0);
 
-  const [feed, setFeed] = useState<FeedMarketplace>(FEED_VACIO);
-  const [cargandoFeed, setCargandoFeed] = useState(true);
+  const [feed, setFeed] = useState<FeedMarketplace>(snap0?.feed ?? FEED_VACIO);
+  const [cargandoFeed, setCargandoFeed] = useState(!snap0);
   const [errorFeed, setErrorFeed] = useState<string | null>(null);
 
-  const [busqueda, setBusqueda] = useState<EstadoBusqueda>(BUSQUEDA_INICIAL);
+  const [busqueda, setBusqueda] = useState<EstadoBusqueda>(
+    snap0?.busqueda ?? BUSQUEDA_INICIAL
+  );
   const [cargandoMas, setCargandoMas] = useState(false);
 
   const { control, mapa, invitacion, cerrarInvitacion } = useFavoritos();
 
   // Feed para los bloques curados. Una sola vez. (Patrón lint-safe: el setState cae SIEMPRE
   // después del await, nunca de forma síncrona dentro del efecto.)
+  // Si venimos de una foto restaurada (`snap0`), NO se refetchea: los datos tienen < 30 min
+  // y volver a pedirlos re-renderiza y tira el scroll que estamos restaurando.
   useEffect(() => {
+    if (snap0) return;
     let activo = true;
     (async () => {
       try {
@@ -248,13 +269,19 @@ function ContenidoMarketplace() {
     return () => {
       activo = false;
     };
-  }, []);
+  }, [snap0]);
 
   // Búsqueda server-side: se relanza la PRIMERA página cada vez que cambian los filtros.
   // Sin cursor (el cursor no vive en la URL compartible, solo en el estado de paginación),
   // así que un 400 aquí es inalcanzable. setState siempre tras el await.
   useEffect(() => {
     if (!busquedaActiva) return;
+    // Volvimos del detalle con la misma búsqueda ya sembrada desde el snapshot: no
+    // refetchear en el primer render (solo esta vez).
+    if (saltarPrimerFetchBusqueda.current) {
+      saltarPrimerFetchBusqueda.current = false;
+      return;
+    }
     let vivo = true;
     (async () => {
       try {
@@ -270,6 +297,50 @@ function ContenidoMarketplace() {
       vivo = false;
     };
   }, [busquedaActiva, clave, filtros]);
+
+  // ── Guardar la foto (datos + scroll) y restaurar el scroll al volver ─────────
+  // Guardado del scroll: barato y frecuente (throttle por rAF).
+  useEffect(() => {
+    let pendiente = false;
+    function onScroll() {
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(() => {
+        pendiente = false;
+        guardarScrollFeed(clave);
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [clave]);
+
+  // Restauración del scroll: una sola vez, tras pintar el contenido restaurado.
+  const scrollRestaurado = useRef(false);
+
+  // Guardado de los datos: cada vez que cambia el feed o el estado de búsqueda. No corre
+  // mientras se restaura el scroll (escribiría `scrollY: 0` y pisaría la foto buena).
+  useEffect(() => {
+    if (snap0 && !scrollRestaurado.current) return;
+    if (cargandoFeed && !busquedaActiva) return; // aún no hay nada que valga la pena
+    guardarSnapshotFeed(clave, feed, busqueda);
+  }, [clave, feed, busqueda, cargandoFeed, busquedaActiva, snap0]);
+  useEffect(() => {
+    if (scrollRestaurado.current || !snap0 || !snap0.scrollY) return;
+    scrollRestaurado.current = true;
+    const y = snap0.scrollY;
+    // Las portadas tienen alto fijo (aspect-[4/3]) → el layout es estable aunque las
+    // imágenes aún carguen; un par de reintentos cubren el scroll-restore de Next.
+    requestAnimationFrame(() => {
+      window.scrollTo(0, y);
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    });
+    const t1 = setTimeout(() => window.scrollTo(0, y), 150);
+    const t2 = setTimeout(() => window.scrollTo(0, y), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [snap0]);
 
   // Paginación por cursor. Va en un handler (no en un efecto): aquí setState síncrono es
   // válido. Un 400 = cursor corrupto → reinicia desde la primera página sin romper.
@@ -453,6 +524,10 @@ function ContenidoMarketplace() {
     // `espacio-barra-movil`: reserva abajo el alto de la barra de navegación de celular
     // (fixed) para que la última tarjeta / el CTA no queden tapados. 0 desde `md`.
     <div className="espacio-barra-movil">
+    {/* Leyenda flotante "¿en qué momento del feed estoy?" (Hoy/Ayer/Esta semana/…),
+        como el encabezado de fecha de FB Marketplace. Lee los `[data-fecha]` de las
+        tarjetas; aparece al desplazarse y se desvanece al parar. */}
+    <LeyendaTiempoScroll />
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <header className="mb-6">
         <div className="flex items-start justify-between gap-3">

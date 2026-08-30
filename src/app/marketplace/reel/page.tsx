@@ -17,6 +17,7 @@ import Link from "next/link";
 import { buscarPublicaciones } from "@/lib/api";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { InvitacionFavorito } from "@/components/BotonFavorito";
+import { LeyendaTiempoScroll } from "@/components/LeyendaTiempoScroll";
 import { precioNum } from "@/lib/precio";
 import { antiguedadDe } from "@/lib/antiguedad";
 import { fichaIncompleta } from "@/lib/ficha";
@@ -65,7 +66,10 @@ function ReelInterna({
   const guardado = control.esFavorito(pub.placa);
 
   return (
-    <section className="relative flex h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center overflow-hidden bg-black">
+    <section
+      data-fecha={pub.creado_en}
+      className="relative flex h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center overflow-hidden bg-black"
+    >
       {pub.foto_portada ? (
         <>
           {/* Fondo desenfocado: rellena el letterbox sin un vacío plano. */}
@@ -185,7 +189,10 @@ function ReelInterna({
 function ReelReferenciada({ pub }: { pub: PublicacionReferenciada }) {
   const portada = pub.fotos?.[0] ?? pub.imagen_url;
   return (
-    <section className="relative flex h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center overflow-hidden bg-black">
+    <section
+      data-fecha={pub.creado_en}
+      className="relative flex h-[100dvh] w-full shrink-0 snap-start snap-always items-center justify-center overflow-hidden bg-black"
+    >
       {portada ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -238,6 +245,9 @@ export default function ReelPage() {
   const cargando = useRef(false);
   const primeraLista = useRef(false);
   const sentinela = useRef<HTMLDivElement | null>(null);
+  // El reel scrollea en su propio contenedor (no window): la leyenda flotante lo
+  // escucha por callback-ref (estado, para re-render cuando el nodo aparece).
+  const [contenedorScroll, setContenedorScroll] = useState<HTMLDivElement | null>(null);
 
   // Trae la SIGUIENTE página de `/buscar` (la primera la carga el efecto de montaje).
   // El setState cae siempre después del await (patrón lint-safe de useFavoritos).
@@ -304,7 +314,12 @@ export default function ReelPage() {
         </Link>
       </div>
 
-      <div className="mx-auto h-full max-w-[480px] snap-y snap-mandatory overflow-y-scroll overscroll-contain">
+      <LeyendaTiempoScroll scrollTarget={contenedorScroll} />
+
+      <div
+        ref={setContenedorScroll}
+        className="mx-auto h-full max-w-[480px] snap-y snap-mandatory overflow-y-scroll overscroll-contain"
+      >
         {items.map((it) =>
           it.tipo_publicacion === "interna" && it.interna ? (
             <ReelInterna key={`i-${it.interna.id}`} pub={it.interna} control={control} />
