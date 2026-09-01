@@ -153,3 +153,12 @@ export function IconoAgenda({ className }: PropsIcono) {
     </svg>
   );
 }
+
+export function IconoChat({ className }: PropsIcono) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H9l-4 3.5V16.5H4A1.5 1.5 0 0 1 2.5 15V7A1.5 1.5 0 0 1 4 5.5Z" />
+      <path d="M7.5 10h9M7.5 13h6" />
+    </svg>
+  );
+}
