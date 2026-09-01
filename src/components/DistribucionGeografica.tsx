@@ -16,12 +16,24 @@ import { MapaEcuador } from "@/components/MapaEcuador";
 import { obtenerDistribucionGeografica } from "@/lib/api";
 import type { DistribucionGeografica as Distribucion } from "@/types/api";
 
+function esperar(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// El backend (Render free) tiene cold start de ~30s tras inactividad: el primer
+// fetch de la portada puede fallar por eso, no porque el servicio esté caído. Antes
+// un solo intento fallido ocultaba el mapa para siempre (hasta recargar la página).
+// Con 2 reintentos con backoff, un cold start típico ya no se nota.
 async function traer(): Promise<Distribucion | null> {
-  try {
-    return await obtenerDistribucionGeografica();
-  } catch {
-    return null; // la portada debe seguir viva si el backend está caído
+  for (const espera of [0, 2000, 5000]) {
+    if (espera) await esperar(espera);
+    try {
+      return await obtenerDistribucionGeografica();
+    } catch {
+      // sigue al próximo intento; si se acaban, la portada queda igual sin el mapa
+    }
   }
+  return null;
 }
 
 export function DistribucionGeografica() {

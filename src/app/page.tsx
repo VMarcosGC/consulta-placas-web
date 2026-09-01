@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import { DistribucionGeografica } from "@/components/DistribucionGeografica";
+import { IconoAuto, IconoGarage, IconoLlave, IconoMegafono } from "@/components/Iconos";
 import { PublicidadHome } from "@/components/PublicidadHome";
 
 export default function Home() {
@@ -52,7 +53,7 @@ function AccesosSection() {
       chip: "Comprar",
       titulo: "Ver autos en venta",
       texto: "Busca por marca, precio o ciudad y filtra por lo que te importa.",
-      emoji: "🚗",
+      Icono: IconoAuto,
       href: "/marketplace",
       cta: "Ir al marketplace",
     },
@@ -60,7 +61,7 @@ function AccesosSection() {
       chip: "Vender",
       titulo: "Publicar mi auto",
       texto: "Datos, ficha técnica y fotos. Gratis y tu anuncio aparece al instante.",
-      emoji: "📢",
+      Icono: IconoMegafono,
       href: "/marketplace/publicar",
       cta: "Publicar ahora",
     },
@@ -68,7 +69,7 @@ function AccesosSection() {
       chip: "Tu historial",
       titulo: "Mi garage",
       texto: "Kilometraje, mantenimientos y dueños. Un historial documentado vende mejor.",
-      emoji: "🔧",
+      Icono: IconoGarage,
       href: "/mi-garage",
       cta: "Abrir mi garage",
     },
@@ -76,7 +77,7 @@ function AccesosSection() {
       chip: "Servicios",
       titulo: "Servicios para tu auto",
       texto: "Mecánicas, centros de servicio, lavaderos, luces y accesorios de tu ciudad.",
-      emoji: "🛠️",
+      Icono: IconoLlave,
       href: "/servicios",
       cta: "Ver servicios",
     },
@@ -95,8 +96,8 @@ function AccesosSection() {
             className="group sombra-tarjeta flex flex-col rounded-xl border border-borde bg-superficie p-3 transition hover:-translate-y-0.5 hover:border-borde-fuerte sm:p-4"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-marca-tinte text-lg transition group-hover:scale-105">
-                {a.emoji}
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-marca-tinte text-marca-texto transition group-hover:scale-105">
+                <a.Icono className="h-[18px] w-[18px]" />
               </span>
               <span className="rounded-full border border-borde px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-secundario">
                 {a.chip}

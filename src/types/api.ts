@@ -993,3 +993,94 @@ export interface CalificacionesVendedor {
   // La calificación de ESTE usuario (si hay sesión y ya calificó), para prellenar.
   mia: CalificacionSalida | null;
 }
+
+
+// ── Puntos de encuentro seguros (migración 0033) ────────────────────────────
+// Mirror de src/modules/marketplace/schemas.py. Lugares curados donde comprador y
+// vendedor se ven en persona; un vendedor "anuncia" que va a llevar una publicación
+// suya a un punto en una fecha/franja.
+
+export type FranjaPresencia = "manana" | "tarde" | "noche" | "todo_el_dia";
+export type EstadoPresencia = "anunciada" | "finalizada" | "cancelada";
+
+export const FRANJA_LEGIBLE: Record<FranjaPresencia, string> = {
+  manana: "Mañana",
+  tarde: "Tarde",
+  noche: "Noche",
+  todo_el_dia: "Todo el día",
+};
+
+export interface PuntoEncuentro {
+  id: number;
+  nombre: string;
+  ciudad: string;
+  sector: string | null;
+  direccion: string;
+  referencia: string | null;
+  latitud: string | null;
+  longitud: string | null;
+  horario: string | null;
+  tiene_seguridad: boolean;
+  notas: string | null;
+  activo: boolean;
+  orden: number;
+  presencias_activas: number;
+}
+
+export interface VehiculoEnPresencia {
+  publicacion_id: number;
+  placa: string;
+  titulo: string | null;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  precio_usd: string;
+  foto_portada: string | null;
+}
+
+export interface PresenciaSalida {
+  id: number;
+  punto_id: number;
+  fecha: string;
+  franja: FranjaPresencia;
+  estado: EstadoPresencia;
+  nota: string | null;
+  creado_en: string;
+  vehiculo: VehiculoEnPresencia;
+}
+
+export interface PuntoEncuentroDetalle extends PuntoEncuentro {
+  presencias: PresenciaSalida[];
+}
+
+export interface PuntoResumen {
+  id: number;
+  nombre: string;
+  ciudad: string;
+  sector: string | null;
+}
+
+export interface MiPresencia {
+  id: number;
+  punto: PuntoResumen;
+  fecha: string;
+  franja: FranjaPresencia;
+  estado: EstadoPresencia;
+  nota: string | null;
+  creado_en: string;
+  vehiculo: VehiculoEnPresencia;
+}
+
+export interface PresenciaCrear {
+  publicacion_id: number;
+  fecha: string;
+  franja: FranjaPresencia;
+  nota?: string | null;
+}
+
+export interface PresenciaActualizar {
+  fecha?: string;
+  franja?: FranjaPresencia;
+  nota?: string | null;
+  estado?: Exclude<EstadoPresencia, "anunciada">;
+}

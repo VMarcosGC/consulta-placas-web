@@ -27,6 +27,12 @@ import {
   MantenimientoCrear,
   MantenimientoSalida,
   PlanCuidado,
+  MiPresencia,
+  PresenciaActualizar,
+  PresenciaCrear,
+  PresenciaSalida,
+  PuntoEncuentro,
+  PuntoEncuentroDetalle,
   PublicacionActualizar,
   PublicacionCrear,
   PublicacionDetalle,
@@ -689,6 +695,51 @@ export function verificarPublicacion(id: number, decision: "verificado" | "recha
   return fetchAPI<PublicacionInterna>(
     `/marketplace/publicaciones/${id}/verificar`,
     { method: "POST", body: JSON.stringify({ decision }) },
+    true
+  );
+}
+
+
+// ─── Puntos de encuentro seguros (migración 0033) ─────────
+// Catálogo público de lugares para negociar en persona + el "anuncio" del vendedor
+// (voy a llevar mi auto a X el día Y).
+export function listarPuntosEncuentro() {
+  return fetchAPI<PuntoEncuentro[]>("/marketplace/puntos-encuentro", {}, false);
+}
+
+export function obtenerPuntoEncuentro(id: number) {
+  return fetchAPI<PuntoEncuentroDetalle>(
+    `/marketplace/puntos-encuentro/${id}`,
+    {},
+    false
+  );
+}
+
+// El vendedor anuncia que llevará `publicacion_id` a este punto.
+export function anunciarPresencia(puntoId: number, datos: PresenciaCrear) {
+  return fetchAPI<PresenciaSalida>(
+    `/marketplace/puntos-encuentro/${puntoId}/presencias`,
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function misPresencias() {
+  return fetchAPI<MiPresencia[]>("/marketplace/presencias/mias", {}, true);
+}
+
+export function actualizarPresencia(id: number, datos: PresenciaActualizar) {
+  return fetchAPI<MiPresencia>(
+    `/marketplace/presencias/${id}`,
+    { method: "PATCH", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function eliminarPresencia(id: number) {
+  return fetchAPI<void>(
+    `/marketplace/presencias/${id}`,
+    { method: "DELETE" },
     true
   );
 }

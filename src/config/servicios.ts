@@ -5,15 +5,29 @@
 // negocios reales. Cuando entren negocios de verdad se agregan a `SERVICIOS_REALES` (y,
 // más adelante, a su propio módulo con alta desde la web). La página muestra la unión.
 // El alta de negocios NO es automática: llegan por el CTA "Súmate".
+//
+// `icono` es un componente SVG monocromo (`Iconos.tsx`), no un emoji: un emoji de
+// color (🛡️💡✨🫧) rompe la paleta "Grafito" casi monocroma más que cualquier otra
+// cosa en la página. El componente hereda `currentColor`, así que calza con el tema.
+
+import {
+  IconoBombilla,
+  IconoChispa,
+  IconoEscudo,
+  IconoFabrica,
+  IconoGota,
+  IconoLlave,
+  IconoPuntos,
+} from "@/components/Iconos";
 
 export const CATEGORIAS_SERVICIO = [
-  { clave: "mecanica", nombre: "Mecánica general", icono: "🔧" },
-  { clave: "mecanica_certificada", nombre: "Mecánica certificada", icono: "🛡️" },
-  { clave: "centro_servicio", nombre: "Centro de servicio", icono: "🏭" },
-  { clave: "lavadero", nombre: "Lavadero", icono: "🫧" },
-  { clave: "luces", nombre: "Luces y eléctrico", icono: "💡" },
-  { clave: "accesorios", nombre: "Accesorios y lujos", icono: "✨" },
-  { clave: "otro", nombre: "Otro", icono: "🚗" },
+  { clave: "mecanica", nombre: "Mecánica general", icono: IconoLlave },
+  { clave: "mecanica_certificada", nombre: "Mecánica certificada", icono: IconoEscudo },
+  { clave: "centro_servicio", nombre: "Centro de servicio", icono: IconoFabrica },
+  { clave: "lavadero", nombre: "Lavadero", icono: IconoGota },
+  { clave: "luces", nombre: "Luces y eléctrico", icono: IconoBombilla },
+  { clave: "accesorios", nombre: "Accesorios y lujos", icono: IconoChispa },
+  { clave: "otro", nombre: "Otro", icono: IconoPuntos },
 ] as const;
 
 export type CategoriaServicio = (typeof CATEGORIAS_SERVICIO)[number]["clave"];

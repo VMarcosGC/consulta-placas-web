@@ -148,9 +148,7 @@ export default function InteresesPage() {
                 className="flex flex-col rounded-2xl border border-borde bg-superficie p-4 sombra-tarjeta"
               >
                 <div className="flex items-center gap-2">
-                  <span aria-hidden className="text-lg">
-                    {meta?.icono}
-                  </span>
+                  {meta && <meta.icono className="h-4 w-4 text-secundario" />}
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-secundario">
                     {meta?.nombre}
                   </span>

@@ -47,8 +47,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      {/* No-flash del tema: corre antes de pintar el body. En App Router un
-          <script> como hijo directo de <html> se iza al <head>. */}
+      {/* No-flash del tema: corre antes de pintar el body. En App Router un <script>
+          como hijo directo de <html> se iza al <head>; React avisa de hidratación por
+          él (de ahí `suppressHydrationWarning` arriba) pero funciona y es lo estándar
+          para un inline pre-pintado sin depender de `next/script`. */}
       <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
       {/* `espacio-barra-movil` reserva abajo el alto de la barra de navegación de
           celular (fixed). Va en el body y no en el <main> porque el Footer queda

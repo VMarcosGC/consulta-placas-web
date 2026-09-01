@@ -23,6 +23,7 @@ import { InvitacionFavorito } from "@/components/BotonFavorito";
 import { EsqueletoTarjetas } from "@/components/EsqueletoTarjetas";
 import { ListingInternaCard, ListingReferenciadaCard } from "@/components/ListingCard";
 import { LeyendaTiempoScroll } from "@/components/LeyendaTiempoScroll";
+import { IconoLupa, IconoPin } from "@/components/Iconos";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { bajaDePrecio } from "@/lib/favoritos";
 import {
@@ -48,6 +49,7 @@ import {
   guardarScrollFeed,
   guardarSnapshotFeed,
   leerSnapshotFeed,
+  type SnapshotFeed,
 } from "@/lib/feedScroll";
 import {
   esTransparente,
@@ -220,15 +222,16 @@ function ContenidoMarketplace() {
   const busquedaActiva = hayFiltros(filtros);
   const nAvanzados = conteoAvanzados(filtros);
 
-  // Restauración al volver del detalle (mismo querystring, foto fresca). Se lee UNA vez.
-  const [snap0] = useState(() =>
-    leerSnapshotFeed<FeedMarketplace, EstadoBusqueda>(clave)
-  );
-  // El primer disparo del efecto de búsqueda se salta si ya venimos del snapshot con
-  // resultados para esta misma clave (si no, refetchearía y perdería el scroll).
-  const saltarPrimerFetchBusqueda = useRef(
-    Boolean(snap0 && snap0.busqueda?.clave === clave && hayFiltros(filtros))
-  );
+  // Restauración al volver del detalle (mismo querystring, foto fresca).
+  //
+  // El snapshot vive en sessionStorage → NO puede leerse en un inicializador de
+  // useState: el server (SSR de este client component) lo ve como null y el cliente
+  // como un objeto real, y eso rompe la hidratación de todo lo que dependa del feed.
+  // Se lee en un efecto post-montaje y se aplica con setState; los fetch iniciales
+  // esperan a `restauracionLista` para no pisar lo restaurado.
+  const snapRef = useRef<SnapshotFeed<FeedMarketplace, EstadoBusqueda> | null>(null);
+  const [restauracionLista, setRestauracionLista] = useState(false);
+  const saltarPrimerFetchBusqueda = useRef(false);
 
   // Buscador de texto: estado local, se confirma a la URL al enviar (no en cada tecla, para
   // no disparar una llamada por pulsación en una red lenta). Se siembra desde la URL.
@@ -236,23 +239,55 @@ function ContenidoMarketplace() {
   // Panel de filtros avanzados: abierto de entrada si el enlace ya trae filtros avanzados.
   const [panelAbierto, setPanelAbierto] = useState(() => conteoAvanzados(filtros) > 0);
 
-  const [feed, setFeed] = useState<FeedMarketplace>(snap0?.feed ?? FEED_VACIO);
-  const [cargandoFeed, setCargandoFeed] = useState(!snap0);
+  const [feed, setFeed] = useState<FeedMarketplace>(FEED_VACIO);
+  const [cargandoFeed, setCargandoFeed] = useState(true);
   const [errorFeed, setErrorFeed] = useState<string | null>(null);
 
-  const [busqueda, setBusqueda] = useState<EstadoBusqueda>(
-    snap0?.busqueda ?? BUSQUEDA_INICIAL
-  );
+  const [busqueda, setBusqueda] = useState<EstadoBusqueda>(BUSQUEDA_INICIAL);
   const [cargandoMas, setCargandoMas] = useState(false);
 
   const { control, mapa, invitacion, cerrarInvitacion } = useFavoritos();
 
-  // Feed para los bloques curados. Una sola vez. (Patrón lint-safe: el setState cae SIEMPRE
-  // después del await, nunca de forma síncrona dentro del efecto.)
-  // Si venimos de una foto restaurada (`snap0`), NO se refetchea: los datos tienen < 30 min
-  // y volver a pedirlos re-renderiza y tira el scroll que estamos restaurando.
+  // Lee y aplica la foto guardada (solo al montar). Si la hay: siembra feed/búsqueda,
+  // restaura el scroll y marca que los fetch iniciales deben saltarse. Si no la hay,
+  // solo destraba los fetch. setState va dentro de un async IIFE (lint-safe).
   useEffect(() => {
-    if (snap0) return;
+    let vivo = true;
+    (async () => {
+      const s = leerSnapshotFeed<FeedMarketplace, EstadoBusqueda>(clave);
+      if (!vivo) return;
+      if (s) {
+        snapRef.current = s;
+        setFeed(s.feed);
+        setCargandoFeed(false);
+        if (s.busqueda) setBusqueda(s.busqueda);
+        saltarPrimerFetchBusqueda.current = Boolean(
+          s.busqueda && s.busqueda.clave === clave && hayFiltros(filtros)
+        );
+        if (s.scrollY) {
+          const y = s.scrollY;
+          requestAnimationFrame(() => {
+            window.scrollTo(0, y);
+            requestAnimationFrame(() => window.scrollTo(0, y));
+          });
+          setTimeout(() => window.scrollTo(0, y), 150);
+          setTimeout(() => window.scrollTo(0, y), 400);
+        }
+      }
+      setRestauracionLista(true);
+    })();
+    return () => {
+      vivo = false;
+    };
+    // Solo al montar: la restauración es para el remonte por "atrás", no para un
+    // cambio de filtros en la misma sesión.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Feed para los bloques curados. Espera a la restauración; si vino de una foto
+  // (`snapRef.current`) NO se refetchea (datos < 30 min y romper el scroll).
+  useEffect(() => {
+    if (!restauracionLista || snapRef.current) return;
     let activo = true;
     (async () => {
       try {
@@ -269,13 +304,13 @@ function ContenidoMarketplace() {
     return () => {
       activo = false;
     };
-  }, [snap0]);
+  }, [restauracionLista]);
 
   // Búsqueda server-side: se relanza la PRIMERA página cada vez que cambian los filtros.
   // Sin cursor (el cursor no vive en la URL compartible, solo en el estado de paginación),
   // así que un 400 aquí es inalcanzable. setState siempre tras el await.
   useEffect(() => {
-    if (!busquedaActiva) return;
+    if (!busquedaActiva || !restauracionLista) return;
     // Volvimos del detalle con la misma búsqueda ya sembrada desde el snapshot: no
     // refetchear en el primer render (solo esta vez).
     if (saltarPrimerFetchBusqueda.current) {
@@ -296,9 +331,9 @@ function ContenidoMarketplace() {
     return () => {
       vivo = false;
     };
-  }, [busquedaActiva, clave, filtros]);
+  }, [busquedaActiva, clave, filtros, restauracionLista]);
 
-  // ── Guardar la foto (datos + scroll) y restaurar el scroll al volver ─────────
+  // ── Guardar la foto (datos + scroll) para restaurarla al volver del detalle ──
   // Guardado del scroll: barato y frecuente (throttle por rAF).
   useEffect(() => {
     let pendiente = false;
@@ -314,33 +349,17 @@ function ContenidoMarketplace() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [clave]);
 
-  // Restauración del scroll: una sola vez, tras pintar el contenido restaurado.
-  const scrollRestaurado = useRef(false);
-
-  // Guardado de los datos: cada vez que cambia el feed o el estado de búsqueda. No corre
-  // mientras se restaura el scroll (escribiría `scrollY: 0` y pisaría la foto buena).
+  // Guardado de los datos: cada vez que cambia el feed o el estado de búsqueda, pero
+  // solo cuando ya hay algo de verdad que guardar (no la foto vacía inicial).
   useEffect(() => {
-    if (snap0 && !scrollRestaurado.current) return;
-    if (cargandoFeed && !busquedaActiva) return; // aún no hay nada que valga la pena
+    if (!restauracionLista) return;
+    if (busquedaActiva) {
+      if (busqueda.clave !== clave) return; // los resultados de esta búsqueda no están listos
+    } else if (cargandoFeed) {
+      return; // el feed curado aún no cargó
+    }
     guardarSnapshotFeed(clave, feed, busqueda);
-  }, [clave, feed, busqueda, cargandoFeed, busquedaActiva, snap0]);
-  useEffect(() => {
-    if (scrollRestaurado.current || !snap0 || !snap0.scrollY) return;
-    scrollRestaurado.current = true;
-    const y = snap0.scrollY;
-    // Las portadas tienen alto fijo (aspect-[4/3]) → el layout es estable aunque las
-    // imágenes aún carguen; un par de reintentos cubren el scroll-restore de Next.
-    requestAnimationFrame(() => {
-      window.scrollTo(0, y);
-      requestAnimationFrame(() => window.scrollTo(0, y));
-    });
-    const t1 = setTimeout(() => window.scrollTo(0, y), 150);
-    const t2 = setTimeout(() => window.scrollTo(0, y), 400);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [snap0]);
+  }, [restauracionLista, clave, feed, busqueda, cargandoFeed, busquedaActiva]);
 
   // Paginación por cursor. Va en un handler (no en un efecto): aquí setState síncrono es
   // válido. Un 400 = cursor corrupto → reinicia desde la primera página sin romper.
@@ -553,6 +572,26 @@ function ContenidoMarketplace() {
         </p>
       </header>
 
+      {/* Puntos de encuentro seguros: acceso al apartado para negociar en persona. */}
+      <Link
+        href="/puntos-encuentro"
+        className="mb-6 flex items-center gap-3 rounded-2xl border border-borde bg-superficie-tenue/70 p-4 transition hover:border-borde-fuerte"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-marca-tinte text-marca-texto">
+          <IconoPin className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-tinta">
+            Puntos de encuentro seguros
+          </span>
+          <span className="block text-sm text-secundario">
+            Lugares concurridos de Quito para cerrar la compra en persona. Mira qué autos
+            van a estar en cada uno.
+          </span>
+        </span>
+        <span aria-hidden className="shrink-0 text-secundario">→</span>
+      </Link>
+
       {/* ── 1. Buscador protagonista + filtros ─────────────────────────────── */}
       <div className="mb-8">
         <form onSubmit={enviarTexto}>
@@ -560,11 +599,8 @@ function ContenidoMarketplace() {
             ¿Qué auto buscas? Marca, modelo o placa
           </label>
           <div className="relative">
-            <span
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-secundario"
-              aria-hidden
-            >
-              🔍
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-secundario">
+              <IconoLupa className="h-[18px] w-[18px]" />
             </span>
             <input
               id="buscador-autos"

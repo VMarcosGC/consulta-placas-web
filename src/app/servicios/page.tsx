@@ -148,8 +148,8 @@ export default function ServiciosPage() {
                 }}
                 className="group sombra-tarjeta flex flex-col items-start gap-2 rounded-xl border border-borde bg-superficie p-3.5 text-left transition hover:-translate-y-0.5 hover:border-borde-fuerte sm:p-4"
               >
-                <span className="grid h-10 w-10 place-items-center rounded-lg bg-marca-tinte text-xl transition group-hover:scale-105">
-                  {c.icono}
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-marca-tinte text-marca-texto transition group-hover:scale-105">
+                  <c.icono className="h-5 w-5" />
                 </span>
                 <span className="text-sm font-bold leading-tight text-tinta">{c.nombre}</span>
                 <span className="text-[11px] text-secundario">
@@ -176,7 +176,7 @@ export default function ServiciosPage() {
               ← Todas
             </button>
             <h2 className="flex items-center gap-2 text-lg font-bold text-tinta">
-              <span aria-hidden>{metaCat?.icono}</span>
+              {metaCat && <metaCat.icono className="h-5 w-5 text-marca" />}
               {metaCat?.nombre}
               <span className="text-sm font-normal text-secundario">({lista.length})</span>
             </h2>

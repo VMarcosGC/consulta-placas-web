@@ -98,6 +98,7 @@ export function Header() {
           </Link>
           <Link href="/marketplace/publicar" className="hover:text-tinta">Publicar</Link>
           <Link href="/servicios" className="hover:text-tinta">Servicios</Link>
+          <Link href="/puntos-encuentro" className="hover:text-tinta">Puntos de encuentro</Link>
           <Link href="/intereses" className="hover:text-tinta">Intereses</Link>
           {logueado && (
             <Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link>
