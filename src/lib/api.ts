@@ -33,6 +33,10 @@ import {
   PresenciaSalida,
   PuntoEncuentro,
   PuntoEncuentroDetalle,
+  CitaCrear,
+  CitaActualizar,
+  CitaSalida,
+  RespuestaNegocio,
   PublicacionActualizar,
   PublicacionCrear,
   PublicacionDetalle,
@@ -740,6 +744,41 @@ export function eliminarPresencia(id: number) {
   return fetchAPI<void>(
     `/marketplace/presencias/${id}`,
     { method: "DELETE" },
+    true
+  );
+}
+
+
+// ─── Agendamiento de citas para servicios (migración 0034) ──
+export function pedirCita(servicioId: number, datos: CitaCrear) {
+  return fetchAPI<CitaSalida>(
+    `/marketplace/servicios/${servicioId}/citas`,
+    { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function misCitas() {
+  return fetchAPI<CitaSalida[]>("/marketplace/citas/mias", {}, true);
+}
+
+// Solicitudes a los servicios que YO aporté (o todas, si soy admin).
+export function citasRecibidas() {
+  return fetchAPI<CitaSalida[]>("/marketplace/citas/recibidas", {}, true);
+}
+
+export function actualizarCita(id: number, datos: CitaActualizar) {
+  return fetchAPI<CitaSalida>(
+    `/marketplace/citas/${id}`,
+    { method: "PATCH", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+export function responderCita(id: number, datos: RespuestaNegocio) {
+  return fetchAPI<CitaSalida>(
+    `/marketplace/citas/${id}/responder`,
+    { method: "POST", body: JSON.stringify(datos) },
     true
   );
 }

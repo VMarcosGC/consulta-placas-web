@@ -899,6 +899,7 @@ export interface ServicioCrear {
   direccion?: string;
   horario?: string;
   url_externa?: string;
+  acepta_agendamiento?: boolean;
 }
 
 export interface ServicioSalida {
@@ -914,6 +915,7 @@ export interface ServicioSalida {
   horario: string | null;
   url_externa: string | null;
   certificado: boolean;
+  acepta_agendamiento: boolean;
   estado_moderacion: "pendiente" | "aprobada" | "rechazada";
   activo: boolean;
   creado_en: string;
@@ -1083,4 +1085,74 @@ export interface PresenciaActualizar {
   franja?: FranjaPresencia;
   nota?: string | null;
   estado?: Exclude<EstadoPresencia, "anunciada">;
+}
+
+
+// ── Agendamiento de citas para servicios (migración 0034) ─────────────
+export type MotivoCita =
+  | "mantenimiento"
+  | "revision"
+  | "diagnostico"
+  | "lavado"
+  | "accesorios"
+  | "otro";
+export type FranjaAgenda = "manana" | "tarde" | "noche" | "todo_el_dia";
+export type EstadoCita =
+  | "solicitada"
+  | "confirmada"
+  | "reprogramada"
+  | "rechazada"
+  | "cancelada"
+  | "cumplida";
+
+export const MOTIVO_CITA_LEGIBLE: Record<MotivoCita, string> = {
+  mantenimiento: "Mantenimiento",
+  revision: "Revisión general",
+  diagnostico: "Diagnóstico / falla",
+  lavado: "Lavado / detailing",
+  accesorios: "Accesorios / instalación",
+  otro: "Otro",
+};
+
+export interface CitaCrear {
+  nombre_contacto: string;
+  telefono_contacto?: string | null;
+  vehiculo?: string | null;
+  motivo: MotivoCita;
+  fecha: string; // YYYY-MM-DD
+  franja: FranjaAgenda;
+  nota?: string | null;
+}
+
+export interface CitaActualizar {
+  fecha?: string;
+  franja?: FranjaAgenda;
+  nota?: string | null;
+  estado?: "cancelada" | "confirmada";
+}
+
+export interface RespuestaNegocio {
+  decision: "confirmada" | "rechazada" | "reprogramada" | "cumplida";
+  respuesta?: string | null;
+  fecha_propuesta?: string | null;
+  franja_propuesta?: FranjaAgenda | null;
+}
+
+export interface CitaSalida {
+  id: number;
+  servicio_id: number;
+  servicio_nombre: string | null;
+  servicio_ciudad: string | null;
+  nombre_contacto: string;
+  telefono_contacto: string | null;
+  vehiculo: string | null;
+  motivo: MotivoCita;
+  fecha: string;
+  franja: FranjaAgenda;
+  nota: string | null;
+  estado: EstadoCita;
+  respuesta_negocio: string | null;
+  fecha_propuesta: string | null;
+  franja_propuesta: FranjaAgenda | null;
+  creado_en: string;
 }

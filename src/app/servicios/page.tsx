@@ -32,13 +32,30 @@ import {
   haversineKm,
   type Coord,
 } from "@/lib/geolocalizacion";
-import { crearServicio, listarServicios } from "@/lib/api";
+import { crearServicio, listarServicios, pedirCita } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
 import {
   alternarServicioGuardado,
   useServiciosGuardados,
 } from "@/lib/serviciosGuardados";
-import type { CategoriaServicioApi, ServicioSalida } from "@/types/api";
+import { CampoTexto } from "@/components/CampoTexto";
+import {
+  ApiError,
+  MOTIVO_CITA_LEGIBLE,
+  type CategoriaServicioApi,
+  type FranjaAgenda,
+  type MotivoCita,
+  type ServicioSalida,
+} from "@/types/api";
+
+const HOY = () => new Date().toISOString().slice(0, 10);
+const FRANJAS_AGENDA: { valor: FranjaAgenda; etiqueta: string }[] = [
+  { valor: "manana", etiqueta: "Mañana" },
+  { valor: "tarde", etiqueta: "Tarde" },
+  { valor: "noche", etiqueta: "Noche" },
+  { valor: "todo_el_dia", etiqueta: "Todo el día" },
+];
+const MOTIVOS_AGENDA = Object.entries(MOTIVO_CITA_LEGIBLE) as [MotivoCita, string][];
 
 // ServicioSalida (backend) → forma de tarjeta que ya usa esta página.
 function desdeApi(s: ServicioSalida): Servicio {
@@ -54,8 +71,16 @@ function desdeApi(s: ServicioSalida): Servicio {
     direccion: s.direccion ?? undefined,
     horario: s.horario ?? undefined,
     certificado: s.certificado,
+    acepta_agendamiento: s.acepta_agendamiento,
     demo: false,
   };
+}
+
+// "api-42" → 42 (para pegarle a /servicios/{id}/citas). Los demo (`demo-N`) no
+// tienen id real, así que su `acepta_agendamiento` es siempre falso.
+function idNumerico(id: string): number | null {
+  const m = id.match(/^api-(\d+)$/);
+  return m ? Number(m[1]) : null;
 }
 
 type EstadoGeo = "inicial" | "ok" | "negado";
@@ -125,12 +150,20 @@ export default function ServiciosPage() {
 
   return (
     <div className="espacio-barra-movil mx-auto max-w-5xl px-6 py-8 sm:py-10">
-      <header className="mb-6">
-        <h1 className="text-2xl font-black text-tinta sm:text-3xl">Servicios para tu auto</h1>
-        <p className="mt-1 text-sm text-secundario sm:text-base">
-          Mecánicas y mecánicas certificadas, centros de servicio, lavaderos, luces y
-          accesorios. Un solo lugar para encontrarlos, ver su horario y contactarlos.
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-tinta sm:text-3xl">Servicios para tu auto</h1>
+          <p className="mt-1 max-w-2xl text-sm text-secundario sm:text-base">
+            Mecánicas y mecánicas certificadas, centros de servicio, lavaderos, luces y
+            accesorios. Un solo lugar para encontrarlos, ver su horario y agendar una cita.
+          </p>
+        </div>
+        <Link
+          href="/servicios/agenda"
+          className="shrink-0 rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario transition hover:bg-superficie-tenue"
+        >
+          📅 Mis citas
+        </Link>
       </header>
 
       {/* NIVEL 1 — bloques por categoría. */}
@@ -354,20 +387,8 @@ function TarjetaServicio({
             )}
           </dl>
 
-          {/* Agendamiento — servicio de la plataforma (aún no disponible). */}
-          <div className="mt-3 rounded-xl border border-dashed border-borde-fuerte bg-superficie-tenue p-3">
-            <p className="text-sm font-semibold text-tinta">📅 Agenda tu cita</p>
-            <p className="mt-0.5 text-xs text-secundario">
-              Pronto vas a poder reservar tu turno con este negocio sin salir de CarStore Ec.
-            </p>
-            <button
-              type="button"
-              disabled
-              className="mt-2 cursor-not-allowed rounded-full bg-borde px-4 py-1.5 text-sm font-semibold text-secundario"
-            >
-              Agendar — muy pronto
-            </button>
-          </div>
+          {/* Agendamiento en línea (migración 0034). */}
+          <AgendarCita servicio={s} />
 
           <div className="mt-3 flex flex-wrap gap-2">
             {s.whatsapp && (
@@ -390,6 +411,202 @@ function TarjetaServicio({
             )}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── Agendamiento en línea de una cita ─────────────────────────────────────────
+function AgendarCita({ servicio: s }: { servicio: Servicio }) {
+  const idApi = idNumerico(s.id);
+  const disponible = Boolean(s.acepta_agendamiento && idApi != null);
+
+  const [haySesion, setHaySesion] = useState(false);
+  const [abierto, setAbierto] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [f, setF] = useState({
+    nombre_contacto: "",
+    telefono_contacto: "",
+    vehiculo: "",
+    motivo: "mantenimiento" as MotivoCita,
+    fecha: HOY(),
+    franja: "tarde" as FranjaAgenda,
+    nota: "",
+  });
+  const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  // Async a propósito (react-hooks/set-state-in-effect): mismo patrón que AltaNegocio.
+  useEffect(() => {
+    let vivo = true;
+    const leer = async () => {
+      if (vivo) setHaySesion(tieneSesion());
+    };
+    leer();
+    window.addEventListener("sesion-cambiada", leer);
+    return () => {
+      vivo = false;
+      window.removeEventListener("sesion-cambiada", leer);
+    };
+  }, [abierto]);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (idApi == null) return;
+    setError(null);
+    if (f.nombre_contacto.trim().length < 2) {
+      setError("Escribe tu nombre para la cita.");
+      return;
+    }
+    setEnviando(true);
+    try {
+      await pedirCita(idApi, {
+        nombre_contacto: f.nombre_contacto.trim(),
+        telefono_contacto: f.telefono_contacto.trim() || undefined,
+        vehiculo: f.vehiculo.trim() || undefined,
+        motivo: f.motivo,
+        fecha: f.fecha,
+        franja: f.franja,
+        nota: f.nota.trim() || undefined,
+      });
+      setOk(true);
+      setAbierto(false);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message || "No pudimos registrar tu cita."
+          : "No pudimos registrar tu cita."
+      );
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-dashed border-borde-fuerte bg-superficie-tenue p-3">
+      <p className="text-sm font-semibold text-tinta">📅 Agenda tu cita</p>
+
+      {!disponible ? (
+        <p className="mt-0.5 text-xs text-secundario">
+          Este negocio todavía no activó el agendamiento en línea. Contáctalo por WhatsApp
+          o teléfono para coordinar.
+        </p>
+      ) : ok ? (
+        <p className="mt-1 rounded-lg border border-confirmado bg-confirmado-tinte px-3 py-2 text-xs font-medium text-confirmado-texto">
+          ✓ Solicitud enviada. El negocio la confirma o te propone otra fecha; la sigues
+          en{" "}
+          <Link href="/servicios/agenda" className="underline">
+            Mis citas
+          </Link>
+          .
+        </p>
+      ) : !haySesion ? (
+        <p className="mt-0.5 text-xs text-secundario">
+          <Link href="/login" className="font-semibold text-tinta underline">
+            Inicia sesión
+          </Link>{" "}
+          para reservar tu turno sin salir de CarStore Ec.
+        </p>
+      ) : !abierto ? (
+        <>
+          <p className="mt-0.5 text-xs text-secundario">
+            Reserva tu turno sin llamadas. El negocio confirma o te propone otra fecha.
+          </p>
+          <button
+            type="button"
+            onClick={() => setAbierto(true)}
+            className="mt-2 rounded-full bg-accion px-4 py-1.5 text-sm font-semibold text-superficie shadow-sm transition hover:opacity-90"
+          >
+            Agendar cita
+          </button>
+        </>
+      ) : (
+        <form onSubmit={enviar} className="mt-2 grid gap-2.5 sm:grid-cols-2">
+          <CampoTexto
+            label="Tu nombre"
+            value={f.nombre_contacto}
+            onChange={(v) => set("nombre_contacto", v)}
+            requerido
+          />
+          <CampoTexto
+            label="Teléfono (opcional)"
+            value={f.telefono_contacto}
+            onChange={(v) => set("telefono_contacto", v)}
+          />
+          <CampoTexto
+            label="Vehículo (opcional)"
+            value={f.vehiculo}
+            onChange={(v) => set("vehiculo", v)}
+          />
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-tinta">Motivo</span>
+            <select
+              value={f.motivo}
+              onChange={(e) => set("motivo", e.target.value)}
+              className="rounded-xl border border-borde-fuerte bg-superficie px-3 py-2.5 text-sm"
+            >
+              {MOTIVOS_AGENDA.map(([valor, etiqueta]) => (
+                <option key={valor} value={valor}>
+                  {etiqueta}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-tinta">Día</span>
+            <input
+              type="date"
+              value={f.fecha}
+              min={HOY()}
+              onChange={(e) => set("fecha", e.target.value)}
+              className="rounded-xl border border-borde-fuerte bg-superficie px-3 py-2.5 text-sm"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-tinta">Franja</span>
+            <select
+              value={f.franja}
+              onChange={(e) => set("franja", e.target.value)}
+              className="rounded-xl border border-borde-fuerte bg-superficie px-3 py-2.5 text-sm"
+            >
+              {FRANJAS_AGENDA.map((x) => (
+                <option key={x.valor} value={x.valor}>
+                  {x.etiqueta}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+            <span className="font-medium text-tinta">Nota (opcional)</span>
+            <input
+              maxLength={400}
+              value={f.nota}
+              onChange={(e) => set("nota", e.target.value)}
+              placeholder="Describe la falla o lo que necesitas"
+              className="rounded-xl border border-borde-fuerte bg-superficie px-3 py-2.5 text-sm"
+            />
+          </label>
+          {error && (
+            <p className="text-xs text-error sm:col-span-2">{error}</p>
+          )}
+          <div className="flex gap-2 sm:col-span-2">
+            <button
+              type="submit"
+              disabled={enviando}
+              className="rounded-full bg-accion px-5 py-2 text-sm font-semibold text-superficie shadow-sm disabled:opacity-60"
+            >
+              {enviando ? "Enviando…" : "Solicitar cita"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbierto(false)}
+              className="rounded-full border border-borde-fuerte bg-superficie px-4 py-2 text-sm font-semibold text-secundario hover:bg-superficie-tenue"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
       )}
     </div>
   );
@@ -421,6 +638,7 @@ function AltaNegocio() {
     horario: "",
     descripcion: "",
   });
+  const [aceptaAgenda, setAceptaAgenda] = useState(true);
 
   // Async a propósito: setState directo dentro del cuerpo de un effect lo marca el
   // linter (react-hooks/set-state-in-effect). Mismo patrón que useFavoritos.
@@ -452,6 +670,7 @@ function AltaNegocio() {
         whatsapp: form.whatsapp.trim() || undefined,
         horario: form.horario.trim() || undefined,
         descripcion: form.descripcion.trim() || undefined,
+        acepta_agendamiento: aceptaAgenda,
       });
       setOk(true);
     } catch {
@@ -468,7 +687,9 @@ function AltaNegocio() {
       </h2>
       <p className="mt-1.5 max-w-lg text-sm text-secundario">
         Súmalo a CarStore Ec y que te encuentren los compradores y vendedores de autos de
-        tu ciudad. Lo revisamos y lo publicamos en el directorio.
+        tu ciudad. Lo revisamos y lo publicamos en el directorio. Activa el{" "}
+        <strong>agendamiento en línea</strong> y tus clientes reservan cita desde aquí;
+        tú las confirmas, reprogramas o rechazas.
       </p>
 
       {ok ? (
@@ -588,6 +809,19 @@ function AltaNegocio() {
                   onChange={(e) => set("descripcion", e.target.value)}
                   className="rounded-lg border border-borde bg-superficie px-3 py-2"
                 />
+              </label>
+
+              <label className="flex items-start gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={aceptaAgenda}
+                  onChange={(e) => setAceptaAgenda(e.target.checked)}
+                  className="mt-0.5 h-4 w-4"
+                />
+                <span className="text-secundario">
+                  Quiero recibir <strong className="text-tinta">solicitudes de cita</strong>{" "}
+                  desde CarStore Ec (agendamiento en línea). Puedes cambiarlo después.
+                </span>
               </label>
 
               {error && (

@@ -47,6 +47,8 @@ export type Servicio = {
   horario?: string;
   /** true = la plataforma revisó sus credenciales (mecánica certificada). */
   certificado?: boolean;
+  /** true = el negocio recibe solicitudes de cita en línea (agendamiento, migración 0034). */
+  acepta_agendamiento?: boolean;
   /** DEMO = ejemplo simulado, no un negocio real. */
   demo?: boolean;
 };
