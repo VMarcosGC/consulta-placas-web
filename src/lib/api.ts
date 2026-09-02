@@ -37,6 +37,10 @@ import {
   CitaActualizar,
   CitaSalida,
   RespuestaNegocio,
+  Conversacion,
+  ConversacionResumen,
+  MensajeChat,
+  EstadoConversacion,
   PublicacionActualizar,
   PublicacionCrear,
   PublicacionDetalle,
@@ -779,6 +783,59 @@ export function responderCita(id: number, datos: RespuestaNegocio) {
   return fetchAPI<CitaSalida>(
     `/marketplace/citas/${id}/responder`,
     { method: "POST", body: JSON.stringify(datos) },
+    true
+  );
+}
+
+
+// ─── Chat interno comprador↔vendedor (migración 0035) ──
+
+/** Abre (o reusa) el hilo con el vendedor de una publicación. Mensaje opcional. */
+export function abrirConversacion(publicacionId: number, mensaje?: string) {
+  return fetchAPI<Conversacion>(
+    `/marketplace/publicaciones/${publicacionId}/conversacion`,
+    { method: "POST", body: JSON.stringify({ mensaje: mensaje ?? null }) },
+    true
+  );
+}
+
+export function listarConversaciones() {
+  return fetchAPI<ConversacionResumen[]>("/marketplace/conversaciones", {}, true);
+}
+
+export function contarMensajesNoLeidos() {
+  return fetchAPI<{ total: number }>(
+    "/marketplace/conversaciones/no-leidos",
+    {},
+    true
+  );
+}
+
+export function obtenerConversacion(id: number) {
+  return fetchAPI<Conversacion>(`/marketplace/conversaciones/${id}`, {}, true);
+}
+
+export function enviarMensajeChat(id: number, cuerpo: string) {
+  return fetchAPI<MensajeChat>(
+    `/marketplace/conversaciones/${id}/mensajes`,
+    { method: "POST", body: JSON.stringify({ cuerpo }) },
+    true
+  );
+}
+
+/** Solo el vendedor: habilita su WhatsApp para este comprador sin esperar a responder. */
+export function compartirContactoChat(id: number) {
+  return fetchAPI<Conversacion>(
+    `/marketplace/conversaciones/${id}/compartir-contacto`,
+    { method: "POST" },
+    true
+  );
+}
+
+export function cambiarEstadoConversacion(id: number, estado: EstadoConversacion) {
+  return fetchAPI<Conversacion>(
+    `/marketplace/conversaciones/${id}`,
+    { method: "PATCH", body: JSON.stringify({ estado }) },
     true
   );
 }

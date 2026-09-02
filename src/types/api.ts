@@ -1156,3 +1156,45 @@ export interface CitaSalida {
   franja_propuesta: FranjaAgenda | null;
   creado_en: string;
 }
+
+// ─── Chat interno comprador↔vendedor (migración 0035) ──
+export type RolConversacion = "comprador" | "vendedor";
+export type EstadoConversacion = "abierta" | "bloqueada" | "archivada";
+
+export interface MensajeChat {
+  id: number;
+  rol_autor: RolConversacion;
+  cuerpo: string;
+  mio: boolean;
+  leido_en: string | null;
+  creado_en: string;
+}
+
+export interface ConversacionResumen {
+  id: number;
+  publicacion_id: number;
+  publicacion_titulo: string;
+  publicacion_foto: string | null;
+  publicacion_precio: number | null;
+  contraparte_nombre: string;
+  mi_rol: RolConversacion;
+  estado: EstadoConversacion;
+  contacto_habilitado: boolean;
+  no_leidos: number;
+  ultimo_mensaje: string | null;
+  ultimo_mensaje_en: string | null;
+}
+
+export interface Conversacion {
+  id: number;
+  publicacion_id: number;
+  publicacion_titulo: string;
+  publicacion_foto: string | null;
+  publicacion_precio: number | null;
+  contraparte_nombre: string;
+  mi_rol: RolConversacion;
+  estado: EstadoConversacion;
+  contacto_habilitado: boolean;
+  puede_bloquear: boolean;
+  mensajes: MensajeChat[];
+}
