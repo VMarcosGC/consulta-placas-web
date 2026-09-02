@@ -57,7 +57,9 @@ export default function InteresesPage() {
           r.map((s) => ({
             id: `api-${s.id}`,
             nombre: s.nombre,
-            categoria: s.categoria as CategoriaServicio,
+            categoria: (s.categoria === "mecanica_certificada"
+              ? "mecanica"
+              : s.categoria) as CategoriaServicio,
             ciudad: s.ciudad,
             provincia: s.provincia,
             whatsapp: s.whatsapp ?? undefined,

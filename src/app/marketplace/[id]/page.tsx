@@ -359,6 +359,7 @@ export default function PublicacionDetallePage() {
               fotos={pub.fotos}
               ficha={pub.ficha}
               titulo={tituloVehiculo(pub)}
+              sello={pub.sello_mecanica}
             />
           </div>
 
@@ -371,11 +372,8 @@ export default function PublicacionDetallePage() {
                   ★ Premium
                 </span>
               )}
-              {pub.sello_mecanica && (
-                <Insignia tono="ok">
-                  🔧 Revisado por {pub.sello_mecanica.nombre}
-                </Insignia>
-              )}
+              {/* El sello "revisado por mecánica" ya no va acá: se muestra flotando
+                  sobre la foto del auto (ver GaleriaAnuncio → SelloFlotante). */}
               {pub.verificado && <Insignia tono="ok">✓ Verificado por la plataforma</Insignia>}
               {fichaIncompleta(pctFicha) && <Insignia tono="neutro">Ficha incompleta</Insignia>}
               {/* Popularidad: solo aparece si cruzó el umbral. Sin votos NO se muestra

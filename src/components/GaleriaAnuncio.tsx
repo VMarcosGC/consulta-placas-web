@@ -15,7 +15,7 @@ import {
   resumenFicha,
   type FilaFicha,
 } from "@/lib/ficha";
-import type { FichaSalida, FotoSalida } from "@/types/api";
+import type { FichaSalida, FotoSalida, SelloMecanica } from "@/types/api";
 
 // ── Resumen de la ficha para la foto ───────────────────────────────────────
 // `foto.bloque` es motor_suspension | carroceria | interiores | general. Si la foto
@@ -253,21 +253,37 @@ function Visor({
 
 // ── Galería ────────────────────────────────────────────────────────────────
 
+// Sello "revisado por mecánica" (§10.6): antes vivía como chip en la cabecera del
+// anuncio, junto a "Premium" / "Verificado". Marcos lo pidió flotando SOBRE la foto
+// (2026-09-02): es un aval del vehículo, así que se lee mejor pegado a su imagen,
+// como una calcomanía. Esquina superior izquierda para no chocar con "⤢ Ampliar".
+function SelloFlotante({ sello }: { sello: SelloMecanica }) {
+  return (
+    <span className="pointer-events-none absolute left-3 top-3 z-10 inline-flex max-w-[78%] items-center gap-1 rounded-full border border-borde bg-superficie px-2.5 py-1 text-[11px] font-bold text-confirmado-texto sombra-tarjeta">
+      <span aria-hidden>🔧</span>
+      <span className="truncate">Revisado por {sello.nombre}</span>
+    </span>
+  );
+}
+
 export function GaleriaAnuncio({
   fotos,
   ficha,
   titulo,
+  sello,
 }: {
   fotos: FotoSalida[];
   ficha: FichaSalida | null;
   titulo: string;
+  sello?: SelloMecanica | null;
 }) {
   const [activa, setActiva] = useState(0);
   const [visor, setVisor] = useState(false);
 
   if (fotos.length === 0) {
     return (
-      <div className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-borde bg-superficie-tenue text-secundario sm:aspect-[16/8]">
+      <div className="relative flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-borde bg-superficie-tenue text-secundario sm:aspect-[16/8]">
+        {sello && <SelloFlotante sello={sello} />}
         <span className="text-5xl" aria-hidden>
           🚗
         </span>
@@ -283,6 +299,7 @@ export function GaleriaAnuncio({
   return (
     <div>
       <div className="relative overflow-hidden rounded-2xl border border-borde bg-superficie-tenue sombra-tarjeta">
+        {sello && <SelloFlotante sello={sello} />}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={foto.url}

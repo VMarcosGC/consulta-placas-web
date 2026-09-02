@@ -13,16 +13,19 @@
 import {
   IconoBombilla,
   IconoChispa,
-  IconoEscudo,
   IconoFabrica,
   IconoGota,
   IconoLlave,
   IconoPuntos,
 } from "@/components/Iconos";
 
+// "Mecánica certificada" salió como sección propia (decisión Marcos, 2026-08-30): no
+// hay todavía un proceso real de certificación de talleres, así que separar la
+// categoría prometía algo que no cumplimos. Los negocios que el backend traiga con
+// `categoria = "mecanica_certificada"` se muestran bajo "Mecánica general"
+// (ver `desdeApi` en app/servicios/page.tsx). El backend conserva el valor válido.
 export const CATEGORIAS_SERVICIO = [
   { clave: "mecanica", nombre: "Mecánica general", icono: IconoLlave },
-  { clave: "mecanica_certificada", nombre: "Mecánica certificada", icono: IconoEscudo },
   { clave: "centro_servicio", nombre: "Centro de servicio", icono: IconoFabrica },
   { clave: "lavadero", nombre: "Lavadero", icono: IconoGota },
   { clave: "luces", nombre: "Luces y eléctrico", icono: IconoBombilla },
@@ -92,7 +95,6 @@ const SECTORES = [
 
 const PLANTILLAS: Record<CategoriaServicio, (a: string, c: string, s: string) => { nombre: string; descripcion: string }> = {
   mecanica: (a, c) => ({ nombre: `Taller ${a}`, descripcion: `Mecánica general, frenos y suspensión en ${c}.` }),
-  mecanica_certificada: (a, c) => ({ nombre: `Mecánica ${a} · Certificada`, descripcion: `Diagnóstico computarizado y garantía escrita en ${c}.` }),
   centro_servicio: (_a, c) => ({ nombre: `AutoService ${c}`, descripcion: `Mantenimiento por kilometraje, ABC de motor y aceites.` }),
   lavadero: (_a, c, s) => ({ nombre: `Lavadero Express ${s}`, descripcion: `Lavado a presión, aspirado y encerado en ${c}.` }),
   luces: (_a, c) => ({ nombre: `AutoLuces ${c}`, descripcion: `Instalación de luces LED, xenón y revisión eléctrica.` }),
@@ -126,7 +128,6 @@ const SERVICIOS_DEMO: Servicio[] = (() => {
         telefono: _telefono(i),
         direccion: `Av. ${s} y Calle ${a}, ${ciudad}`,
         horario: HORARIOS_DEMO[i % HORARIOS_DEMO.length],
-        certificado: cat === "mecanica_certificada",
         demo: true,
       });
       i += 1;

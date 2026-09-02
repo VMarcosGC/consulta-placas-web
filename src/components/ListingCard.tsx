@@ -168,18 +168,9 @@ export function ListingInternaCard({
   const chipBase =
     "inline-flex shrink-0 items-center rounded-full px-1.5 py-1 text-[11px] font-semibold leading-tight";
   const chips: ReactNode[] = [];
-  // El sello de mecánica es la señal de confianza más fuerte del anuncio: va primero.
-  if (pub.sello_mecanica) {
-    chips.push(
-      <span
-        key="mecanica"
-        className={`${chipBase} bg-confirmado-tinte text-confirmado-texto`}
-        title={`Revisado por ${pub.sello_mecanica.nombre}`}
-      >
-        🔧 Revisado
-      </span>
-    );
-  }
+  // El sello de mecánica ya no es un chip de esta fila: se muestra flotando sobre la
+  // foto (abajo-derecha), como en el detalle del anuncio (Marcos, 2026-09-02). Es un
+  // aval del vehículo y se lee mejor pegado a su imagen.
   if (pub.verificado && chips.length < 2) {
     chips.push(
       <span key="verificado" className={`${chipBase} bg-confirmado-tinte text-confirmado-texto`}>
@@ -253,6 +244,17 @@ export function ListingInternaCard({
             precioActual={pub.precio_usd}
             control={favoritos}
           />
+        )}
+        {/* Sello "revisado por mecánica" flotando sobre la foto (abajo-derecha). Pill
+            sólido claro para que se lea sobre cualquier foto; el verde va solo en el
+            texto, coherente con el detalle del anuncio. */}
+        {pub.sello_mecanica && (
+          <span
+            className="absolute bottom-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-superficie px-2 py-0.5 text-[11px] font-bold text-confirmado-texto shadow-md"
+            title={`Revisado por ${pub.sello_mecanica.nombre}`}
+          >
+            🔧 Revisado
+          </span>
         )}
       </div>
 

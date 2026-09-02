@@ -57,12 +57,16 @@ const FRANJAS_AGENDA: { valor: FranjaAgenda; etiqueta: string }[] = [
 ];
 const MOTIVOS_AGENDA = Object.entries(MOTIVO_CITA_LEGIBLE) as [MotivoCita, string][];
 
-// ServicioSalida (backend) → forma de tarjeta que ya usa esta página.
+// ServicioSalida (backend) → forma de tarjeta que ya usa esta página. `mecanica_certificada`
+// dejó de ser una sección propia: se muestra bajo "Mecánica general".
 function desdeApi(s: ServicioSalida): Servicio {
+  const categoria = (
+    s.categoria === "mecanica_certificada" ? "mecanica" : s.categoria
+  ) as CategoriaServicio;
   return {
     id: `api-${s.id}`,
     nombre: s.nombre,
-    categoria: s.categoria as CategoriaServicio,
+    categoria,
     ciudad: s.ciudad,
     provincia: s.provincia,
     descripcion: s.descripcion ?? undefined,
@@ -70,7 +74,6 @@ function desdeApi(s: ServicioSalida): Servicio {
     whatsapp: s.whatsapp ?? undefined,
     direccion: s.direccion ?? undefined,
     horario: s.horario ?? undefined,
-    certificado: s.certificado,
     acepta_agendamiento: s.acepta_agendamiento,
     demo: false,
   };
@@ -130,7 +133,7 @@ export default function ServiciosPage() {
   }, [servicios]);
 
   // Lista de la categoría, con distancia aproximada y ordenada por cercanía cuando hay
-  // un origen. Sin origen: orden original (certificados primero, luego recientes).
+  // un origen. Sin origen: orden original de la fuente.
   const lista = useMemo<{ s: Servicio; km: number | null }[]>(() => {
     const base = cat ? servicios.filter((x) => x.categoria === cat) : [];
     const conKm = base.map((s) => {
@@ -154,8 +157,8 @@ export default function ServiciosPage() {
         <div>
           <h1 className="text-2xl font-black text-tinta sm:text-3xl">Servicios para tu auto</h1>
           <p className="mt-1 max-w-2xl text-sm text-secundario sm:text-base">
-            Mecánicas y mecánicas certificadas, centros de servicio, lavaderos, luces y
-            accesorios. Un solo lugar para encontrarlos, ver su horario y agendar una cita.
+            Mecánicas, centros de servicio, lavaderos, luces y accesorios. Un solo lugar
+            para encontrarlos, ver su horario y agendar una cita.
           </p>
         </div>
         <Link
@@ -330,11 +333,6 @@ function TarjetaServicio({
         >
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-bold text-tinta">{s.nombre}</h3>
-            {s.certificado && (
-              <span className="shrink-0 rounded-full bg-confirmado-tinte px-2 py-0.5 text-[10px] font-bold text-confirmado-texto">
-                ✓ Certificado
-              </span>
-            )}
             {km != null && (
               <span className="shrink-0 rounded-full bg-marca-tinte px-2 py-0.5 text-[10px] font-bold text-marca-texto">
                 📍 {etiquetaDistancia(km)}
@@ -615,7 +613,6 @@ function AgendarCita({ servicio: s }: { servicio: Servicio }) {
 // ── Alta de un negocio (formulario + wa.me de respaldo) ────────────────────────
 const CATS_API: { valor: CategoriaServicioApi; etiqueta: string }[] = [
   { valor: "mecanica", etiqueta: "Mecánica general" },
-  { valor: "mecanica_certificada", etiqueta: "Mecánica certificada" },
   { valor: "centro_servicio", etiqueta: "Centro de servicio" },
   { valor: "lavadero", etiqueta: "Lavadero" },
   { valor: "luces", etiqueta: "Luces y eléctrico" },
