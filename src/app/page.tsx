@@ -1,21 +1,26 @@
-// Página inicial: NO es un feed de autos (eso vive en /marketplace). Es un resumen
-// ordenado de lo que hay en la web —comprar, vender, garage— con UN enlace directo a
-// cada área, y debajo el mapa de dónde hay stock.
+// Página inicial = HUB: reparte entre los dos servicios de CarStore —
+//   1. Verificar un vehículo (consulta de datos por placa, superficie aislada /verificar)
+//   2. Comprar, vender y servicios (el marketplace)
+// Debajo, accesos directos a las áreas del market + el mapa de stock + publicidad.
 //
-// Orden: hero compacto → "¿Qué quieres hacer?" (4 tarjetas, 2×2 en celular) → mapa → publicidad.
-// El hero es CHICO a propósito para que en celular se vean ya las tarjetas.
-//
-// La consulta de placa / datos oficiales quedó en stand-by. Español de Ecuador (tuteo).
+// Orden: dos puertas → "Entra directo a" (4 tarjetas) → mapa → publicidad.
+// Español de Ecuador (tuteo).
 
 import Link from "next/link";
 import { DistribucionGeografica } from "@/components/DistribucionGeografica";
-import { IconoAuto, IconoGarage, IconoLlave, IconoMegafono } from "@/components/Iconos";
+import {
+  IconoAuto,
+  IconoGarage,
+  IconoLlave,
+  IconoLupa,
+  IconoMegafono,
+} from "@/components/Iconos";
 import { PublicidadHome } from "@/components/PublicidadHome";
 
 export default function Home() {
   return (
     <div className="espacio-barra-movil">
-      <HeroSection />
+      <PuertasSection />
       <AccesosSection />
       <DistribucionGeografica />
       <PublicidadHome />
@@ -23,30 +28,71 @@ export default function Home() {
   );
 }
 
-function HeroSection() {
+// Las DOS puertas de entrada. Es la decisión de primer nivel: ¿vengo a averiguar algo
+// de un auto, o a comprar/vender? Todo lo demás cuelga de la segunda.
+function PuertasSection() {
+  const puertas = [
+    {
+      chip: "Consultar",
+      titulo: "Verificar un vehículo",
+      texto:
+        "Escribe una placa y mira su identificación, estado de matrícula y multas. Lo básico es gratis, sin cuenta.",
+      Icono: IconoLupa,
+      href: "/verificar",
+      cta: "Consultar una placa",
+    },
+    {
+      chip: "Comprar y vender",
+      titulo: "Marketplace y servicios",
+      texto:
+        "Anuncios con ficha técnica, publica el tuyo gratis, y encuentra talleres y lavaderos de tu ciudad.",
+      Icono: IconoAuto,
+      href: "/marketplace",
+      cta: "Entrar al marketplace",
+    },
+  ];
   return (
     <section className="relative overflow-hidden">
       <div aria-hidden className="hero-glow pointer-events-none absolute inset-0 -z-10" />
-      <div className="mx-auto max-w-2xl px-6 pt-8 pb-7 text-center sm:pt-16 sm:pb-12">
-        <span className="inline-flex items-center gap-2 rounded-full border border-borde bg-superficie px-3 py-1 text-[11px] font-medium text-secundario shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-confirmado" />
-          Cada anuncio con su ficha técnica
-        </span>
-        <h1 className="mt-4 text-[26px] font-black leading-[1.1] tracking-tight text-tinta sm:mt-5 sm:text-4xl">
-          Compra y vende autos en Ecuador
+      <div className="mx-auto max-w-4xl px-6 pt-8 pb-6 sm:pt-14 sm:pb-10">
+        <h1 className="text-center text-[26px] font-black leading-[1.1] tracking-tight text-tinta sm:text-4xl">
+          Tu garage local en Ecuador
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-secundario sm:text-base">
-          Un solo lugar para ver anuncios y publicar el tuyo, cada uno con su ficha técnica.
+        <p className="mx-auto mt-3 max-w-md text-center text-sm text-secundario sm:text-base">
+          Averigua los datos de un auto, o compra y vende con su ficha técnica.
         </p>
-        <p className="mt-3 text-[11px] text-secundario">
-          Publicar es gratis · Ver los anuncios no necesita cuenta
-        </p>
+        <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          {puertas.map((p) => (
+            <Link
+              key={p.titulo}
+              href={p.href}
+              className="group sombra-tarjeta flex flex-col rounded-2xl border border-borde bg-superficie p-5 transition hover:-translate-y-0.5 hover:border-borde-fuerte"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-marca-tinte text-marca-texto transition group-hover:scale-105">
+                  <p.Icono className="h-5 w-5" />
+                </span>
+                <span className="rounded-full border border-borde px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secundario">
+                  {p.chip}
+                </span>
+              </div>
+              <h2 className="mt-3 text-lg font-black leading-tight text-tinta">
+                {p.titulo}
+              </h2>
+              <p className="mt-1.5 flex-1 text-sm text-secundario">{p.texto}</p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-tinta">
+                {p.cta}
+                <span className="transition group-hover:translate-x-0.5">→</span>
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-// Los tres accesos del inicio. Es la navegación principal — el hero no los repite.
+// Accesos directos a las áreas del marketplace (cuelgan de la 2ª puerta).
 function AccesosSection() {
   const accesos = [
     {
@@ -85,7 +131,7 @@ function AccesosSection() {
   return (
     <section className="mx-auto max-w-5xl px-6 pb-12">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-secundario">
-        ¿Qué quieres hacer?
+        Entra directo a
       </h2>
       {/* 2×2 en celular (compacto, entra en una pantalla), 4 en línea desde lg. */}
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">

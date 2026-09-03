@@ -90,8 +90,6 @@ export function Header() {
           </span>
         </Link>
 
-        {/* El producto es el market de autos. La consulta de placa quedó en stand-by
-            (pendiente de resolver la fuente de datos), así que no está en la nav. */}
         <div className="hidden md:flex items-center gap-6 text-sm text-secundario">
           <Link href="/marketplace" className="font-semibold text-tinta hover:text-tinta">
             Marketplace
@@ -99,6 +97,9 @@ export function Header() {
           <Link href="/marketplace/publicar" className="hover:text-tinta">Publicar</Link>
           <Link href="/servicios" className="hover:text-tinta">Servicios</Link>
           <Link href="/puntos-encuentro" className="hover:text-tinta">Puntos de encuentro</Link>
+          {/* La consulta de datos vive AISLADA en `/verificar` (sin este chrome); el
+              enlace la deja alcanzable desde el market. */}
+          <Link href="/verificar" className="hover:text-tinta">Verificar placa</Link>
           <Link href="/intereses" className="hover:text-tinta">Intereses</Link>
           {logueado && (
             <Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link>

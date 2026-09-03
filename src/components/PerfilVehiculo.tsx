@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { consultarPerfil, reintentarFuente } from "@/lib/api";
+import { tieneSesion } from "@/lib/auth";
 import { Insignia, type TonoInsignia } from "@/components/BentoCard";
 import { Acordeon } from "@/components/Acordeon";
 import { ResumenPlaca, derivarResumen } from "@/components/ResumenPlaca";
@@ -420,6 +421,26 @@ export function PerfilVehiculo({ inicial }: Props) {
   const [reintentando, setReintentando] = useState(false);
 
   const cargando = hayFuentesEnProceso(perfil);
+
+  // El SSR consulta el perfil de forma ANÓNIMA (teaser). Si al montar hay sesión,
+  // se re-consulta CON el token para revelar los bloques ampliados (multas con
+  // detalle, identificadores, n.º de dueños): gratis con cuenta mientras dure la
+  // monetización suspendida (§1.0.3). Una sola vez por placa.
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      if (!tieneSesion()) return;
+      try {
+        const conAuth = await consultarPerfil(inicial.placa);
+        if (vivo) setPerfil(conAuth);
+      } catch {
+        /* conservar el teaser del SSR */
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [inicial.placa]);
 
   useEffect(() => {
     if (!cargando) return;

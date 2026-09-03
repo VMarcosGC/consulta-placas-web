@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BarraNavegacionMovil } from "@/components/BarraNavegacionMovil";
 import { ChatWidget } from "@/components/ChatWidget";
+import { ChromeSlot } from "@/components/ChromeSlot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,11 +61,19 @@ export default function RootLayout({
           globals.css. Una utilidad de Tailwind en este elemento gana por
           especificidad y dejaría el token del sistema sin efecto. */}
       <body className="min-h-full flex flex-col espacio-barra-movil">
-        <Header />
+        {/* En rutas aisladas (`/verificar`) ChromeSlot no pinta nada: la consulta de
+            datos es una superficie propia, sin Header/Footer/barra/chat. */}
+        <ChromeSlot>
+          <Header />
+        </ChromeSlot>
         <main className="flex-1">{children}</main>
-        <Footer />
-        <BarraNavegacionMovil />
-        <ChatWidget />
+        <ChromeSlot>
+          <Footer />
+        </ChromeSlot>
+        <ChromeSlot>
+          <BarraNavegacionMovil />
+          <ChatWidget />
+        </ChromeSlot>
       </body>
     </html>
   );

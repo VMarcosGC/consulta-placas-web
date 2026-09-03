@@ -42,7 +42,7 @@ export function ConsultaForm({ tamanio = "hero", placaInicial = "" }: Props) {
       return;
     }
     setError(null);
-    startTransition(() => router.push(`/consultar/${limpia}`));
+    startTransition(() => router.push(`/verificar/${limpia}`));
   }
 
   const inputClases =
