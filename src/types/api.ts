@@ -422,6 +422,15 @@ export interface Titular {
   mensaje: string | null;
 }
 
+// N.º de dueños que ha tenido la placa (dato registral, no PII). Lo aporta el
+// proveedor vehicular; se ve con sesión (§1.0.3).
+export interface HistorialPropietarios {
+  bloqueado: boolean;
+  disponible: boolean;
+  numero_propietarios: number | null;
+  mensaje: string | null;
+}
+
 // Catálogo de microdesbloqueos de la consulta por placa. El backend sigue enviando
 // `productos` en el perfil, pero la UI de desbloqueo con tokens se retiró
 // (monetización suspendida, AGENTS.md §1.0.3). Se conserva en el mirror para no
@@ -442,6 +451,7 @@ export interface VehiculoConsolidado {
   datos_basicos: DatosBasicos;
   identificacion: Identificacion;
   titular: Titular;
+  historial_propietarios: HistorialPropietarios;
   valores_tributarios: ValoresTributarios | null;
   multas_pendientes: MultaItem[];
   multas_detalle: MultaDetalle[];

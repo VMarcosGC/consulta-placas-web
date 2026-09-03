@@ -224,12 +224,37 @@ function CuerpoIdentificacion({ perfil }: { perfil: VehiculoConsolidado }) {
   const id = perfil.identificacion;
   const t = perfil.titular;
   const v = perfil.valores_tributarios;
+  const h = perfil.historial_propietarios;
   const hayIdent = !!(id.vin_ofuscado || id.numero_motor_ofuscado || id.numero_chasis_ofuscado);
   const hayTitular = !t.bloqueado && t.disponible;
   const hayValores = !fuenteInactiva("SRI") && v != null && v.url_consulta == null;
+  const hayDuenos = h.disponible;
 
   return (
     <div className="space-y-5">
+      {hayDuenos && (
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <p className="text-[11px] uppercase tracking-wide text-secundario">Propietarios</p>
+            {h.bloqueado ? (
+              <Insignia tono="neutro">🔒 con cuenta</Insignia>
+            ) : (
+              <Insignia tono="ok">visible</Insignia>
+            )}
+          </div>
+          <Dato
+            label="Dueños registrados"
+            valor={
+              h.numero_propietarios != null
+                ? String(h.numero_propietarios)
+                : h.bloqueado
+                  ? "—"
+                  : (h.mensaje ?? "No informado")
+            }
+          />
+        </div>
+      )}
+
       {hayIdent && (
         <div>
           <div className="mb-2 flex items-center gap-2">
@@ -478,7 +503,8 @@ export function PerfilVehiculo({ inicial }: Props) {
     !fuenteInactiva("SRI") &&
     perfil.valores_tributarios != null &&
     perfil.valores_tributarios.url_consulta == null;
-  const hayAccesorias = hayIdent || hayTitular || hayValores;
+  const hayDuenos = perfil.historial_propietarios.disponible;
+  const hayAccesorias = hayIdent || hayTitular || hayValores || hayDuenos;
 
   const amtErrorFuente = estadoDeFuente(perfil, "AMT") === "error_fuente";
 
