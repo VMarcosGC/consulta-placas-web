@@ -34,6 +34,7 @@ import {
 } from "@/lib/geolocalizacion";
 import { crearServicio, listarServicios, pedirCita } from "@/lib/api";
 import { tieneSesion } from "@/lib/auth";
+import { normalizar } from "@/lib/marketplace";
 import {
   alternarServicioGuardado,
   useServiciosGuardados,
@@ -94,6 +95,12 @@ export default function ServiciosPage() {
   const [servicios, setServicios] = useState<Servicio[]>(SERVICIOS_DEMO);
   const guardados = new Set(useServiciosGuardados());
 
+  // Buscador + filtro de favoritos. Cuando alguno está activo, la sección pasa de los
+  // bloques por categoría a una LISTA PLANA filtrada (por nombre, ciudad, descripción).
+  const [q, setQ] = useState("");
+  const [soloFav, setSoloFav] = useState(false);
+  const buscando = q.trim().length > 0 || soloFav;
+
   // Ubicación del usuario para ordenar por cercanía. Primero se intenta el GPS del
   // navegador; si lo niega o no está, elige una ciudad a mano.
   const [origen, setOrigen] = useState<Coord | null>(null);
@@ -150,6 +157,38 @@ export default function ServiciosPage() {
   }, [cat, servicios, origen]);
 
   const metaCat = CATEGORIAS_SERVICIO.find((c) => c.clave === cat);
+  const nombreCat = (clave: CategoriaServicio) =>
+    CATEGORIAS_SERVICIO.find((c) => c.clave === clave)?.nombre ?? clave;
+
+  // `guardados` es un Set nuevo cada render; se usa su contenido serializado como dep.
+  const claveFav = [...guardados].sort().join(",");
+
+  // Lista plana filtrada por texto y/o favoritos (con distancia y orden por cercanía).
+  const resultados = useMemo<{ s: Servicio; km: number | null }[]>(() => {
+    if (!buscando) return [];
+    const term = normalizar(q);
+    const favSet = new Set(claveFav ? claveFav.split(",") : []);
+    const etiqueta = (clave: CategoriaServicio) =>
+      CATEGORIAS_SERVICIO.find((c) => c.clave === clave)?.nombre ?? clave;
+    const base = servicios.filter((s) => {
+      if (soloFav && !favSet.has(s.id)) return false;
+      if (!term) return true;
+      return normalizar(
+        `${s.nombre} ${s.ciudad} ${s.provincia} ${s.descripcion ?? ""} ${etiqueta(s.categoria)}`
+      ).includes(term);
+    });
+    const conKm = base.map((s) => {
+      if (!origen) return { s, km: null };
+      const c = centroideDe(s.ciudad, s.provincia);
+      return { s, km: c ? haversineKm(origen, c) : null };
+    });
+    if (!origen) return conKm;
+    return conKm.sort((a, b) => {
+      if (a.km == null) return 1;
+      if (b.km == null) return -1;
+      return a.km - b.km;
+    });
+  }, [buscando, q, soloFav, servicios, origen, claveFav]);
 
   return (
     <div className="espacio-barra-movil mx-auto max-w-5xl px-6 py-8 sm:py-10">
@@ -169,8 +208,109 @@ export default function ServiciosPage() {
         </Link>
       </header>
 
+      {/* Buscador + favoritos. Con alguno activo, la vista pasa a lista plana filtrada. */}
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-secundario">
+            🔎
+          </span>
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Busca por nombre, ciudad o tipo de servicio…"
+            aria-label="Buscar un servicio"
+            className="w-full rounded-2xl border border-borde-fuerte bg-superficie py-3 pl-11 pr-4 text-sm text-tinta placeholder:text-secundario outline-none focus:border-marca"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setSoloFav((v) => !v)}
+          aria-pressed={soloFav}
+          className={`shrink-0 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+            soloFav
+              ? "border-marca bg-marca-tinte text-marca-texto"
+              : "border-borde-fuerte bg-superficie text-secundario hover:bg-superficie-tenue"
+          }`}
+        >
+          {soloFav ? "♥" : "♡"} Favoritos
+          {guardados.size > 0 && (
+            <span className="ml-1 opacity-70">({guardados.size})</span>
+          )}
+        </button>
+      </div>
+
+      {/* RESULTADOS DE BÚSQUEDA — lista plana (cuando hay texto o filtro de favoritos). */}
+      {buscando && (
+        <>
+          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h2 className="text-lg font-bold text-tinta">
+              {soloFav && !q.trim() ? "Tus favoritos" : "Resultados"}{" "}
+              <span className="text-sm font-normal text-secundario">
+                ({resultados.length})
+              </span>
+            </h2>
+            {(q.trim() || soloFav) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  setSoloFav(false);
+                }}
+                className="text-xs font-semibold text-secundario underline hover:text-tinta"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+
+          <BarraUbicacion
+            estado={estadoGeo}
+            tieneOrigen={origen != null}
+            onCiudad={(ciudad) => {
+              const c = coordDeCiudad(ciudad);
+              if (c) {
+                setOrigen(c);
+                setEstadoGeo("ok");
+              }
+            }}
+          />
+
+          {resultados.length === 0 ? (
+            <div className="rounded-2xl border border-borde bg-superficie p-8 text-center sombra-tarjeta">
+              <p className="font-medium text-tinta">
+                {soloFav && !q.trim()
+                  ? "Todavía no guardaste ningún servicio."
+                  : "Ningún servicio coincide con tu búsqueda."}
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-secundario">
+                {soloFav && !q.trim()
+                  ? "Toca el ♡ en cualquier servicio para tenerlo a mano."
+                  : "Prueba con otro término, o mira las categorías de abajo."}
+              </p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2.5">
+              {resultados.map(({ s, km }) => (
+                <li key={s.id}>
+                  <TarjetaServicio
+                    servicio={s}
+                    km={km}
+                    etiquetaCategoria={nombreCat(s.categoria)}
+                    abierta={abierto === s.id}
+                    onToggle={() => setAbierto((a) => (a === s.id ? null : s.id))}
+                    guardado={guardados.has(s.id)}
+                    onGuardar={() => alternarServicioGuardado(s.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+
       {/* NIVEL 1 — bloques por categoría. */}
-      {!cat && (
+      {!buscando && !cat && (
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
           {CATEGORIAS_SERVICIO.map((c) => {
             const n = conteos.get(c.clave) ?? 0;
@@ -198,7 +338,7 @@ export default function ServiciosPage() {
       )}
 
       {/* NIVEL 2 — lista de la categoría elegida. */}
-      {cat && (
+      {!buscando && cat && (
         <>
           <div className="mb-4 flex items-center gap-3">
             <button
@@ -314,6 +454,7 @@ function TarjetaServicio({
   onToggle,
   guardado,
   onGuardar,
+  etiquetaCategoria,
 }: {
   servicio: Servicio;
   km: number | null;
@@ -321,6 +462,8 @@ function TarjetaServicio({
   onToggle: () => void;
   guardado: boolean;
   onGuardar: () => void;
+  /** Nombre de la categoría — se muestra como chip en los resultados de búsqueda. */
+  etiquetaCategoria?: string;
 }) {
   return (
     <div className="rounded-2xl border border-borde bg-superficie sombra-tarjeta">
@@ -333,6 +476,11 @@ function TarjetaServicio({
         >
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-bold text-tinta">{s.nombre}</h3>
+            {etiquetaCategoria && (
+              <span className="shrink-0 rounded-full border border-borde px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-secundario">
+                {etiquetaCategoria}
+              </span>
+            )}
             {km != null && (
               <span className="shrink-0 rounded-full bg-marca-tinte px-2 py-0.5 text-[10px] font-bold text-marca-texto">
                 📍 {etiquetaDistancia(km)}
