@@ -18,7 +18,13 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function traerPerfil(placa: string): Promise<VehiculoConsolidado | null> {
   try {
-    const r = await fetch(`${BASE_URL}/consultar/${placa}/perfil`, { cache: "no-store" });
+    // Techo de espera en el SSR: si el backend está frío o ANT tarda, no dejamos la
+    // pantalla en blanco 60 s — se corta a los 25 s y se pinta la tarjeta de reintento.
+    // El backend además tiene su propio timeout de ANT (CONSULTA_TIMEOUT_ANT_SEGUNDOS).
+    const r = await fetch(`${BASE_URL}/consultar/${placa}/perfil`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(25000),
+    });
     if (!r.ok) return null;
     return (await r.json()) as VehiculoConsolidado;
   } catch {

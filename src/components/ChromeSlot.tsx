@@ -1,17 +1,18 @@
-// Envoltura que OCULTA el chrome del sitio (Header, Footer, barra de navegación de
-// celular, widget de chat) en las rutas aisladas — hoy `/verificar` (consulta de datos).
+// Envoltura que OCULTA el chrome del marketplace (Header con su nav, Footer, barra de
+// navegación de celular, widget de chat) en la LANDING (`/`) y en `/verificar…`. Cada
+// una de esas pantallas trae su propia barra mínima; el chrome del market solo va
+// dentro del market. Ver `lib/rutas.ts`.
 //
 // Los componentes hijos igual se renderizan en el servidor; acá solo se decide si su
-// salida entra o no en el árbol del cliente. Es barato y centraliza la lista de rutas
-// aisladas en un solo lugar (`lib/rutas.ts`).
+// salida entra o no en el árbol del cliente.
 
 "use client";
 
 import { usePathname } from "next/navigation";
-import { esRutaAislada } from "@/lib/rutas";
+import { sinChromeMarketplace } from "@/lib/rutas";
 
 export function ChromeSlot({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (esRutaAislada(pathname)) return null;
+  if (sinChromeMarketplace(pathname)) return null;
   return <>{children}</>;
 }

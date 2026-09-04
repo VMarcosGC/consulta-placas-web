@@ -37,3 +37,24 @@ export function marcarFuenteEnProceso(
     ),
   };
 }
+
+// Copia del perfil con las fuentes VISIBLES que siguen `en_proceso` marcadas como
+// `error_fuente`. Se usa cuando el polling agotó su ventana (el worker residencial no
+// está respondiendo): así la pantalla llega a un estado FINAL —"sin dato municipal,
+// reintentar"— en vez de girar para siempre. `reintentar` vuelve a ponerlas en camino.
+export function marcarFuentesVaradas(
+  perfil: VehiculoConsolidado
+): VehiculoConsolidado {
+  return {
+    ...perfil,
+    estado_fuentes: perfil.estado_fuentes.map((f) =>
+      f.estado === "en_proceso" && !fuenteInactiva(f.clave)
+        ? {
+            ...f,
+            estado: "error_fuente",
+            detalle: "No respondió a tiempo. Puedes reintentar en un momento.",
+          }
+        : f
+    ),
+  };
+}

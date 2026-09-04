@@ -25,6 +25,7 @@ import {
   estadoDeFuente,
   hayFuentesEnProceso,
   marcarFuenteEnProceso,
+  marcarFuentesVaradas,
 } from "@/lib/perfil";
 import { fuenteInactiva } from "@/lib/fuentes";
 import {
@@ -35,6 +36,10 @@ import {
 } from "@/types/api";
 
 const INTERVALO_POLLING_MS = 4000;
+// Ciclos máximos de polling a las fuentes municipales (AMT/EPMTSD, worker residencial).
+// Pasado esto sin respuesta, se da por "no disponible ahora" y la pantalla llega a un
+// estado final con botón de reintento — no se gira para siempre si el worker está caído.
+const MAX_CICLOS_POLLING = 8; // ≈ 32 s
 
 interface Props {
   inicial: VehiculoConsolidado;
@@ -444,8 +449,10 @@ function ChipFuente({ fuente }: { fuente: EstadoFuenteItem }) {
 export function PerfilVehiculo({ inicial }: Props) {
   const [perfil, setPerfil] = useState<VehiculoConsolidado>(inicial);
   const [reintentando, setReintentando] = useState(false);
+  const [ciclos, setCiclos] = useState(0);
 
-  const cargando = hayFuentesEnProceso(perfil);
+  // `cargando` = hay fuentes en camino Y todavía no agotamos la ventana de polling.
+  const cargando = hayFuentesEnProceso(perfil) && ciclos < MAX_CICLOS_POLLING;
 
   // El SSR consulta el perfil de forma ANÓNIMA (teaser). Si al montar hay sesión,
   // se re-consulta CON el token para revelar los bloques ampliados (multas con
@@ -470,17 +477,23 @@ export function PerfilVehiculo({ inicial }: Props) {
   useEffect(() => {
     if (!cargando) return;
     const t = setTimeout(async () => {
+      const ultimo = ciclos + 1 >= MAX_CICLOS_POLLING; // este es el último intento
       try {
-        setPerfil(await consultarPerfil(perfil.placa));
+        const fresco = await consultarPerfil(perfil.placa);
+        setCiclos((n) => n + 1);
+        setPerfil(ultimo ? marcarFuentesVaradas(fresco) : fresco);
       } catch {
-        // Silencioso: conservar datos previos y reintentar en el próximo ciclo.
+        // Silencioso: conservar datos previos. Si era el último ciclo, cerrar igual.
+        setCiclos((n) => n + 1);
+        if (ultimo) setPerfil((prev) => marcarFuentesVaradas(prev));
       }
     }, INTERVALO_POLLING_MS);
     return () => clearTimeout(t);
-  }, [perfil, cargando]);
+  }, [perfil, cargando, ciclos]);
 
   async function reintentarAmt() {
     setReintentando(true);
+    setCiclos(0); // reabre la ventana de polling
     setPerfil((prev) => marcarFuenteEnProceso(prev, "AMT"));
     try {
       await reintentarFuente(perfil.placa, "AMT");

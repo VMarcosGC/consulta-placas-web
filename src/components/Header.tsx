@@ -97,10 +97,9 @@ export function Header() {
           <Link href="/marketplace/publicar" className="hover:text-tinta">Publicar</Link>
           <Link href="/servicios" className="hover:text-tinta">Servicios</Link>
           <Link href="/puntos-encuentro" className="hover:text-tinta">Puntos de encuentro</Link>
-          {/* La consulta de datos vive AISLADA en `/verificar` (sin este chrome); el
-              enlace la deja alcanzable desde el market. */}
-          <Link href="/verificar" className="hover:text-tinta">Verificar placa</Link>
           <Link href="/intereses" className="hover:text-tinta">Intereses</Link>
+          {/* "Verificar placa" NO va en esta nav: es otra pantalla/mundo. Se llega
+              desde la landing (`/`), a la que apunta el logo de arriba. */}
           {logueado && (
             <Link href="/mi-garage" className="hover:text-tinta">Mi garage</Link>
           )}
